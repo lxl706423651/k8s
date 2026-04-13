@@ -39,17 +39,16 @@ protocol kernel {{
 """
 
 RoutingFileTemplates["kernel2"] = """
-protocol kernel {
+protocol kernel {{
     merge paths on;
     persist;
-    scan time 600;
-    ipv4 {
+    scan time {interval};
+    ipv4 {{
         import none;
         export all;
-    };
-}
+    }};
+}}
 """
-
 
 RoutingFileTemplates["rnode_bird"] = """\
 router id {routerId};
