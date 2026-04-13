@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+###############################################################################
+# check_resources - 检查虚拟机资源和K3s集群信息
+###############################################################################
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 加载环境变量
+if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+    source "${SCRIPT_DIR}/env.sh"
+fi
+
+echo "=========================================="
+echo "虚拟机资源检查"
+echo "=========================================="
+
+# K3s节点IP列表
+NODES=("${SEED_K3S_MASTER_IP}" "${SEED_K3S_WORKER1_IP}" "${SEED_K3S_WORKER2_IP}")
+NODE_NAMES=("master" "worker1" "worker2")
+
+SSH_OPTS=(
+    -o StrictHostKeyChecking=no
+    -o UserKnownHostsFile=/dev/null
+    -o LogLevel=ERROR
+    -o ConnectTimeout=10
+)
+
+for i in "${!NODES[@]}"; do
+    ip="${NODES[$i]}"
+    name="${NODE_NAMES[$i]}"
+    echo ""
+    echo "--- ${name} (${ip}) ---"
+    
+    # 内存
+    mem=$(ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${ip}" "free -h | grep Mem | awk '{print \$2}'" 2>/dev/null || echo "N/A")
+    echo "  内存: ${mem}"
+    
+    # CPU核数
+    cpu=$(ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${ip}" "nproc" 2>/dev/null || echo "N/A")
+    echo "  CPU核数: ${cpu}"
+    
+    # 磁盘容量
+    disk=$(ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${ip}" "lsblk -bd -o SIZE -n /dev/vda 2>/dev/null || lsblk -bd -o SIZE -n /dev/sda 2>/dev/null" 2>/dev/null || echo "N/A")
+    echo "  虚拟磁盘: ${disk}"
+done
+
+echo ""
+echo "=========================================="
+echo "K3s集群节点信息"
+echo "=========================================="
+
+# 设置KUBECONFIG
+export KUBECONFIG="${SCRIPT_DIR}/../output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+
+# 检查kubeconfig是否存在
+if [ ! -f "${KUBECONFIG}" ]; then
+    echo "错误: 未找到kubeconfig文件: ${KUBECONFIG}"
+    exit 1
+fi
+
+echo ""
+echo "--- 节点概览 ---"
+kubectl get nodes -o wide
+
+echo ""
+echo "--- 节点详细信息 (maxPods, podCIDR) ---"
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.podCIDR}{"\t"}{.status.capacity.pods}{"\n"}{end}' | while read -r name podcidr maxpods; do
+    echo "  ${name}:"
+    echo "    podCIDR: ${podcidr}"
+    echo "    maxPods: ${maxpods}"
+done
+
+echo ""
+echo "--- Kubelet配置 (maxPods) ---"
+for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
+    echo "  ${node}:"
+    maxpods=$(kubectl get node ${node} -o jsonpath='{.status.capacity.pods}')
+    echo "    maxPods: ${maxpods}"
+done

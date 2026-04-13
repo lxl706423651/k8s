@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+###############################################################################
+# preflight - 预检查阶段
+###############################################################################
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# 加载环境变量
+if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+    source "${SCRIPT_DIR}/env.sh"
+fi
+
+# 创建实验目录并记录时间
+create_experiment_dir
+log_start "preflight"
+
+# 设置 KUBECONFIG
+export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+
+# 日志输出到实验目录
+LOG_FILE="${EXPERIMENT_DIR}/preflight.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+SSH_OPTS=(
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o LogLevel=ERROR
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+)
+SSH_EXEC_OPTS=("${SSH_OPTS[@]}" -n)
+
+echo "=== Preflight Check ==="
+echo "Log file: ${LOG_FILE}"
+
+# 检查节点
+echo "Checking nodes..."
+kubectl get nodes
+
+# 检查 Multus
+echo "Checking Multus..."
+kubectl -n kube-system get ds kube-multus-ds
+
+# 检测所有节点的默认网络接口
+echo "Detecting CNI master interface..."
+detect_iface() {
+    local ip="$1"
+    ssh "${SSH_EXEC_OPTS[@]}" "${SEED_K3S_USER}@${ip}" \
+        "ip -o -4 route show to default | sed -n '1{s/.* dev \([^ ]*\).*/\1/p}'" 2>/dev/null || echo ""
+}
+
+master_iface="$(detect_iface "${SEED_K3S_MASTER_IP}")" || true
+worker1_iface="$(detect_iface "${SEED_K3S_WORKER1_IP}")" || true
+worker2_iface="$(detect_iface "${SEED_K3S_WORKER2_IP}")" || true
+
+echo "Master interface: ${master_iface:-eth0}"
+echo "Worker1 interface: ${worker1_iface:-eth0}"
+echo "Worker2 interface: ${worker2_iface:-eth0}"
+
+# 检查 registry 从 worker 节点是否可达
+echo "Checking registry connectivity from workers..."
+ssh "${SSH_EXEC_OPTS[@]}" "${SEED_K3S_USER}@${SEED_K3S_WORKER1_IP}" \
+    "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1 && echo "Worker1 -> Registry: OK" || echo "Worker1 -> Registry: FAILED"
+ssh "${SSH_EXEC_OPTS[@]}" "${SEED_K3S_USER}@${SEED_K3S_WORKER2_IP}" \
+    "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1 && echo "Worker2 -> Registry: OK" || echo "Worker2 -> Registry: FAILED"
+
+# 获取节点信息
+echo "Getting nodes info..."
+kubectl get nodes -o json > /tmp/nodes.json
+
+# 生成节点标签
+echo "Generating node labels..."
+TOPOLOGY_FILE="${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt"
+ASSIGNMENT_FILE="${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
+
+python3 "${SCRIPT_DIR}/seed_k8s_plan_real_topology_by_as.py" \
+    "${TOPOLOGY_FILE}" \
+    "${ASSIGNMENT_FILE}" \
+    "/tmp/nodes.json" \
+    "/tmp/placement_expected.json" \
+    "/tmp/placement_plan.json"
+
+echo "Preflight completed"
+log_end "preflight"

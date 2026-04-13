@@ -35,7 +35,9 @@ project-words.txt
 .opencode/bun.lock
 **/.obsidian/**
 test_result.txt
-lxl/
+lxl/logs/
+lxl/scripts/
+lxl/__pycache__/
 docs/phase_start_split.md
 scripts/validate_k3s_stages.md
 scripts/check_multus_110_111_112.sh

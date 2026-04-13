@@ -1,0 +1,414 @@
+#!/usr/bin/env bash
+###############################################################################
+# deploy-batched - 部署阶段（新 namespace / 大规模 K3s / 分批提交 / 失败取证 / 节点监控）
+###############################################################################
+
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+    # shellcheck disable=SC1091
+    source "${SCRIPT_DIR}/env.sh"
+fi
+
+create_experiment_dir
+log_start "deploy"
+
+LOG_FILE="${EXPERIMENT_DIR}/deploy.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+OUTPUT_DIR="${EXPERIMENT_DIR}/output"
+MANIFEST="${OUTPUT_DIR}/k8s.yaml"
+export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+
+# -----------------------------
+# Tunables
+# -----------------------------
+: "${DEPLOY_BATCH_SIZE:=25}"                 # 每批控制器对象数（Deployment/StatefulSet/Job）
+: "${DEPLOY_BATCH_SLEEP_SECONDS:=20}"       # 批次间休息
+: "${DEPLOY_MONITOR_INTERVAL:=15}"          # 资源监控间隔
+: "${DEPLOY_USE_APPLY:=false}"              # true=kubectl apply; false=kubectl create
+: "${DEPLOY_FAIL_FAST:=true}"               # true=任何一批失败即退出
+: "${DEPLOY_CAPTURE_DESCRIBE_LIMIT:=20}"    # 失败时最多抓多少个异常 pod describe
+: "${DEPLOY_KIND_DIR:=${OUTPUT_DIR}/deploy_batches}"
+
+# 你的 3 节点；也可在 env.sh 覆盖
+: "${SEED_K3S_MASTER_IP:=192.168.122.110}"
+: "${SEED_K3S_WORKER1_IP:=192.168.122.111}"
+: "${SEED_K3S_WORKER2_IP:=192.168.122.112}"
+: "${SEED_K3S_SSH_USER:=seed}"
+: "${SEED_K3S_SSH_KEY:=${HOME}/.ssh/id_ed25519}"
+
+echo "=== Deploy (Batched) ==="
+echo "Log file: ${LOG_FILE}"
+echo "Output directory: ${OUTPUT_DIR}"
+echo "Manifest: ${MANIFEST}"
+echo "Namespace: ${SEED_NAMESPACE}"
+echo "Batch size: ${DEPLOY_BATCH_SIZE}"
+echo "Batch sleep: ${DEPLOY_BATCH_SLEEP_SECONDS}s"
+echo "Monitor interval: ${DEPLOY_MONITOR_INTERVAL}s"
+echo "Use apply: ${DEPLOY_USE_APPLY}"
+
+if [ ! -f "${MANIFEST}" ]; then
+    echo "Error: k8s.yaml not found at ${MANIFEST}"
+    echo "Please run compile and build first."
+    exit 1
+fi
+
+if ! kubectl version --request-timeout=10s >/dev/null 2>&1; then
+    echo "Error: kubectl cannot reach the cluster."
+    exit 1
+fi
+
+if kubectl get namespace "${SEED_NAMESPACE}" >/dev/null 2>&1; then
+    echo "Error: namespace ${SEED_NAMESPACE} already exists."
+    echo "This deploy script assumes a fresh namespace per experiment."
+    exit 1
+fi
+
+mkdir -p "${DEPLOY_KIND_DIR}"
+rm -rf "${DEPLOY_KIND_DIR:?}/"*
+
+# ------------------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------------------
+
+ts() { date +"%F %T"; }
+
+kapply() {
+    local file="$1"
+    if [ "${DEPLOY_USE_APPLY}" = "true" ]; then
+        kubectl -n "${SEED_NAMESPACE}" apply -f "${file}"
+    else
+        kubectl -n "${SEED_NAMESPACE}" create -f "${file}"
+    fi
+}
+
+safe_top_nodes() {
+    kubectl top nodes 2>/dev/null || echo "[top nodes unavailable: metrics-server missing or not ready]"
+}
+
+safe_top_pods() {
+    kubectl -n "${SEED_NAMESPACE}" top pods 2>/dev/null || true
+}
+
+safe_events() {
+    kubectl -n "${SEED_NAMESPACE}" get events --sort-by='.lastTimestamp' 2>/dev/null || true
+}
+
+safe_get_pods_wide() {
+    kubectl -n "${SEED_NAMESPACE}" get pods -o wide 2>/dev/null || true
+}
+
+safe_get_all() {
+    kubectl -n "${SEED_NAMESPACE}" get all -o wide 2>/dev/null || true
+}
+
+capture_node_ssh_stats() {
+    local ip="$1"
+    local out="$2"
+
+    {
+        echo "===== $(ts) node=${ip} ====="
+        ssh -i "${SEED_K3S_SSH_KEY}" -o BatchMode=yes -o ConnectTimeout=5 \
+            -o StrictHostKeyChecking=no "${SEED_K3S_SSH_USER}@${ip}" '
+                echo "--- uptime ---"
+                uptime || true
+                echo "--- /proc/loadavg ---"
+                cat /proc/loadavg || true
+                echo "--- free -m ---"
+                free -m || true
+                echo "--- vmstat 1 2 ---"
+                vmstat 1 2 || true
+                echo "--- top (batch) ---"
+                top -b -n 1 | head -n 20 || true
+            ' 2>&1 || echo "[ssh failed: ${ip}]"
+        echo
+    } >> "${out}"
+}
+
+monitor_loop() {
+    local outdir="$1"
+    local summary="${outdir}/node_monitor.log"
+    local kube_top="${outdir}/kubectl_top_nodes.log"
+    local pod_top="${outdir}/kubectl_top_pods.log"
+    local events_log="${outdir}/events_during_deploy.log"
+
+    while true; do
+        {
+            echo "===== $(ts) kubectl top nodes ====="
+            safe_top_nodes
+            echo
+        } >> "${kube_top}"
+
+        {
+            echo "===== $(ts) kubectl top pods ====="
+            safe_top_pods
+            echo
+        } >> "${pod_top}"
+
+        {
+            echo "===== $(ts) namespace events ====="
+            safe_events | tail -n 100
+            echo
+        } >> "${events_log}"
+
+        capture_node_ssh_stats "${SEED_K3S_MASTER_IP}"  "${summary}"
+        capture_node_ssh_stats "${SEED_K3S_WORKER1_IP}" "${summary}"
+        capture_node_ssh_stats "${SEED_K3S_WORKER2_IP}" "${summary}"
+
+        sleep "${DEPLOY_MONITOR_INTERVAL}"
+    done
+}
+
+capture_failure_artifacts() {
+    local outdir="${EXPERIMENT_DIR}/deploy_failure_artifacts"
+    mkdir -p "${outdir}"
+
+    echo "[failure] collecting cluster artifacts into ${outdir}"
+
+    kubectl get nodes -o wide > "${outdir}/nodes_wide.txt" 2>&1 || true
+    kubectl describe nodes > "${outdir}/nodes_describe.txt" 2>&1 || true
+
+    safe_get_all > "${outdir}/all_wide.txt"
+    safe_get_pods_wide > "${outdir}/pods_wide.txt"
+    safe_events > "${outdir}/events.txt"
+
+    kubectl -n "${SEED_NAMESPACE}" get deploy,sts,ds,job -o wide > "${outdir}/controllers_wide.txt" 2>&1 || true
+    kubectl -n "${SEED_NAMESPACE}" get network-attachment-definitions.k8s.cni.cncf.io -o yaml \
+        > "${outdir}/nad.yaml" 2>&1 || true
+
+    safe_top_nodes > "${outdir}/top_nodes.txt"
+    safe_top_pods > "${outdir}/top_pods.txt"
+
+    local bad_pods_file="${outdir}/bad_pods.txt"
+    kubectl -n "${SEED_NAMESPACE}" get pods --no-headers 2>/dev/null \
+        | awk '$2 !~ /^[0-9]+\/[0-9]+$/ || $3 !~ /Running|Completed/ {print $1}' \
+        | head -n "${DEPLOY_CAPTURE_DESCRIBE_LIMIT}" > "${bad_pods_file}" || true
+
+    while IFS= read -r pod; do
+        [ -z "${pod}" ] && continue
+        echo "[failure] describe pod ${pod}"
+        kubectl -n "${SEED_NAMESPACE}" describe pod "${pod}" > "${outdir}/describe_${pod}.txt" 2>&1 || true
+        kubectl -n "${SEED_NAMESPACE}" logs "${pod}" --all-containers --tail=200 \
+            > "${outdir}/logs_${pod}.txt" 2>&1 || true
+    done < "${bad_pods_file}"
+
+    capture_node_ssh_stats "${SEED_K3S_MASTER_IP}"  "${outdir}/node_stats_master.txt"
+    capture_node_ssh_stats "${SEED_K3S_WORKER1_IP}" "${outdir}/node_stats_worker1.txt"
+    capture_node_ssh_stats "${SEED_K3S_WORKER2_IP}" "${outdir}/node_stats_worker2.txt"
+}
+
+cleanup_monitor() {
+    if [ -n "${MONITOR_PID:-}" ]; then
+        kill "${MONITOR_PID}" >/dev/null 2>&1 || true
+        wait "${MONITOR_PID}" 2>/dev/null || true
+    fi
+}
+
+on_error() {
+    local exit_code=$?
+    echo ""
+    echo "[ERROR] deploy failed at $(ts), exit_code=${exit_code}"
+    cleanup_monitor
+    capture_failure_artifacts
+    exit "${exit_code}"
+}
+trap on_error ERR INT TERM
+
+# ------------------------------------------------------------------------------
+# Split k8s.yaml into per-doc files, then group by kind
+# ------------------------------------------------------------------------------
+
+split_manifest() {
+    local manifest="$1"
+    local split_dir="$2/raw_docs"
+    mkdir -p "${split_dir}"
+
+    # 按 YAML 文档切分
+    awk '
+        BEGIN {n=0; out=""}
+        /^---[[:space:]]*$/ {
+            if (out != "") close(out)
+            n++
+            out=sprintf("'"${split_dir}"'/doc_%05d.yaml", n)
+            next
+        }
+        {
+            if (out == "") {
+                n++
+                out=sprintf("'"${split_dir}"'/doc_%05d.yaml", n)
+            }
+            print >> out
+        }
+        END {
+            if (out != "") close(out)
+        }
+    ' "${manifest}"
+
+    mkdir -p "${DEPLOY_KIND_DIR}/00-crds" \
+             "${DEPLOY_KIND_DIR}/01-foundation" \
+             "${DEPLOY_KIND_DIR}/02-services" \
+             "${DEPLOY_KIND_DIR}/03-controllers"
+
+    local f kind
+
+    shopt -s nullglob
+    for f in "${split_dir}"/*.yaml; do
+        # Support both YAML format (kind: Deployment) and JSON format ({"kind": "Deployment", ...})
+        kind="$(python3 -c "
+import sys, re
+f = sys.argv[1]
+try:
+    with open(f) as c:
+        content = c.read().strip()
+    m = re.search(r'^kind:\s*(\S+)', content, re.M)
+    if not m:
+        m = re.search(r'\"kind\":\s*\"([^\"]+)\"', content)
+    if m:
+        print(m.group(1))
+except:
+    pass
+" "${f}" 2>/dev/null || true)"
+
+        case "${kind}" in
+            CustomResourceDefinition)
+                cp "${f}" "${DEPLOY_KIND_DIR}/00-crds/"
+                ;;
+            Namespace|ServiceAccount|ConfigMap|Secret|Role|RoleBinding|ClusterRole|ClusterRoleBinding|NetworkAttachmentDefinition|NetworkAttachmentDefinitionList)
+                cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/"
+                ;;
+            Service|Endpoints)
+                cp "${f}" "${DEPLOY_KIND_DIR}/02-services/"
+                ;;
+            Deployment|StatefulSet|DaemonSet|Job)
+                cp "${f}" "${DEPLOY_KIND_DIR}/03-controllers/"
+                ;;
+            *)
+                # 默认放 foundation，避免把未知资源过早并发推起来
+                cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/"
+                ;;
+        esac
+    done
+    shopt -u nullglob
+}
+
+apply_dir_serial() {
+    local dir="$1"
+    local label="$2"
+    local count=0
+    local f
+
+    shopt -s nullglob
+    local files=( "${dir}"/*.yaml )
+    shopt -u nullglob
+
+    count="${#files[@]}"
+    if [ "${count}" -eq 0 ]; then
+        echo "[${label}] no resources"
+        return 0
+    fi
+
+    echo "[${label}] applying ${count} resources serially..."
+    for f in "${files[@]}"; do
+        echo "[${label}] $(basename "${f}")"
+        kapply "${f}"
+    done
+}
+
+apply_dir_in_batches() {
+    local dir="$1"
+    local label="$2"
+    local batch_size="$3"
+
+    shopt -s nullglob
+    local files=( "${dir}"/*.yaml )
+    shopt -u nullglob
+
+    local total="${#files[@]}"
+    if [ "${total}" -eq 0 ]; then
+        echo "[${label}] no resources"
+        return 0
+    fi
+
+    echo "[${label}] total resources: ${total}, batch_size=${batch_size}"
+
+    local i=0
+    local batch_no=0
+    while [ "${i}" -lt "${total}" ]; do
+        batch_no=$((batch_no + 1))
+        local end=$((i + batch_size))
+        if [ "${end}" -gt "${total}" ]; then
+            end="${total}"
+        fi
+
+        echo ""
+        echo "[${label}] batch ${batch_no}: items $((i + 1))..${end}/${total}"
+        for ((j=i; j<end; j++)); do
+            echo "[${label}] apply $(basename "${files[j]}")"
+            if ! kapply "${files[j]}"; then
+                echo "[${label}] failed on $(basename "${files[j]}")"
+                if [ "${DEPLOY_FAIL_FAST}" = "true" ]; then
+                    return 1
+                fi
+            fi
+        done
+
+        echo "[${label}] post-batch quick snapshot:"
+        kubectl get nodes -o wide || true
+        kubectl -n "${SEED_NAMESPACE}" get pods -o wide | tail -n 30 || true
+        safe_top_nodes || true
+
+        if [ "${end}" -lt "${total}" ]; then
+            echo "[${label}] sleeping ${DEPLOY_BATCH_SLEEP_SECONDS}s before next batch..."
+            sleep "${DEPLOY_BATCH_SLEEP_SECONDS}"
+        fi
+
+        i="${end}"
+    done
+}
+
+# ------------------------------------------------------------------------------
+# Main
+# ------------------------------------------------------------------------------
+
+echo "Creating namespace..."
+kubectl create namespace "${SEED_NAMESPACE}"
+
+echo "Starting node monitor in background..."
+monitor_loop "${EXPERIMENT_DIR}" &
+MONITOR_PID=$!
+echo "Monitor PID: ${MONITOR_PID}"
+
+echo "Splitting manifest..."
+split_manifest "${MANIFEST}" "${DEPLOY_KIND_DIR}"
+
+echo "Applying CRDs..."
+apply_dir_serial "${DEPLOY_KIND_DIR}/00-crds" "crds"
+
+echo "Applying foundation objects..."
+apply_dir_serial "${DEPLOY_KIND_DIR}/01-foundation" "foundation"
+
+echo "Applying services..."
+apply_dir_serial "${DEPLOY_KIND_DIR}/02-services" "services"
+
+echo "Applying controllers in batches..."
+apply_dir_in_batches "${DEPLOY_KIND_DIR}/03-controllers" "controllers" "${DEPLOY_BATCH_SIZE}"
+
+echo ""
+echo "Deploy submitted successfully."
+echo "This still does NOT mean all pods are Running/Ready."
+echo "Next step:"
+echo "  ${SCRIPT_DIR}/wait-ready"
+echo ""
+
+echo "Quick checks:"
+echo "  kubectl get pods -n ${SEED_NAMESPACE} -o wide"
+echo "  kubectl get events -n ${SEED_NAMESPACE} --sort-by='.lastTimestamp'"
+echo "  kubectl top nodes"
+echo ""
+
+cleanup_monitor
+log_end "deploy"

@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+###############################################################################
+# compile - 编译阶段
+###############################################################################
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# 加载环境变量
+if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+    source "${SCRIPT_DIR}/env.sh"
+fi
+
+# 使用已有实验目录或创建新的
+create_experiment_dir
+log_start "compile"
+
+# 日志输出到实验目录
+LOG_FILE="${EXPERIMENT_DIR}/compile.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+echo "=== Compile ==="
+echo "Log file: ${LOG_FILE}"
+
+# 将编译产物放到实验目录的 output 子目录
+OUTPUT_DIR="${EXPERIMENT_DIR}/output"
+mkdir -p "${OUTPUT_DIR}"
+
+TOPOLOGY_FILE="${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt"
+ASSIGNMENT_FILE="${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
+
+# 检查 preflight 生成的节点标签文件
+if [ ! -f "/tmp/placement_expected.json" ]; then
+    echo "Error: /tmp/placement_expected.json not found. Please run preflight first."
+    exit 1
+fi
+
+# 读取节点标签 JSON
+SEED_NODE_LABELS_JSON="$(cat /tmp/placement_expected.json)"
+
+cd "${REPO_ROOT}"
+PYTHONPATH="${REPO_ROOT}" \
+SEED_NAMESPACE="${SEED_NAMESPACE}" \
+SEED_REGISTRY="${SEED_REGISTRY}" \
+SEED_CNI_TYPE="${SEED_CNI_TYPE}" \
+SEED_CNI_MASTER_INTERFACE="${SEED_CNI_MASTER_INTERFACE}" \
+SEED_SCHEDULING_STRATEGY="${SEED_SCHEDULING_STRATEGY}" \
+SEED_PLACEMENT_MODE="${SEED_PLACEMENT_MODE}" \
+SEED_IMAGE_PULL_POLICY="${SEED_IMAGE_PULL_POLICY}" \
+SEED_NODE_LABELS_JSON="${SEED_NODE_LABELS_JSON}" \
+SEED_OUTPUT_DIR="${OUTPUT_DIR}" \
+SEED_REAL_TOPOLOGY_DIR="${SEED_REAL_TOPOLOGY_DIR}" \
+SEED_TOPOLOGY_SIZE="${SEED_TOPOLOGY_SIZE}" \
+SEED_TOPOLOGY_FILE="${TOPOLOGY_FILE}" \
+SEED_ASSIGNMENT_FILE="${ASSIGNMENT_FILE}" \
+python3 examples/kubernetes/real_topology_k3s_compile.py # k8s_real_topology_rr.py
+
+echo "Compile completed. Output: ${OUTPUT_DIR}/k8s.yaml"
+echo "Output directory: ${OUTPUT_DIR}"
+log_end "compile"

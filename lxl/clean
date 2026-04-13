@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+###############################################################################
+# clean - 清理阶段（串行等待 namespace 彻底删除）
+###############################################################################
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# 加载环境变量
+if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+    source "${SCRIPT_DIR}/env.sh"
+fi
+
+# 使用已有实验目录或创建新的
+create_experiment_dir
+log_start "clean"
+
+# 日志输出到实验目录
+LOG_FILE="${EXPERIMENT_DIR}/clean.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+# 设置 KUBECONFIG
+export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+
+# 可调参数
+NS="${SEED_NAMESPACE}"
+CHECK_INTERVAL="${SEED_CLEAN_CHECK_INTERVAL_SECONDS:-30}"
+TIMEOUT_SECONDS="${SEED_CLEAN_TIMEOUT_SECONDS:-7200}"
+
+echo "=== Clean ==="
+echo "Log file: ${LOG_FILE}"
+echo "Namespace: ${NS}"
+echo "Check interval: ${CHECK_INTERVAL}s"
+echo "Timeout: ${TIMEOUT_SECONDS}s"
+
+if [ "${CLEAN_NAMESPACE}" != "true" ]; then
+    echo "Skipping cleanup (CLEAN_NAMESPACE=false)"
+    log_end "clean"
+    exit 0
+fi
+
+if ! kubectl get namespace "${NS}" >/dev/null 2>&1; then
+    echo "Namespace ${NS} does not exist. Nothing to clean."
+    log_end "clean"
+    exit 0
+fi
+
+echo ""
+echo "[1/3] Fast-delete major workloads first..."
+kubectl delete deploy,sts,ds --all -n "${NS}" --wait=false || true
+kubectl delete jobs --all -n "${NS}" --wait=false || true
+kubectl delete pods --all -n "${NS}" --wait=false || true
+
+echo ""
+echo "[2/3] Submit namespace deletion..."
+kubectl delete namespace "${NS}" --wait=false || true
+
+echo ""
+echo "[3/3] Waiting for namespace to disappear completely..."
+
+start_ts="$(date +%s)"
+deadline=$((start_ts + TIMEOUT_SECONDS))
+
+while true; do
+    now="$(date +%s)"
+    elapsed=$((now - start_ts))
+
+    if ! kubectl get namespace "${NS}" >/dev/null 2>&1; then
+        echo "[${elapsed}s] Namespace ${NS} has been fully deleted."
+        echo "Clean completed"
+        log_end "clean"
+        exit 0
+    fi
+
+    if [ "${now}" -ge "${deadline}" ]; then
+        echo "[${elapsed}s] ERROR: Timed out waiting for namespace ${NS} deletion."
+        echo ""
+        echo "Current namespace status:"
+        kubectl get namespace "${NS}" -o wide || true
+        echo ""
+        echo "Remaining pods (if any):"
+        kubectl get pods -n "${NS}" -o wide 2>/dev/null || true
+        exit 1
+    fi
+
+    ns_phase="$(kubectl get namespace "${NS}" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")"
+    pod_count="$(kubectl get pods -n "${NS}" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
+
+    echo "[${elapsed}s] Namespace still exists. phase=${ns_phase}, remaining_pods=${pod_count}"
+
+    sleep "${CHECK_INTERVAL}"
+done
