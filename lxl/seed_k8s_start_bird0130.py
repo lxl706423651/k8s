@@ -21,9 +21,15 @@ EXIT_BIRD_START_FAILED = 10
 START_DELAY = 0.05             
 
 # 每台虚拟机有 12 核，当 1 分钟 Load Average 低于此值时，认为该节点 BGP 收敛完毕。
-SYSTEM_LOAD_THRESHOLD = 10.0  
-LOAD_CHECK_INTERVAL = 10       
+SYSTEM_LOAD_THRESHOLD = 40  
+LOAD_CHECK_INTERVAL = 20       
+PHASE3_PROGRESS_EVERY = 200
 # ===========================================
+
+try:
+    sys.stdout.reconfigure(line_buffering=True, write_through=True)
+except Exception:
+    pass
 
 @dataclass
 class PodTarget:
@@ -51,7 +57,8 @@ def log(log_path: Path, message: str) -> None:
     stamped = f"[{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}] {message}"
     with log_path.open("a", encoding="utf-8") as handle:
         handle.write(stamped + "\n")
-    print(stamped)
+        handle.flush()
+    print(stamped, flush=True)
 
 def ensure_targets(namespace: str) -> List[PodTarget]:
     result = kubectl(namespace, ["get", "pods", "-o", "json"], timeout=60)
@@ -168,11 +175,13 @@ def wait_for_cluster_idle(namespace: str, nodes_map: Dict[str, List[PodTarget]],
                 status_strs.append(f"{node}: ⚠️ Error")
                 all_idle = False # 读取失败为了安全起见也认为未收敛
         
-        sys.stdout.write("\r [Load Check] " + " | ".join(status_strs) + f" (Target: <{SYSTEM_LOAD_THRESHOLD}) ")
+        status_line = "[Load Check] " + " | ".join(status_strs) + f" (Target: <{SYSTEM_LOAD_THRESHOLD})"
+        sys.stdout.write("\r " + status_line + " ")
         sys.stdout.flush()
+        log(log_path, status_line)
         
         if all_idle:
-            print("") 
+            print("", flush=True) 
             log(log_path, f"✅ All cluster nodes stabilized! Final loads: " + ", ".join(status_strs))
             break
             
@@ -266,11 +275,16 @@ def main() -> int:
     # (为了不压垮 API，检查阶段依然按原逻辑，不使用高并发)
     deadline = time.time() + phase_timeout
     all_healthy = False
+    phase3_round = 0
     while time.time() < deadline:
+        phase3_round += 1
+        log(log_path, f"🔎 Phase 3 round {phase3_round}: verifying birdc status across {len(targets)} pods...")
         pending = []
-        for target in targets:
+        for idx, target in enumerate(targets, start=1):
             if not bird_running(namespace, target.name, exec_timeout):
                 pending.append(target.name)
+            if idx % PHASE3_PROGRESS_EVERY == 0 or idx == len(targets):
+                log(log_path, f"🔎 Phase 3 round {phase3_round}: checked {idx}/{len(targets)} pods, pending={len(pending)}")
         
         if not pending:
             log(log_path, "✅ Phase 3: All target pods respond to birdc show status!")

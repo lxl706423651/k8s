@@ -1,58 +1,58 @@
-#!/usr/bin/env bash
-###############################################################################
-# deploy - 部署阶段（新 namespace / 大规模 K3s 优化版）
-###############################################################################
+# #!/usr/bin/env bash
+# ###############################################################################
+# # deploy - 部署阶段（新 namespace / 大规模 K3s 优化版）
+# ###############################################################################
 
-set -euo pipefail
+# set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-if [ -f "${SCRIPT_DIR}/env.sh" ]; then
-    source "${SCRIPT_DIR}/env.sh"
-fi
+# if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+#     source "${SCRIPT_DIR}/env.sh"
+# fi
 
-create_experiment_dir
-log_start "deploy"
+# create_experiment_dir
+# log_start "deploy"
 
-LOG_FILE="${EXPERIMENT_DIR}/deploy.log"
-exec > >(tee -a "${LOG_FILE}") 2>&1
+# LOG_FILE="${EXPERIMENT_DIR}/deploy.log"
+# exec > >(tee -a "${LOG_FILE}") 2>&1
 
-OUTPUT_DIR="${EXPERIMENT_DIR}/output"
-export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+# OUTPUT_DIR="${EXPERIMENT_DIR}/output"
+# export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
 
-echo "=== Deploy ==="
-echo "Log file: ${LOG_FILE}"
-echo "Output directory: ${OUTPUT_DIR}"
-echo "Namespace: ${SEED_NAMESPACE}"
+# echo "=== Deploy ==="
+# echo "Log file: ${LOG_FILE}"
+# echo "Output directory: ${OUTPUT_DIR}"
+# echo "Namespace: ${SEED_NAMESPACE}"
 
-if [ ! -f "${OUTPUT_DIR}/k8s.yaml" ]; then
-    echo "Error: k8s.yaml not found at ${OUTPUT_DIR}/k8s.yaml"
-    echo "Please run compile and build first."
-    exit 1
-fi
+# if [ ! -f "${OUTPUT_DIR}/k8s.yaml" ]; then
+#     echo "Error: k8s.yaml not found at ${OUTPUT_DIR}/k8s.yaml"
+#     echo "Please run compile and build first."
+#     exit 1
+# fi
 
-if kubectl get namespace "${SEED_NAMESPACE}" >/dev/null 2>&1; then
-    echo "Error: namespace ${SEED_NAMESPACE} already exists."
-    echo "This optimized deploy script assumes a fresh namespace per experiment."
-    exit 1
-fi
+# if kubectl get namespace "${SEED_NAMESPACE}" >/dev/null 2>&1; then
+#     echo "Error: namespace ${SEED_NAMESPACE} already exists."
+#     echo "This optimized deploy script assumes a fresh namespace per experiment."
+#     exit 1
+# fi
 
-echo "Creating namespace..."
-kubectl create namespace "${SEED_NAMESPACE}"
+# echo "Creating namespace..."
+# kubectl create namespace "${SEED_NAMESPACE}"
 
-echo "Submitting manifests..."
-kubectl -n "${SEED_NAMESPACE}" create -f "${OUTPUT_DIR}/k8s.yaml"
+# echo "Submitting manifests..."
+# kubectl -n "${SEED_NAMESPACE}" create -f "${OUTPUT_DIR}/k8s.yaml"
 
-echo ""
-echo "Deploy submitted successfully."
-echo "Note: this does NOT mean all pods are Running/Ready yet."
-echo "Next step:"
-echo "  ${SCRIPT_DIR}/wait-ready"
-echo ""
-echo "Quick checks:"
-echo "  kubectl get pods -n ${SEED_NAMESPACE}"
-echo "  kubectl get events -n ${SEED_NAMESPACE} --sort-by='.lastTimestamp'"
-echo ""
+# echo ""
+# echo "Deploy submitted successfully."
+# echo "Note: this does NOT mean all pods are Running/Ready yet."
+# echo "Next step:"
+# echo "  ${SCRIPT_DIR}/wait-ready"
+# echo ""
+# echo "Quick checks:"
+# echo "  kubectl get pods -n ${SEED_NAMESPACE}"
+# echo "  kubectl get events -n ${SEED_NAMESPACE} --sort-by='.lastTimestamp'"
+# echo ""
 
-log_end "deploy"
+# log_end "deploy"

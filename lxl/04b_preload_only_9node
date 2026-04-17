@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "${SCRIPT_DIR}/env_9node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+seed_load_cluster_nodes
+
+if [ -z "${EXPERIMENT_DIR:-}" ] || [ ! -d "${EXPERIMENT_DIR}" ]; then
+    echo "Error: EXPERIMENT_DIR must point to an existing experiment directory."
+    exit 1
+fi
+
+K8S_MANIFEST="${EXPERIMENT_DIR}/output/k8s.yaml"
+IMAGE_REFS_FILE="${EXPERIMENT_DIR}/output/images.txt"
+NODE_IMAGE_DIR="${EXPERIMENT_DIR}/node_image_refs"
+if [ ! -s "${IMAGE_REFS_FILE}" ] || [ ! -f "${K8S_MANIFEST}" ]; then
+    echo "Error: ${IMAGE_REFS_FILE} or ${K8S_MANIFEST} not found."
+    exit 1
+fi
+
+SSH_OPTS=(
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o LogLevel=ERROR
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+)
+
+PRELOAD_BATCH_SIZE="${SEED_PRELOAD_BATCH_SIZE:-10}"
+PRELOAD_RETRIES="${SEED_PRELOAD_RETRIES:-3}"
+PRELOAD_BACKOFF_SECONDS="${SEED_PRELOAD_BACKOFF_SECONDS:-5}"
+PRELOAD_NODE_CONCURRENCY="${SEED_PRELOAD_NODE_CONCURRENCY:-3}"
+
+echo "=== Preload Only (9-node) ==="
+echo "Experiment: ${EXPERIMENT_DIR}"
+echo "Image refs: ${IMAGE_REFS_FILE}"
+echo "Batch size: ${PRELOAD_BATCH_SIZE}"
+echo "Retries: ${PRELOAD_RETRIES}"
+echo "Worker concurrency: ${PRELOAD_NODE_CONCURRENCY}"
+
+"${SCRIPT_DIR}/ensure_master_registry.sh"
+
+python3 "${SCRIPT_DIR}/generate_node_image_refs.py" \
+    "${K8S_MANIFEST}" \
+    "${NODE_IMAGE_DIR}" \
+    "${SEED_NODE_NAMES[@]}"
+
+preload_images_on_node() {
+    local node_ip="$1"
+    local node_label="$2"
+    local log_file="${EXPERIMENT_DIR}/preload_${node_label}.log"
+    local node_image_file="${NODE_IMAGE_DIR}/images_${node_label}.txt"
+    local remote_list="/tmp/seedemu-image-refs-$$-${RANDOM}.txt"
+
+    if [ ! -s "${node_image_file}" ]; then
+        : > "${log_file}"
+        echo "[preload] skip: no images assigned to ${node_label}" | tee -a "${log_file}"
+        return 0
+    fi
+
+    : > "${log_file}"
+    echo "[$(date +%F\ %T)] preload start ${node_label} ${node_ip}" | tee -a "${log_file}"
+    scp -q "${SSH_OPTS[@]}" "${node_image_file}" "${SEED_K3S_USER}@${node_ip}:${remote_list}" >> "${log_file}" 2>&1
+    ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${node_ip}" "sudo -n bash -s" > "${log_file}" 2>&1 <<EOF
+set -euo pipefail
+remote_list="${remote_list}"
+batch_size="${PRELOAD_BATCH_SIZE}"
+retries="${PRELOAD_RETRIES}"
+backoff="${PRELOAD_BACKOFF_SECONDS}"
+trap 'rm -f "\$remote_list" /tmp/seedemu-preload-batch-*' EXIT
+split -l "\$batch_size" -d -a 4 "\$remote_list" /tmp/seedemu-preload-batch-
+for batch in /tmp/seedemu-preload-batch-*; do
+  [ -s "\$batch" ] || continue
+  while IFS= read -r image; do
+    [ -n "\$image" ] || continue
+    attempt=1
+    while true; do
+      if sudo -n k3s ctr images pull --plain-http "\$image"; then
+        break
+      fi
+      if [ "\$attempt" -ge "\$retries" ]; then
+        echo "preload failed after \$retries attempts: \$image" >&2
+        exit 1
+      fi
+      sleep_seconds=\$(( backoff * attempt ))
+      echo "retry preload in \${sleep_seconds}s: \$image (\$attempt/\$retries)" >&2
+      sleep "\${sleep_seconds}"
+      attempt=\$((attempt + 1))
+    done
+  done < "\$batch"
+done
+EOF
+    echo "[$(date +%F\ %T)] preload done ${node_label}" | tee -a "${log_file}"
+}
+
+for i in "${!SEED_NODE_NAMES[@]}"; do
+    if [ "${SEED_NODE_IPS[$i]}" = "${SEED_MASTER_NODE_IP}" ]; then
+        preload_images_on_node "${SEED_NODE_IPS[$i]}" "${SEED_NODE_NAMES[$i]}"
+    fi
+done
+
+pending_pids=()
+pending_labels=()
+
+wait_pending_batch() {
+    local rc=0
+    local idx
+    for idx in "${!pending_pids[@]}"; do
+        if ! wait "${pending_pids[$idx]}"; then
+            echo "preload failed on ${pending_labels[$idx]}" >&2
+            rc=1
+        fi
+    done
+    pending_pids=()
+    pending_labels=()
+    return "${rc}"
+}
+
+for i in "${!SEED_NODE_NAMES[@]}"; do
+    if [ "${SEED_NODE_IPS[$i]}" = "${SEED_MASTER_NODE_IP}" ]; then
+        continue
+    fi
+    preload_images_on_node "${SEED_NODE_IPS[$i]}" "${SEED_NODE_NAMES[$i]}" &
+    pending_pids+=("$!")
+    pending_labels+=("${SEED_NODE_NAMES[$i]}")
+    if [ "${#pending_pids[@]}" -ge "${PRELOAD_NODE_CONCURRENCY}" ]; then
+        wait_pending_batch
+    fi
+done
+
+if [ "${#pending_pids[@]}" -gt 0 ]; then
+    wait_pending_batch
+fi
+
+echo "Preload completed for all nodes."

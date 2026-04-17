@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
-###############################################################################
-# deploy-batched - 部署阶段（新 namespace / 大规模 K3s / 分批提交 / 失败取证 / 节点监控）
-###############################################################################
-
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-if [ -f "${SCRIPT_DIR}/env.sh" ]; then
-    # shellcheck disable=SC1091
-    source "${SCRIPT_DIR}/env.sh"
-fi
+source "${SCRIPT_DIR}/env_9node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+seed_load_cluster_nodes
 
 create_experiment_dir
 log_start "deploy-batched"
@@ -23,38 +18,26 @@ OUTPUT_DIR="${EXPERIMENT_DIR}/output"
 MANIFEST="${OUTPUT_DIR}/k8s.yaml"
 export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
 
-# -----------------------------
-# Tunables
-# -----------------------------
-: "${DEPLOY_BATCH_SIZE:=40}"                 # 常规批次控制器对象数（Deployment/StatefulSet/Job）
-: "${DEPLOY_BATCH_SLEEP_SECONDS:=8}"        # 批次间基础休息
-: "${DEPLOY_MONITOR_INTERVAL:=20}"          # 资源监控间隔
-: "${DEPLOY_USE_APPLY:=false}"              # true=kubectl apply; false=kubectl create
-: "${DEPLOY_FAIL_FAST:=true}"               # true=任何一批失败即退出
-: "${DEPLOY_CAPTURE_DESCRIBE_LIMIT:=20}"    # 失败时最多抓多少个异常 pod describe
+: "${DEPLOY_BATCH_SIZE:=40}"
+: "${DEPLOY_BATCH_SLEEP_SECONDS:=20}"
+: "${DEPLOY_MONITOR_INTERVAL:=20}"
+: "${DEPLOY_USE_APPLY:=false}"
+: "${DEPLOY_FAIL_FAST:=true}"
+: "${DEPLOY_CAPTURE_DESCRIBE_LIMIT:=20}"
 : "${DEPLOY_KIND_DIR:=${OUTPUT_DIR}/deploy_batches}"
-: "${DEPLOY_WARMUP_BATCHES:=3}"             # 前几批使用更小批次，避免瞬时打满控制面
-: "${DEPLOY_WARMUP_BATCH_SIZE:=10}"         # 暖启动批次大小
-: "${DEPLOY_PRESSURE_CHECK_SECONDS:=15}"    # 压力检查轮询间隔
-: "${DEPLOY_STABILIZE_TIMEOUT_SECONDS:=1800}" # 等待集群消化压力的最长时间
-: "${DEPLOY_MAX_PENDING_PODS:=200}"         # Pending pod 超过此值则暂停继续提交
-: "${DEPLOY_MAX_CREATING_PODS:=300}"        # ContainerCreating / Init pod 超过此值则暂停
-: "${DEPLOY_MAX_NOTREADY_PODS:=600}"        # 非 Ready pod 总数超过此值则暂停
-: "${DEPLOY_MAX_FAILED_PODS:=10}"           # 异常 pod 超过此值则中止
-: "${DEPLOY_REQUIRE_ALL_NODES_READY:=true}" # 节点未全部 Ready 时暂停继续提交
+: "${DEPLOY_WARMUP_BATCHES:=3}"
+: "${DEPLOY_WARMUP_BATCH_SIZE:=10}"
+: "${DEPLOY_PRESSURE_CHECK_SECONDS:=15}"
+: "${DEPLOY_STABILIZE_TIMEOUT_SECONDS:=1800}"
+: "${DEPLOY_MAX_PENDING_PODS:=200}"
+: "${DEPLOY_MAX_CREATING_PODS:=300}"
+: "${DEPLOY_MAX_NOTREADY_PODS:=600}"
+: "${DEPLOY_MAX_FAILED_PODS:=10}"
+: "${DEPLOY_REQUIRE_ALL_NODES_READY:=true}"
 
-# 你的 3 节点；也可在 env.sh 覆盖
-: "${SEED_K3S_MASTER_IP:=192.168.122.110}"
-: "${SEED_K3S_WORKER1_IP:=192.168.122.111}"
-: "${SEED_K3S_WORKER2_IP:=192.168.122.112}"
-: "${SEED_K3S_SSH_USER:=${SEED_K3S_USER:-ubuntu}}"
-: "${SEED_K3S_SSH_KEY:=${HOME}/.ssh/id_ed25519}"
-
-echo "=== Deploy (Batched) ==="
+echo "=== Deploy (Batched, 9-node) ==="
 echo "Log file: ${LOG_FILE}"
-echo "Output directory: ${OUTPUT_DIR}"
-echo "Manifest: ${MANIFEST}"
-echo "Namespace: ${SEED_NAMESPACE}"
+seed_print_cluster_nodes
 echo "Batch size: ${DEPLOY_BATCH_SIZE}"
 echo "Warmup batches: ${DEPLOY_WARMUP_BATCHES} x ${DEPLOY_WARMUP_BATCH_SIZE}"
 echo "Batch sleep: ${DEPLOY_BATCH_SLEEP_SECONDS}s"
@@ -64,7 +47,6 @@ echo "Pressure limits: pending<=${DEPLOY_MAX_PENDING_PODS}, creating<=${DEPLOY_M
 
 if [ ! -f "${MANIFEST}" ]; then
     echo "Error: k8s.yaml not found at ${MANIFEST}"
-    echo "Please run compile and build first."
     exit 1
 fi
 
@@ -81,10 +63,6 @@ fi
 
 mkdir -p "${DEPLOY_KIND_DIR}"
 rm -rf "${DEPLOY_KIND_DIR:?}/"*
-
-# ------------------------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------------------------
 
 ts() { date +"%F %T"; }
 
@@ -227,13 +205,12 @@ batch_size_for_iteration() {
 }
 
 capture_node_ssh_stats() {
-    local ip="$1"
+    local node_ip="$1"
     local out="$2"
-
     {
-        echo "===== $(ts) node=${ip} ====="
+        echo "===== $(ts) node=${node_ip} ====="
         ssh -i "${SEED_K3S_SSH_KEY}" -o BatchMode=yes -o ConnectTimeout=5 \
-            -o StrictHostKeyChecking=no "${SEED_K3S_SSH_USER}@${ip}" '
+            -o StrictHostKeyChecking=no "${SEED_K3S_USER}@${node_ip}" '
                 echo "--- uptime ---"
                 uptime || true
                 echo "--- /proc/loadavg ---"
@@ -244,7 +221,7 @@ capture_node_ssh_stats() {
                 vmstat 1 2 || true
                 echo "--- top (batch) ---"
                 top -b -n 1 | head -n 20 || true
-            ' 2>&1 || echo "[ssh failed: ${ip}]"
+            ' 2>&1 || echo "[ssh failed: ${node_ip}]"
         echo
     } >> "${out}"
 }
@@ -255,7 +232,6 @@ monitor_loop() {
     local kube_top="${outdir}/kubectl_top_nodes.log"
     local pod_top="${outdir}/kubectl_top_pods.log"
     local events_log="${outdir}/events_during_deploy.log"
-
     while true; do
         {
             echo "===== $(ts) kubectl top nodes ====="
@@ -275,12 +251,18 @@ monitor_loop() {
             echo
         } >> "${events_log}"
 
-        capture_node_ssh_stats "${SEED_K3S_MASTER_IP}"  "${summary}"
-        capture_node_ssh_stats "${SEED_K3S_WORKER1_IP}" "${summary}"
-        capture_node_ssh_stats "${SEED_K3S_WORKER2_IP}" "${summary}"
-
+        for i in "${!SEED_NODE_NAMES[@]}"; do
+            capture_node_ssh_stats "${SEED_NODE_IPS[$i]}" "${summary}"
+        done
         sleep "${DEPLOY_MONITOR_INTERVAL}"
     done
+}
+
+cleanup_monitor() {
+    if [ -n "${MONITOR_PID:-}" ]; then
+        kill "${MONITOR_PID}" >/dev/null 2>&1 || true
+        wait "${MONITOR_PID}" 2>/dev/null || true
+    fi
 }
 
 capture_failure_artifacts() {
@@ -316,16 +298,9 @@ capture_failure_artifacts() {
             > "${outdir}/logs_${pod}.txt" 2>&1 || true
     done < "${bad_pods_file}"
 
-    capture_node_ssh_stats "${SEED_K3S_MASTER_IP}"  "${outdir}/node_stats_master.txt"
-    capture_node_ssh_stats "${SEED_K3S_WORKER1_IP}" "${outdir}/node_stats_worker1.txt"
-    capture_node_ssh_stats "${SEED_K3S_WORKER2_IP}" "${outdir}/node_stats_worker2.txt"
-}
-
-cleanup_monitor() {
-    if [ -n "${MONITOR_PID:-}" ]; then
-        kill "${MONITOR_PID}" >/dev/null 2>&1 || true
-        wait "${MONITOR_PID}" 2>/dev/null || true
-    fi
+    for i in "${!SEED_NODE_NAMES[@]}"; do
+        capture_node_ssh_stats "${SEED_NODE_IPS[$i]}" "${outdir}/node_stats_${SEED_NODE_NAMES[$i]}.txt"
+    done
 }
 
 on_error() {
@@ -336,18 +311,43 @@ on_error() {
     capture_failure_artifacts
     exit "${exit_code}"
 }
+
+trap cleanup_monitor EXIT
 trap on_error ERR INT TERM
 
-# ------------------------------------------------------------------------------
-# Split k8s.yaml into per-doc files, then group by kind
-# ------------------------------------------------------------------------------
+manifest_kind_and_node() {
+    local file="$1"
+    python3 - "${file}" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+content = open(path, "r", encoding="utf-8").read()
+
+kind = ""
+node = ""
+
+m = re.search(r'^kind:\s*(\S+)', content, re.M)
+if not m:
+    m = re.search(r'"kind"\s*:\s*"([^"]+)"', content)
+if m:
+    kind = m.group(1)
+
+m = re.search(r'nodeSelector:\s*(?:\n(?:[ \t]+.*\n)*)?[ \t]+kubernetes\.io/hostname:\s*["'\'']?([^"'\''\n]+)', content)
+if not m:
+    m = re.search(r'"nodeSelector"\s*:\s*\{[^{}]*"kubernetes\.io/hostname"\s*:\s*"([^"]+)"', content, re.S)
+if m:
+    node = m.group(1).strip()
+
+print(kind)
+print(node)
+PY
+}
 
 split_manifest() {
     local manifest="$1"
     local split_dir="$2/raw_docs"
     mkdir -p "${split_dir}"
-
-    # 按 YAML 文档切分
     awk '
         BEGIN {n=0; out=""}
         /^---[[:space:]]*$/ {
@@ -363,56 +363,31 @@ split_manifest() {
             }
             print >> out
         }
-        END {
-            if (out != "") close(out)
-        }
+        END { if (out != "") close(out) }
     ' "${manifest}"
 
-    mkdir -p "${DEPLOY_KIND_DIR}/00-crds" \
-             "${DEPLOY_KIND_DIR}/01-foundation" \
-             "${DEPLOY_KIND_DIR}/02-services" \
-             "${DEPLOY_KIND_DIR}/03-controllers"
-
-    local f kind
-
+    mkdir -p "${DEPLOY_KIND_DIR}/00-crds" "${DEPLOY_KIND_DIR}/01-foundation" "${DEPLOY_KIND_DIR}/02-services" "${DEPLOY_KIND_DIR}/03-controllers" "${DEPLOY_KIND_DIR}/03-controllers-by-node" "${DEPLOY_KIND_DIR}/03-controllers-unpinned"
+    for node in "${SEED_NODE_NAMES[@]}"; do
+        mkdir -p "${DEPLOY_KIND_DIR}/03-controllers-by-node/${node}"
+    done
     shopt -s nullglob
     for f in "${split_dir}"/*.yaml; do
-        # Support both YAML format (kind: Deployment) and JSON format ({"kind": "Deployment", ...})
-        kind="$(python3 - "${f}" 2>/dev/null <<'PY' || true
-import re
-import sys
-
-f = sys.argv[1]
-try:
-    with open(f, "r", encoding="utf-8") as c:
-        content = c.read().strip()
-    m = re.search(r'^kind:\s*(\S+)', content, re.M)
-    if not m:
-        m = re.search(r'"kind":\s*"([^"]+)"', content)
-    if m:
-        print(m.group(1))
-except Exception:
-    pass
-PY
-)"
-
+        mapfile -t meta < <(manifest_kind_and_node "${f}" 2>/dev/null || true)
+        kind="${meta[0]:-}"
+        node_selector="${meta[1]:-}"
         case "${kind}" in
-            CustomResourceDefinition)
-                cp "${f}" "${DEPLOY_KIND_DIR}/00-crds/"
-                ;;
-            Namespace|ServiceAccount|ConfigMap|Secret|Role|RoleBinding|ClusterRole|ClusterRoleBinding|NetworkAttachmentDefinition|NetworkAttachmentDefinitionList)
-                cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/"
-                ;;
-            Service|Endpoints)
-                cp "${f}" "${DEPLOY_KIND_DIR}/02-services/"
-                ;;
+            CustomResourceDefinition) cp "${f}" "${DEPLOY_KIND_DIR}/00-crds/" ;;
+            Namespace|ServiceAccount|ConfigMap|Secret|Role|RoleBinding|ClusterRole|ClusterRoleBinding|NetworkAttachmentDefinition|NetworkAttachmentDefinitionList) cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/" ;;
+            Service|Endpoints) cp "${f}" "${DEPLOY_KIND_DIR}/02-services/" ;;
             Deployment|StatefulSet|DaemonSet|Job)
                 cp "${f}" "${DEPLOY_KIND_DIR}/03-controllers/"
+                if [ -n "${node_selector}" ] && [ -d "${DEPLOY_KIND_DIR}/03-controllers-by-node/${node_selector}" ]; then
+                    cp "${f}" "${DEPLOY_KIND_DIR}/03-controllers-by-node/${node_selector}/"
+                else
+                    cp "${f}" "${DEPLOY_KIND_DIR}/03-controllers-unpinned/"
+                fi
                 ;;
-            *)
-                # 默认放 foundation，避免把未知资源过早并发推起来
-                cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/"
-                ;;
+            *) cp "${f}" "${DEPLOY_KIND_DIR}/01-foundation/" ;;
         esac
     done
     shopt -u nullglob
@@ -421,20 +396,10 @@ PY
 apply_dir_serial() {
     local dir="$1"
     local label="$2"
-    local count=0
-    local f
-
     shopt -s nullglob
     local files=( "${dir}"/*.yaml )
     shopt -u nullglob
-
-    count="${#files[@]}"
-    if [ "${count}" -eq 0 ]; then
-        echo "[${label}] no resources"
-        return 0
-    fi
-
-    echo "[${label}] applying ${count} resources serially..."
+    [ "${#files[@]}" -gt 0 ] || return 0
     for f in "${files[@]}"; do
         echo "[${label}] $(basename "${f}")"
         kapply "${f}"
@@ -445,10 +410,71 @@ apply_dir_in_batches() {
     local dir="$1"
     local label="$2"
     local batch_size="$3"
-
     shopt -s nullglob
     local files=( "${dir}"/*.yaml )
     shopt -u nullglob
+    local total="${#files[@]}"
+    local i=0
+    while [ "${i}" -lt "${total}" ]; do
+        local end=$((i + batch_size))
+        [ "${end}" -le "${total}" ] || end="${total}"
+        echo "[${label}] batch $((i + 1))..${end}/${total}"
+        for ((j=i; j<end; j++)); do
+            echo "[${label}] apply $(basename "${files[j]}")"
+            kapply "${files[j]}"
+        done
+        [ "${end}" -lt "${total}" ] && sleep "${DEPLOY_BATCH_SLEEP_SECONDS}"
+        i="${end}"
+    done
+}
+
+controller_submission_order() {
+    local buckets_dir="${DEPLOY_KIND_DIR}/03-controllers-by-node"
+    local unpinned_dir="${DEPLOY_KIND_DIR}/03-controllers-unpinned"
+    python3 - "${buckets_dir}" "${unpinned_dir}" "${SEED_NODE_NAMES[@]}" <<'PY'
+import os
+import sys
+
+buckets_dir = sys.argv[1]
+unpinned_dir = sys.argv[2]
+nodes = sys.argv[3:]
+
+queues = {}
+for node in nodes:
+    node_dir = os.path.join(buckets_dir, node)
+    files = []
+    if os.path.isdir(node_dir):
+        files = sorted(
+            os.path.join(node_dir, name)
+            for name in os.listdir(node_dir)
+            if name.endswith(".yaml")
+        )
+    queues[node] = files
+
+ordered = []
+while True:
+    progressed = False
+    for node in nodes:
+        if queues[node]:
+            ordered.append(queues[node].pop(0))
+            progressed = True
+    if not progressed:
+        break
+
+if os.path.isdir(unpinned_dir):
+    for name in sorted(os.listdir(unpinned_dir)):
+        if name.endswith(".yaml"):
+            ordered.append(os.path.join(unpinned_dir, name))
+
+for path in ordered:
+    print(path)
+PY
+}
+
+apply_controllers_round_robin() {
+    local label="$1"
+    local batch_size="$2"
+    mapfile -t files < <(controller_submission_order)
 
     local total="${#files[@]}"
     if [ "${total}" -eq 0 ]; then
@@ -456,18 +482,17 @@ apply_dir_in_batches() {
         return 0
     fi
 
-    echo "[${label}] total resources: ${total}, batch_size=${batch_size}"
+    echo "[${label}] total resources: ${total}, base_batch_size=${batch_size}"
+    echo "[${label}] submission order: round-robin across nodeSelector buckets, then unpinned controllers"
 
     local i=0
     local batch_no=0
     while [ "${i}" -lt "${total}" ]; do
         batch_no=$((batch_no + 1))
-        local current_batch_size
+        local current_batch_size end
         current_batch_size="$(batch_size_for_iteration "${batch_no}")"
-        local end=$((i + current_batch_size))
-        if [ "${end}" -gt "${total}" ]; then
-            end="${total}"
-        fi
+        end=$((i + current_batch_size))
+        [ "${end}" -le "${total}" ] || end="${total}"
 
         wait_for_deploy_pressure_budget "pre-batch-${batch_no}"
 
@@ -498,10 +523,6 @@ apply_dir_in_batches() {
     done
 }
 
-# ------------------------------------------------------------------------------
-# Main
-# ------------------------------------------------------------------------------
-
 echo "Creating namespace..."
 kubectl create namespace "${SEED_NAMESPACE}"
 
@@ -515,15 +536,12 @@ split_manifest "${MANIFEST}" "${DEPLOY_KIND_DIR}"
 
 echo "Applying CRDs..."
 apply_dir_serial "${DEPLOY_KIND_DIR}/00-crds" "crds"
-
 echo "Applying foundation objects..."
 apply_dir_serial "${DEPLOY_KIND_DIR}/01-foundation" "foundation"
-
 echo "Applying services..."
 apply_dir_serial "${DEPLOY_KIND_DIR}/02-services" "services"
-
-echo "Applying controllers in batches..."
-apply_dir_in_batches "${DEPLOY_KIND_DIR}/03-controllers" "controllers" "${DEPLOY_BATCH_SIZE}"
+echo "Applying controllers in node-balanced batches..."
+apply_controllers_round_robin "controllers" "${DEPLOY_BATCH_SIZE}"
 
 echo ""
 echo "Deploy submitted successfully."
@@ -531,12 +549,9 @@ echo "This still does NOT mean all pods are Running/Ready."
 echo "Next step:"
 echo "  ${SCRIPT_DIR}/wait-ready"
 echo ""
-
 echo "Quick checks:"
 echo "  kubectl get pods -n ${SEED_NAMESPACE} -o wide"
 echo "  kubectl get events -n ${SEED_NAMESPACE} --sort-by='.lastTimestamp'"
 echo "  kubectl top nodes"
-echo ""
-
 cleanup_monitor
 log_end "deploy-batched"

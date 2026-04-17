@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ###############################################################################
-# clean - 清理阶段（串行等待 namespace 彻底删除）
+# clean - 清理阶段（大规模友好版：优先删 controllers，再删 namespace）
 ###############################################################################
 
 set -euo pipefail
@@ -28,12 +28,18 @@ export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml
 NS="${SEED_NAMESPACE}"
 CHECK_INTERVAL="${SEED_CLEAN_CHECK_INTERVAL_SECONDS:-30}"
 TIMEOUT_SECONDS="${SEED_CLEAN_TIMEOUT_SECONDS:-7200}"
+FORCE_FINALIZER_CLEANUP="${SEED_CLEAN_FORCE_FINALIZER_CLEANUP:-false}"
+AUTO_FINALIZE_STUCK_NAMESPACE="${SEED_CLEAN_AUTO_FINALIZE_STUCK_NAMESPACE:-true}"
+AUTO_FINALIZE_AFTER_SECONDS="${SEED_CLEAN_AUTO_FINALIZE_AFTER_SECONDS:-120}"
 
 echo "=== Clean ==="
 echo "Log file: ${LOG_FILE}"
 echo "Namespace: ${NS}"
 echo "Check interval: ${CHECK_INTERVAL}s"
 echo "Timeout: ${TIMEOUT_SECONDS}s"
+echo "Force finalizer cleanup on timeout: ${FORCE_FINALIZER_CLEANUP}"
+echo "Auto finalize stuck empty namespace: ${AUTO_FINALIZE_STUCK_NAMESPACE}"
+echo "Auto finalize after: ${AUTO_FINALIZE_AFTER_SECONDS}s"
 
 if [ "${CLEAN_NAMESPACE}" != "true" ]; then
     echo "Skipping cleanup (CLEAN_NAMESPACE=false)"
@@ -47,11 +53,111 @@ if ! kubectl get namespace "${NS}" >/dev/null 2>&1; then
     exit 0
 fi
 
+safe_count_resources() {
+    local resource="$1"
+    kubectl -n "${NS}" get "${resource}" --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo "0"
+}
+
+print_namespace_snapshot() {
+    local elapsed="$1"
+    local ns_phase pod_count deploy_count sts_count ds_count job_count
+    ns_phase="$(kubectl get namespace "${NS}" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")"
+    pod_count="$(safe_count_resources pods)"
+    deploy_count="$(safe_count_resources deploy)"
+    sts_count="$(safe_count_resources sts)"
+    ds_count="$(safe_count_resources ds)"
+    job_count="$(safe_count_resources jobs)"
+
+    echo "[${elapsed}s] Namespace still exists. phase=${ns_phase}, pods=${pod_count}, deploy=${deploy_count}, sts=${sts_count}, ds=${ds_count}, jobs=${job_count}"
+}
+
+dump_timeout_diagnostics() {
+    echo ""
+    echo "Current namespace object:"
+    kubectl get namespace "${NS}" -o yaml || true
+    echo ""
+    echo "Namespace finalizers:"
+    kubectl get namespace "${NS}" -o jsonpath='{.spec.finalizers}' 2>/dev/null || true
+    echo ""
+    echo ""
+    echo "Remaining resources summary:"
+    kubectl -n "${NS}" get deploy,sts,ds,job,pods -o wide 2>/dev/null || true
+    echo ""
+    echo "Recent events:"
+    kubectl -n "${NS}" get events --sort-by='.lastTimestamp' 2>/dev/null | tail -n 100 || true
+    echo ""
+}
+
+force_clear_namespace_finalizers() {
+    local tmp_json
+    tmp_json="$(mktemp)"
+    kubectl get namespace "${NS}" -o json > "${tmp_json}"
+    python3 - <<PY "${tmp_json}"
+import json, sys
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+data.setdefault("spec", {})["finalizers"] = []
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f)
+PY
+    kubectl replace --raw "/api/v1/namespaces/${NS}/finalize" -f "${tmp_json}" || true
+    rm -f "${tmp_json}"
+}
+
+namespace_ready_for_safe_finalize() {
+    local ns_json tmp_py
+    ns_json="$(kubectl get namespace "${NS}" -o json 2>/dev/null || true)"
+    [ -n "${ns_json}" ] || return 1
+
+    tmp_py="$(mktemp)"
+    cat > "${tmp_py}" <<'PY'
+import json
+import sys
+
+data = json.load(sys.stdin)
+spec_finalizers = data.get("spec", {}).get("finalizers") or []
+if spec_finalizers != ["kubernetes"]:
+    raise SystemExit(1)
+
+conditions = {
+    item.get("type"): item.get("status")
+    for item in data.get("status", {}).get("conditions", [])
+}
+
+safe = (
+    conditions.get("NamespaceContentRemaining") == "False"
+    and conditions.get("NamespaceFinalizersRemaining") == "False"
+    and conditions.get("NamespaceDeletionContentFailure") == "True"
+)
+
+raise SystemExit(0 if safe else 1)
+PY
+
+    if ! printf '%s' "${ns_json}" | python3 "${tmp_py}"; then
+        rm -f "${tmp_py}"
+        return 1
+    fi
+    rm -f "${tmp_py}"
+
+    local pod_count deploy_count sts_count ds_count job_count
+    pod_count="$(safe_count_resources pods)"
+    deploy_count="$(safe_count_resources deploy)"
+    sts_count="$(safe_count_resources sts)"
+    ds_count="$(safe_count_resources ds)"
+    job_count="$(safe_count_resources jobs)"
+
+    [ "${pod_count}" = "0" ] &&
+    [ "${deploy_count}" = "0" ] &&
+    [ "${sts_count}" = "0" ] &&
+    [ "${ds_count}" = "0" ] &&
+    [ "${job_count}" = "0" ]
+}
+
 echo ""
 echo "[1/3] Fast-delete major workloads first..."
 kubectl delete deploy,sts,ds --all -n "${NS}" --wait=false || true
 kubectl delete jobs --all -n "${NS}" --wait=false || true
-kubectl delete pods --all -n "${NS}" --wait=false || true
 
 echo ""
 echo "[2/3] Submit namespace deletion..."
@@ -62,6 +168,7 @@ echo "[3/3] Waiting for namespace to disappear completely..."
 
 start_ts="$(date +%s)"
 deadline=$((start_ts + TIMEOUT_SECONDS))
+auto_finalize_attempted=false
 
 while true; do
     now="$(date +%s)"
@@ -74,21 +181,31 @@ while true; do
         exit 0
     fi
 
+    if [ "${AUTO_FINALIZE_STUCK_NAMESPACE}" = "true" ] &&
+       [ "${auto_finalize_attempted}" = "false" ] &&
+       [ "${elapsed}" -ge "${AUTO_FINALIZE_AFTER_SECONDS}" ] &&
+       namespace_ready_for_safe_finalize; then
+        echo "[${elapsed}s] Namespace content is already empty but kubernetes finalizer is stuck after API timeout."
+        echo "[${elapsed}s] Performing safe finalizer cleanup for namespace ${NS}..."
+        force_clear_namespace_finalizers
+        auto_finalize_attempted=true
+        sleep 5
+        continue
+    fi
+
     if [ "${now}" -ge "${deadline}" ]; then
         echo "[${elapsed}s] ERROR: Timed out waiting for namespace ${NS} deletion."
-        echo ""
-        echo "Current namespace status:"
-        kubectl get namespace "${NS}" -o wide || true
-        echo ""
-        echo "Remaining pods (if any):"
-        kubectl get pods -n "${NS}" -o wide 2>/dev/null || true
+        dump_timeout_diagnostics
+        if [ "${FORCE_FINALIZER_CLEANUP}" = "true" ]; then
+            echo ""
+            echo "Attempting force finalizer cleanup for namespace ${NS}..."
+            force_clear_namespace_finalizers
+            echo "Submitted namespace finalizer cleanup request."
+        fi
         exit 1
     fi
 
-    ns_phase="$(kubectl get namespace "${NS}" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")"
-    pod_count="$(kubectl get pods -n "${NS}" --no-headers 2>/dev/null | wc -l | tr -d ' ')"
-
-    echo "[${elapsed}s] Namespace still exists. phase=${ns_phase}, remaining_pods=${pod_count}"
+    print_namespace_snapshot "${elapsed}"
 
     sleep "${CHECK_INTERVAL}"
 done

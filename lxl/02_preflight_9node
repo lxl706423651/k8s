@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+source "${SCRIPT_DIR}/env_9node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+seed_load_cluster_nodes
+
+create_experiment_dir
+log_start "preflight"
+
+export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml"
+
+LOG_FILE="${EXPERIMENT_DIR}/preflight.log"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+SSH_OPTS=(
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o LogLevel=ERROR
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+)
+SSH_EXEC_OPTS=("${SSH_OPTS[@]}" -n)
+
+echo "=== Preflight Check (9-node) ==="
+echo "Log file: ${LOG_FILE}"
+seed_print_cluster_nodes
+
+echo "Checking nodes..."
+kubectl get nodes -o wide
+
+echo "Checking Multus..."
+kubectl -n kube-system get ds kube-multus-ds -o wide
+
+detect_iface() {
+    local ip="$1"
+    ssh "${SSH_EXEC_OPTS[@]}" "${SEED_K3S_USER}@${ip}" \
+        "ip -o -4 route show to default | sed -n '1{s/.* dev \([^ ]*\).*/\1/p}'" 2>/dev/null || echo ""
+}
+
+echo "Detecting CNI master interface across all nodes..."
+declare -A iface_by_node=()
+for i in "${!SEED_NODE_NAMES[@]}"; do
+    iface_by_node["${SEED_NODE_NAMES[$i]}"]="$(detect_iface "${SEED_NODE_IPS[$i]}")"
+    echo "${SEED_NODE_NAMES[$i]} interface: ${iface_by_node[${SEED_NODE_NAMES[$i]}]:-unknown}"
+done
+
+echo "Checking registry connectivity from all workers..."
+registry_failed=0
+for i in "${!SEED_WORKER_NODE_NAMES[@]}"; do
+    if ssh "${SSH_EXEC_OPTS[@]}" "${SEED_K3S_USER}@${SEED_WORKER_NODE_IPS[$i]}" \
+        "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1; then
+        echo "${SEED_WORKER_NODE_NAMES[$i]} -> Registry: OK"
+    else
+        echo "${SEED_WORKER_NODE_NAMES[$i]} -> Registry: FAILED"
+        registry_failed=1
+    fi
+done
+
+if [ "${registry_failed}" -ne 0 ]; then
+    echo ""
+    echo "Registry preflight failed."
+    echo "Registry target: http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/"
+    echo "This is a blocker when:"
+    echo "  SEED_IMAGE_DISTRIBUTION_MODE=${SEED_IMAGE_DISTRIBUTION_MODE}"
+    echo "  SEED_IMAGE_PULL_POLICY=${SEED_IMAGE_PULL_POLICY}"
+    echo "Master currently has no reachable registry on port ${SEED_REGISTRY_PORT}."
+    echo "Recommended fix: run ${SCRIPT_DIR}/init_master_docker.sh first, then rerun 02_preflight_9node."
+    exit 1
+fi
+
+echo "Getting nodes info..."
+kubectl get nodes -o json > /tmp/nodes.json
+
+echo "Generating node labels..."
+TOPOLOGY_FILE="${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt"
+ASSIGNMENT_FILE="${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
+
+python3 "${SCRIPT_DIR}/06_seed_k8s_plan_real_topology_by_as_9node.py" \
+    "${TOPOLOGY_FILE}" \
+    "${ASSIGNMENT_FILE}" \
+    "/tmp/nodes.json" \
+    "/tmp/placement_expected.json" \
+    "/tmp/placement_plan.json"
+
+echo "Preflight completed"
+log_end "preflight"

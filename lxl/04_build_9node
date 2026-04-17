@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+source "${SCRIPT_DIR}/env_9node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+seed_load_cluster_nodes
+
+# 04_build_9node is the single authoritative build+preload entrypoint.
+# Force preload mode here so stale caller environment cannot silently fall back
+# to older registry-only or legacy preload paths.
+export SEED_IMAGE_DISTRIBUTION_MODE="preload"
+# The remote build phase still has to publish images into the registry.
+# Preload then imports from that registry into each node's containerd.
+REMOTE_BUILD_DISTRIBUTION_MODE="registry"
+
+create_experiment_dir
+log_start "build"
+
+LOG_FILE="${EXPERIMENT_DIR}/build.log"
+: > "${LOG_FILE}"
+exec > >(tee -a "${LOG_FILE}") 2>&1
+
+OUTPUT_DIR="${EXPERIMENT_DIR}/output"
+REMOTE_WORK_DIR="/tmp/seedemu-build"
+REGISTRY_ENSURE_SCRIPT="${SCRIPT_DIR}/ensure_master_registry.sh"
+
+BUILD_PARALLEL_JOBS="${SEED_BUILD_PARALLELISM:-4}"
+BUILD_BATCH_SIZE="${SEED_BUILD_BATCH_SIZE:-50}"
+DOCKER_BUILDKIT="${SEED_DOCKER_BUILDKIT:-1}"
+COMPOSE_DOCKER_CLI_BUILD="${SEED_COMPOSE_DOCKER_CLI_BUILD:-1}"
+
+export DOCKER_BUILDKIT="${DOCKER_BUILDKIT}"
+export COMPOSE_DOCKER_CLI_BUILD="${COMPOSE_DOCKER_CLI_BUILD}"
+
+SSH_OPTS=(
+  -o StrictHostKeyChecking=no
+  -o UserKnownHostsFile=/dev/null
+  -o LogLevel=ERROR
+  -o BatchMode=yes
+  -o ConnectTimeout=10
+)
+
+echo "=== Build (9-node) ==="
+echo "Log file: ${LOG_FILE}"
+echo "Workflow distribution mode: ${SEED_IMAGE_DISTRIBUTION_MODE}"
+echo "Remote build publish mode: ${REMOTE_BUILD_DISTRIBUTION_MODE}"
+seed_print_cluster_nodes
+
+echo "Checking registry availability on master..."
+if ! ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
+    "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1; then
+    echo "Registry is not reachable at http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/"
+    echo "Trying to repair registry using ${REGISTRY_ENSURE_SCRIPT} ..."
+    "${REGISTRY_ENSURE_SCRIPT}"
+    if ! ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
+        "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1; then
+        echo "Registry is still not reachable after repair."
+        echo "This build flow depends on the master registry for preload verification and node import."
+        exit 1
+    fi
+fi
+
+if [ ! -d "${OUTPUT_DIR}" ]; then
+    echo "Error: Output directory not found. Please run 03_compile_9node first."
+    exit 1
+fi
+
+tar -C "${OUTPUT_DIR}" -czf /tmp/compiled.tar.gz .
+
+echo "Uploading to master..."
+ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
+    "sudo -n rm -rf '${REMOTE_WORK_DIR}' && mkdir -p '${REMOTE_WORK_DIR}' && sudo -n chown '${SEED_K3S_USER}:${SEED_K3S_USER}' '${REMOTE_WORK_DIR}'"
+scp -q "${SSH_OPTS[@]}" /tmp/compiled.tar.gz "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
+
+REMOTE_SCRIPT="${REMOTE_WORK_DIR}/build_remote.sh"
+cat > /tmp/build_remote.sh << 'REMOTE_EOF'
+#!/bin/bash
+set -euo pipefail
+REMOTE_WORK_DIR="$1"
+BUILD_PARALLEL_JOBS="$2"
+BUILD_BATCH_SIZE="$3"
+DOCKER_BUILDKIT="$4"
+COMPOSE_DOCKER_CLI_BUILD="$5"
+SEED_IMAGE_DISTRIBUTION_MODE="$6"
+SEED_REGISTRY="$7"
+SEED_REGISTRY_LOCAL_ENDPOINT="$8"
+SEED_REGISTRY_PUSH_RETRIES="$9"
+SEED_REGISTRY_PUSH_BACKOFF_SECONDS="${10}"
+SEED_REGISTRY_PUSH_TIMEOUT_SECONDS="${11}"
+cd "${REMOTE_WORK_DIR}"
+tar -xzf compiled.tar.gz
+export DOCKER_BUILDKIT="${DOCKER_BUILDKIT}"
+export COMPOSE_DOCKER_CLI_BUILD="${COMPOSE_DOCKER_CLI_BUILD}"
+export SEED_DOCKER_BUILDKIT="${DOCKER_BUILDKIT}"
+export SEED_BUILD_PARALLELISM="${BUILD_PARALLEL_JOBS}"
+export SEED_IMAGE_DISTRIBUTION_MODE="${SEED_IMAGE_DISTRIBUTION_MODE}"
+export SEED_REGISTRY="${SEED_REGISTRY}"
+export SEED_REGISTRY_LOCAL_ENDPOINT="${SEED_REGISTRY_LOCAL_ENDPOINT}"
+export SEED_REGISTRY_PUSH_RETRIES="${SEED_REGISTRY_PUSH_RETRIES}"
+export SEED_REGISTRY_PUSH_BACKOFF_SECONDS="${SEED_REGISTRY_PUSH_BACKOFF_SECONDS}"
+export SEED_REGISTRY_PUSH_TIMEOUT_SECONDS="${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS}"
+if command -v curl >/dev/null 2>&1; then
+  curl -m 5 -fsS http://127.0.0.1:5000/v2/ >/dev/null
+fi
+if [ -x "./build_images.sh" ]; then
+  ./build_images.sh 2>&1 | tee "${REMOTE_WORK_DIR}/build.log"
+else
+  echo "Missing build_images.sh" >&2
+  exit 1
+fi
+REMOTE_EOF
+
+scp -q "${SSH_OPTS[@]}" /tmp/build_remote.sh "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_SCRIPT}"
+printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q' \
+    "${REMOTE_SCRIPT}" \
+    "${REMOTE_WORK_DIR}" \
+    "${BUILD_PARALLEL_JOBS}" \
+    "${BUILD_BATCH_SIZE}" \
+    "${DOCKER_BUILDKIT}" \
+    "${COMPOSE_DOCKER_CLI_BUILD}" \
+    "${REMOTE_BUILD_DISTRIBUTION_MODE}" \
+    "${SEED_REGISTRY}" \
+    "${SEED_REGISTRY_LOCAL_ENDPOINT:-}" \
+    "${SEED_REGISTRY_PUSH_RETRIES:-5}" \
+    "${SEED_REGISTRY_PUSH_BACKOFF_SECONDS:-5}" \
+    "${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS:-180}"
+ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
+    "${REMOTE_CMD}"
+rm -f /tmp/build_remote.sh
+
+ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
+    "cat ${REMOTE_WORK_DIR}/build.log" > "${EXPERIMENT_DIR}/build_remote.log" 2>/dev/null || true
+
+if rg -q "Preloading to master|using registry fallback|Cluster preload phase completed" "${LOG_FILE}" "${EXPERIMENT_DIR}/build_remote.log" 2>/dev/null; then
+    echo "Error: detected legacy preload/fallback path in remote build output."
+    echo "04_build_9node is expected to use only the node-specific 9-node preload flow."
+    echo "Please rerun this build with the patched 04_build_9node so preload stays under local orchestration."
+    exit 1
+fi
+
+if [ "${SEED_IMAGE_DISTRIBUTION_MODE}" = "preload" ]; then
+    echo "Preloading images to all cluster nodes from registry..."
+    PRELOAD_BATCH_SIZE="${SEED_PRELOAD_BATCH_SIZE:-10}"
+    PRELOAD_RETRIES="${SEED_PRELOAD_RETRIES:-3}"
+    PRELOAD_BACKOFF_SECONDS="${SEED_PRELOAD_BACKOFF_SECONDS:-5}"
+    PRELOAD_NODE_CONCURRENCY="${SEED_PRELOAD_NODE_CONCURRENCY:-3}"
+    IMAGE_REFS_FILE="${EXPERIMENT_DIR}/image_refs.txt"
+    NODE_IMAGE_DIR="${EXPERIMENT_DIR}/node_image_refs"
+    K8S_MANIFEST="${OUTPUT_DIR}/k8s.yaml"
+
+    if [ -s "${OUTPUT_DIR}/images.txt" ]; then
+        cp "${OUTPUT_DIR}/images.txt" "${IMAGE_REFS_FILE}"
+    else
+        awk '/^seedemu_build_and_push / {print $2}' "${OUTPUT_DIR}/build_images.sh" > "${IMAGE_REFS_FILE}"
+    fi
+
+    python3 "${SCRIPT_DIR}/generate_node_image_refs.py" \
+        "${K8S_MANIFEST}" \
+        "${NODE_IMAGE_DIR}" \
+        "${SEED_NODE_NAMES[@]}"
+
+    preload_images_on_node() {
+        local node_ip="$1"
+        local node_label="$2"
+        local log_file="${EXPERIMENT_DIR}/preload_${node_label}.log"
+        local node_image_file="${NODE_IMAGE_DIR}/images_${node_label}.txt"
+        local remote_list="/tmp/seedemu-image-refs-$$-${RANDOM}.txt"
+
+        if [ ! -s "${node_image_file}" ]; then
+            : > "${log_file}"
+            echo "[preload] skip: no images assigned to ${node_label}" | tee -a "${log_file}"
+            return 0
+        fi
+
+        : > "${log_file}"
+        scp -q "${SSH_OPTS[@]}" "${node_image_file}" "${SEED_K3S_USER}@${node_ip}:${remote_list}" >> "${log_file}" 2>&1
+        ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${node_ip}" "sudo -n bash -s" > "${log_file}" 2>&1 <<EOF
+set -euo pipefail
+remote_list="${remote_list}"
+batch_size="${PRELOAD_BATCH_SIZE}"
+trap 'rm -f "\$remote_list" /tmp/seedemu-preload-batch-*' EXIT
+split -l "\$batch_size" -d -a 4 "\$remote_list" /tmp/seedemu-preload-batch-
+for batch in /tmp/seedemu-preload-batch-*; do
+  [ -s "\$batch" ] || continue
+  while IFS= read -r image; do
+    [ -n "\$image" ] || continue
+    attempt=1
+    while true; do
+      if sudo -n k3s ctr images pull --plain-http "\$image"; then
+        break
+      fi
+      if [ "\$attempt" -ge "${PRELOAD_RETRIES}" ]; then
+        echo "preload failed after ${PRELOAD_RETRIES} attempts: \$image" >&2
+        exit 1
+      fi
+      sleep_seconds=\$(( ${PRELOAD_BACKOFF_SECONDS} * \$attempt ))
+      echo "retry preload in \${sleep_seconds}s: \$image (\$attempt/${PRELOAD_RETRIES})" >&2
+      sleep "\${sleep_seconds}"
+      attempt=\$((\$attempt + 1))
+    done
+  done < "\$batch"
+done
+EOF
+        echo "✅ ${node_label} preload completed" | tee -a "${log_file}"
+    }
+
+    pending_pids=()
+    pending_labels=()
+
+    wait_pending_batch() {
+        local rc=0
+        local idx
+        for idx in "${!pending_pids[@]}"; do
+            if ! wait "${pending_pids[$idx]}"; then
+                echo "preload failed on ${pending_labels[$idx]}" >&2
+                rc=1
+            fi
+        done
+        pending_pids=()
+        pending_labels=()
+        return "${rc}"
+    }
+
+    for i in "${!SEED_NODE_NAMES[@]}"; do
+        preload_images_on_node "${SEED_NODE_IPS[$i]}" "${SEED_NODE_NAMES[$i]}" &
+        pending_pids+=("$!")
+        pending_labels+=("${SEED_NODE_NAMES[$i]}")
+        if [ "${#pending_pids[@]}" -ge "${PRELOAD_NODE_CONCURRENCY}" ]; then
+            wait_pending_batch
+        fi
+    done
+
+    if [ "${#pending_pids[@]}" -gt 0 ]; then
+        wait_pending_batch
+    fi
+fi
+
+echo "Build completed. Log: ${LOG_FILE}"
+log_end "build"

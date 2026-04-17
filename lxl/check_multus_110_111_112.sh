@@ -3,7 +3,12 @@ set -Eeuo pipefail
 
 SSH_USER="${SSH_USER:-ubuntu}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
-NODE_IPS=("${@:-192.168.122.110 192.168.122.111 192.168.122.112}")
+DEFAULT_NODE_IPS=(192.168.122.110 192.168.122.111 192.168.122.112)
+if [[ "$#" -gt 0 ]]; then
+  NODE_IPS=("$@")
+else
+  NODE_IPS=("${DEFAULT_NODE_IPS[@]}")
+fi
 
 CHECK_INTERVAL="${CHECK_INTERVAL:-5}"     # 每次检查间隔秒数
 STABLE_SECONDS="${STABLE_SECONDS:-30}"    # 连续观察窗口
@@ -18,6 +23,12 @@ need_cmd() {
 
 need_cmd ssh
 need_cmd kubectl
+
+if [[ -z "${KUBECONFIG:-}" ]]; then
+  echo "未设置 KUBECONFIG。"
+  echo "请先在当前 shell 中加载 kubeconfig，或确认 ~/.bashrc 中的 KUBECONFIG 已生效。"
+  exit 1
+fi
 
 section() {
   echo

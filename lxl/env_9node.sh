@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 ###############################################################################
-# env.sh - 环境变量配置
-# 用法: source env.sh
+# env_9node.sh - 9 节点环境变量配置
+# 用法: source env_9node.sh
 ###############################################################################
 
-# ============ 集群配置（必须修改为你实际的配置）============
+# ============ 集群配置（9 节点）============
 # K3s 集群节点 IP
 export SEED_K3S_MASTER_IP="${SEED_K3S_MASTER_IP:-192.168.122.110}"
 export SEED_K3S_WORKER1_IP="${SEED_K3S_WORKER1_IP:-192.168.122.111}"
 export SEED_K3S_WORKER2_IP="${SEED_K3S_WORKER2_IP:-192.168.122.112}"
+export SEED_K3S_WORKER3_IP="${SEED_K3S_WORKER3_IP:-192.168.122.113}"
+export SEED_K3S_WORKER4_IP="${SEED_K3S_WORKER4_IP:-192.168.122.114}"
+export SEED_K3S_WORKER5_IP="${SEED_K3S_WORKER5_IP:-192.168.122.115}"
+export SEED_K3S_WORKER6_IP="${SEED_K3S_WORKER6_IP:-192.168.122.116}"
+export SEED_K3S_WORKER7_IP="${SEED_K3S_WORKER7_IP:-192.168.122.117}"
+export SEED_K3S_WORKER8_IP="${SEED_K3S_WORKER8_IP:-192.168.122.118}"
+export SEED_K3S_ALL_NODE_IPS="${SEED_K3S_ALL_NODE_IPS:-${SEED_K3S_MASTER_IP} ${SEED_K3S_WORKER1_IP} ${SEED_K3S_WORKER2_IP} ${SEED_K3S_WORKER3_IP} ${SEED_K3S_WORKER4_IP} ${SEED_K3S_WORKER5_IP} ${SEED_K3S_WORKER6_IP} ${SEED_K3S_WORKER7_IP} ${SEED_K3S_WORKER8_IP}}"
 
 # SSH 配置
 export SEED_K3S_USER="${SEED_K3S_USER:-ubuntu}"
@@ -16,6 +23,8 @@ export SEED_K3S_SSH_KEY="${SEED_K3S_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 
 # 集群名称（用于定位 kubeconfig）
 export SEED_K3S_CLUSTER_NAME="${SEED_K3S_CLUSTER_NAME:-seedemu-k3s}"
+export SEED_CLUSTER_INVENTORY="${SEED_CLUSTER_INVENTORY:-seedemu-k3s-9node}"
+export SEED_CLUSTER_INVENTORY_PATH="${SEED_CLUSTER_INVENTORY_PATH:-${HOME}/k8s/configs/clusters/seedemu-k3s-9node.yaml}"
 
 # ============ 拓扑配置（必须修改）=======================
 # 拓扑规模
@@ -44,25 +53,30 @@ export SEED_PLACEMENT_MODE="${SEED_PLACEMENT_MODE:-by_as_hard}"
 export SEED_IMAGE_PULL_POLICY="${SEED_IMAGE_PULL_POLICY:-IfNotPresent}" #IfNotPresent,Always
 export SEED_IMAGE_DISTRIBUTION_MODE="${SEED_IMAGE_DISTRIBUTION_MODE:-preload}"
 
-# 构建配置 (优化版)
-export SEED_BUILD_PARALLELISM="${SEED_BUILD_PARALLELISM:-8}"      # 并行构建任务数
-export SEED_BUILD_BATCH_SIZE="${SEED_BUILD_BATCH_SIZE:-50}"         # 每批构建的服务数
-export SEED_DOCKER_BUILDKIT="${SEED_DOCKER_BUILDKIT:-1}"           # 启用 BuildKit
-export SEED_COMPOSE_DOCKER_CLI_BUILD="${SEED_COMPOSE_DOCKER_CLI_BUILD:-1}"  # Docker Compose CLI 构建模式
-export SEED_PRELOAD_BATCH_SIZE="${SEED_PRELOAD_BATCH_SIZE:-10}"    # registry 预拉取批次大小
+# 构建配置
+export SEED_BUILD_PARALLELISM="${SEED_BUILD_PARALLELISM:-8}"
+export SEED_BUILD_BATCH_SIZE="${SEED_BUILD_BATCH_SIZE:-50}"
+export SEED_DOCKER_BUILDKIT="${SEED_DOCKER_BUILDKIT:-1}"
+export SEED_COMPOSE_DOCKER_CLI_BUILD="${SEED_COMPOSE_DOCKER_CLI_BUILD:-1}"
+export SEED_PRELOAD_BATCH_SIZE="${SEED_PRELOAD_BATCH_SIZE:-10}"
 
 # 大规模部署配置（deploy-batched）
-export DEPLOY_BATCH_SIZE="${DEPLOY_BATCH_SIZE:-40}"                        # 常规控制器提交批次
-export DEPLOY_BATCH_SLEEP_SECONDS="${DEPLOY_BATCH_SLEEP_SECONDS:-20}"      # 批次间基础休眠
-export DEPLOY_MONITOR_INTERVAL="${DEPLOY_MONITOR_INTERVAL:-20}"           # 后台监控轮询间隔
-export DEPLOY_WARMUP_BATCHES="${DEPLOY_WARMUP_BATCHES:-3}"                # 暖启动批次数
-export DEPLOY_WARMUP_BATCH_SIZE="${DEPLOY_WARMUP_BATCH_SIZE:-10}"         # 暖启动每批大小
-export DEPLOY_PRESSURE_CHECK_SECONDS="${DEPLOY_PRESSURE_CHECK_SECONDS:-15}" # 压力检查间隔
-export DEPLOY_STABILIZE_TIMEOUT_SECONDS="${DEPLOY_STABILIZE_TIMEOUT_SECONDS:-3600}" # 等待集群消化压力超时
-export DEPLOY_MAX_PENDING_PODS="${DEPLOY_MAX_PENDING_PODS:-200}"          # Pending 积压上限
-export DEPLOY_MAX_CREATING_PODS="${DEPLOY_MAX_CREATING_PODS:-300}"        # ContainerCreating/Init 积压上限
-export DEPLOY_MAX_NOTREADY_PODS="${DEPLOY_MAX_NOTREADY_PODS:-600}"        # 非 Ready Pod 总积压上限
-export DEPLOY_MAX_FAILED_PODS="${DEPLOY_MAX_FAILED_PODS:-10}"             # 异常 Pod 上限
+export DEPLOY_BATCH_SIZE="${DEPLOY_BATCH_SIZE:-40}"
+export DEPLOY_BATCH_SLEEP_SECONDS="${DEPLOY_BATCH_SLEEP_SECONDS:-20}"
+export DEPLOY_MONITOR_INTERVAL="${DEPLOY_MONITOR_INTERVAL:-20}"
+export DEPLOY_WARMUP_BATCHES="${DEPLOY_WARMUP_BATCHES:-3}"
+export DEPLOY_WARMUP_BATCH_SIZE="${DEPLOY_WARMUP_BATCH_SIZE:-10}"
+export DEPLOY_PRESSURE_CHECK_SECONDS="${DEPLOY_PRESSURE_CHECK_SECONDS:-15}"
+export DEPLOY_STABILIZE_TIMEOUT_SECONDS="${DEPLOY_STABILIZE_TIMEOUT_SECONDS:-3600}"
+export DEPLOY_MAX_PENDING_PODS="${DEPLOY_MAX_PENDING_PODS:-200}"
+export DEPLOY_MAX_CREATING_PODS="${DEPLOY_MAX_CREATING_PODS:-300}"
+export DEPLOY_MAX_NOTREADY_PODS="${DEPLOY_MAX_NOTREADY_PODS:-600}"
+export DEPLOY_MAX_FAILED_PODS="${DEPLOY_MAX_FAILED_PODS:-10}"
+
+# KVM / 基础镜像配置
+export SEED_KVM_UBUNTU_SERIES="${SEED_KVM_UBUNTU_SERIES:-jammy}"
+export SEED_KVM_BASE_IMAGE_URL="${SEED_KVM_BASE_IMAGE_URL:-https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img}"
+export SEED_KVM_BASE_IMAGE_PATH="${SEED_KVM_BASE_IMAGE_PATH:-${HOME}/k8s/output/kvm_lab/base/jammy-server-cloudimg-amd64.img}"
 
 # 输出目录
 export OUTPUT_DIR="${OUTPUT_DIR:-${HOME}/k8s/lxl/output}"
@@ -78,19 +92,17 @@ export CLEAN_NAMESPACE="${CLEAN_NAMESPACE:-true}"
 create_experiment_dir() {
     if [ -n "${EXPERIMENT_DIR:-}" ] && [ -d "${EXPERIMENT_DIR}" ]; then
         echo "Using existing experiment directory: ${EXPERIMENT_DIR}"
-        # 转换为绝对路径
         export EXPERIMENT_DIR="$(cd "${EXPERIMENT_DIR}" && pwd)"
         mkdir -p "${EXPERIMENT_DIR}"
         return 0
     fi
-    
+
     local timestamp
     timestamp="$(date +%Y%m%d_%H%M%S)"
     export EXPERIMENT_DIR="${LOG_BASE_DIR}/${timestamp}_${SEED_TOPOLOGY_SIZE}"
     mkdir -p "${EXPERIMENT_DIR}"
     echo "Created experiment directory: ${EXPERIMENT_DIR}"
-    
-    # 创建 timings.txt 记录脚本执行时间
+
     echo "# Experiment: ${timestamp}_${SEED_TOPOLOGY_SIZE}" > "${EXPERIMENT_DIR}/timings.txt"
     echo "# Created: $(date)" >> "${EXPERIMENT_DIR}/timings.txt"
     echo "" >> "${EXPERIMENT_DIR}/timings.txt"
@@ -109,13 +121,22 @@ log_end() {
 }
 
 # 打印当前配置
-echo "=== SEED Emulator Environment ==="
+echo "=== SEED Emulator Environment (9-node) ==="
 echo "SEED_K3S_MASTER_IP: ${SEED_K3S_MASTER_IP}"
 echo "SEED_K3S_WORKER1_IP: ${SEED_K3S_WORKER1_IP}"
 echo "SEED_K3S_WORKER2_IP: ${SEED_K3S_WORKER2_IP}"
+echo "SEED_K3S_WORKER3_IP: ${SEED_K3S_WORKER3_IP}"
+echo "SEED_K3S_WORKER4_IP: ${SEED_K3S_WORKER4_IP}"
+echo "SEED_K3S_WORKER5_IP: ${SEED_K3S_WORKER5_IP}"
+echo "SEED_K3S_WORKER6_IP: ${SEED_K3S_WORKER6_IP}"
+echo "SEED_K3S_WORKER7_IP: ${SEED_K3S_WORKER7_IP}"
+echo "SEED_K3S_WORKER8_IP: ${SEED_K3S_WORKER8_IP}"
+echo "SEED_K3S_ALL_NODE_IPS: ${SEED_K3S_ALL_NODE_IPS}"
 echo "SEED_K3S_USER: ${SEED_K3S_USER}"
 echo "SEED_K3S_SSH_KEY: ${SEED_K3S_SSH_KEY}"
 echo "SEED_K3S_CLUSTER_NAME: ${SEED_K3S_CLUSTER_NAME}"
+echo "SEED_CLUSTER_INVENTORY: ${SEED_CLUSTER_INVENTORY}"
+echo "SEED_CLUSTER_INVENTORY_PATH: ${SEED_CLUSTER_INVENTORY_PATH}"
 echo "SEED_TOPOLOGY_SIZE: ${SEED_TOPOLOGY_SIZE}"
 echo "SEED_REAL_TOPOLOGY_DIR: ${SEED_REAL_TOPOLOGY_DIR}"
 echo "SEED_NAMESPACE: ${SEED_NAMESPACE}"
@@ -127,13 +148,13 @@ if [ -n "${EXPERIMENT_DIR:-}" ]; then
 else
     echo "EXPERIMENT_DIR: <自动创建新目录>"
 fi
-echo "================================"
+echo "========================================="
 echo ""
 if [ -d "${LOG_BASE_DIR}" ]; then
     echo "已有实验目录:"
     ls -1 "${LOG_BASE_DIR}" 2>/dev/null | sed 's/^/  /'
     echo ""
 fi
-echo "如需续跑之前的实验，在 source env.sh 前执行:"
+echo "如需续跑之前的实验，在 source env_9node.sh 前执行:"
 echo "  export EXPERIMENT_DIR=\${LOG_BASE_DIR}/<时间戳>_<topology_size>"
 echo ""

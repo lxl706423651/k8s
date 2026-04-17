@@ -20,11 +20,11 @@ EXIT_KERNEL_SWITCH_FAILED = 41
 ROLE_SET = {"r", "brd", "rs"}
 
 # Node 内部的串行执行延迟（防止连续发包压垮 Kubelet 隧道）
-START_DELAY = 0.5             
+START_DELAY = 0.3             
 
 # 宿主机负载阈值：判断路由是否完全刷入内核并收敛
-SYSTEM_LOAD_THRESHOLD = 15.0  
-LOAD_CHECK_INTERVAL = 10       
+SYSTEM_LOAD_THRESHOLD = 40.0  
+LOAD_CHECK_INTERVAL = 20       
 # ===========================================
 
 @dataclass

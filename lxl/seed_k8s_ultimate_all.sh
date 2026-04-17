@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+SSH_USER="${SSH_USER:-ubuntu}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+REBOOT_NODES="${REBOOT_NODES:-true}"
+
+if [ -n "${TARGET_NODES:-}" ]; then
+    IFS=' ' read -r -a NODES <<< "${TARGET_NODES}"
+else
+    NODES=("192.168.122.110" "192.168.122.111" "192.168.122.112")
+fi
 
 echo "====================================================================="
 echo "🛠️ 正在生成 K8s 终极调优脚本 (Payload)..."
@@ -102,8 +112,7 @@ echo ""
 # ---------------------------------------------------------
 # 自动分发与执行环节
 # ---------------------------------------------------------
-NODES=("192.168.122.110" "192.168.122.111" "192.168.122.112")
-SSH_OPTS="-i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+SSH_OPTS=(-i "${SSH_KEY}" -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10)
 
 for ip in "${NODES[@]}"; do
     echo "====================================================================="
@@ -111,21 +120,29 @@ for ip in "${NODES[@]}"; do
     
     # 1. 传输脚本
     echo "   [1/3] 上传调优脚本..."
-    scp $SSH_OPTS seed_k8s_ultimate_tune.sh ubuntu@$ip:/tmp/
+    scp "${SSH_OPTS[@]}" seed_k8s_ultimate_tune.sh "${SSH_USER}@${ip}:/tmp/"
     
     # 2. 远程执行调优脚本
     echo "   [2/3] 以 Root 权限执行深度调优..."
-    ssh $SSH_OPTS -t ubuntu@$ip "sudo bash /tmp/seed_k8s_ultimate_tune.sh"
+    ssh "${SSH_OPTS[@]}" "${SSH_USER}@${ip}" "sudo -n bash /tmp/seed_k8s_ultimate_tune.sh"
     
-    # 3. 强制重启
-    echo "   [3/3] 调优完毕，正在下发重启指令..."
-    ssh $SSH_OPTS -t ubuntu@$ip "sudo reboot" || true
+    # 3. 可选重启
+    if [ "${REBOOT_NODES}" = "true" ]; then
+        echo "   [3/3] 调优完毕，正在下发重启指令..."
+        ssh "${SSH_OPTS[@]}" "${SSH_USER}@${ip}" "sudo -n reboot" || true
+    else
+        echo "   [3/3] 已完成调优，按 REBOOT_NODES=false 跳过重启。"
+    fi
     
     echo "✅ Node $ip 处理完毕！"
 done
 
 echo "====================================================================="
-echo "🎉 所有节点调优脚本分发完毕并已下发重启指令！"
+if [ "${REBOOT_NODES}" = "true" ]; then
+    echo "🎉 所有节点调优脚本分发完毕并已下发重启指令！"
+else
+    echo "🎉 所有节点调优脚本分发完毕，且未重启节点！"
+fi
 echo "====================================================================="
 
 # 顺手清理一下宿主机的临时文件
