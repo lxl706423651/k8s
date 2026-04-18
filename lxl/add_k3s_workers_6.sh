@@ -299,7 +299,6 @@ join_worker() {
         cat <<'EOF' | sudo -n tee /etc/rancher/k3s/config.yaml >/dev/null
 kubelet-arg:
   - \"max-pods=${SEED_K3S_MAX_PODS}\"
-  - \"max-parallel-image-pulls=${SEED_KUBELET_MAX_PARALLEL_IMAGE_PULLS}\"
   - \"registry-qps=${SEED_KUBELET_REGISTRY_QPS}\"
   - \"registry-burst=${SEED_KUBELET_REGISTRY_BURST}\"
 EOF
@@ -445,7 +444,6 @@ kubelet-arg:
   - \"max-pods=${SEED_K3S_MAX_PODS}\"
   - \"kube-api-qps=50\"
   - \"kube-api-burst=100\"
-  - \"max-parallel-image-pulls=${SEED_KUBELET_MAX_PARALLEL_IMAGE_PULLS}\"
   - \"registry-qps=${SEED_KUBELET_REGISTRY_QPS}\"
   - \"registry-burst=${SEED_KUBELET_REGISTRY_BURST}\"
 EOF_K3S

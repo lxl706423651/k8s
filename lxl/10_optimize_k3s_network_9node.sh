@@ -8,7 +8,6 @@ source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
 SEED_CNI0_HASH_MAX="${SEED_CNI0_HASH_MAX:-16384}"
 SEED_USER_MAX_NET_NAMESPACES="${SEED_USER_MAX_NET_NAMESPACES:-65536}"
 SEED_OPTMEM_MAX="${SEED_OPTMEM_MAX:-25165824}"
-SEED_KUBELET_MAX_PARALLEL_IMAGE_PULLS="${SEED_KUBELET_MAX_PARALLEL_IMAGE_PULLS:-4}"
 SEED_OPTIMIZE_RESTART_K3S="${SEED_OPTIMIZE_RESTART_K3S:-true}"
 
 SSH_OPTS=(
@@ -35,7 +34,6 @@ apply_node_tuning() {
     "${SEED_USER_MAX_NET_NAMESPACES}" \
     "${SEED_OPTMEM_MAX}" \
     "${SEED_CNI0_HASH_MAX}" \
-    "${SEED_KUBELET_MAX_PARALLEL_IMAGE_PULLS}" \
     "${SEED_OPTIMIZE_RESTART_K3S}" << 'EOF_SSH'
 set -euo pipefail
 
@@ -43,8 +41,7 @@ set -euo pipefail
 MAX_NET_NS="$1"
 MAX_OPTMEM="$2"
 HASH_MAX="$3"
-MAX_PULLS="$4"
-DO_RESTART="$5"
+DO_RESTART="$4"
 
 # 1. 写入 Sysctl (由于 EOF_SYSCTL 没有引号，远端 bash 会自动替换 ${MAX_NET_NS})
 cat <<-EOF_SYSCTL > /etc/sysctl.d/99-seed-k8s-network.conf
@@ -86,48 +83,19 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF_UNIT
 
-# 4. 配置 k3s config.yaml
+# 4. 清理 k3s config.yaml 中无效的历史参数
 mkdir -p /etc/rancher/k3s
 touch /etc/rancher/k3s/config.yaml
 
 cfg=/etc/rancher/k3s/config.yaml
 tmp=$(mktemp)
-found=0
-in_kubelet=0
 
 while IFS= read -r line || [ -n "$line" ]; do
-  if [ "${in_kubelet}" -eq 1 ]; then
-    if [[ "$line" =~ ^[^[:space:]] ]]; then
-      printf "%s\n" "  - \"max-parallel-image-pulls=${MAX_PULLS}\"" >> "${tmp}"
-      in_kubelet=0
-      printf "%s\n" "$line" >> "${tmp}"
-      continue
-    fi
-    if [[ "$line" == *max-parallel-image-pulls=* ]]; then
-      continue
-    fi
-    printf "%s\n" "$line" >> "${tmp}"
+  if [[ "$line" == *max-parallel-image-pulls=* ]]; then
     continue
   fi
-
-  if [[ "$line" == "kubelet-arg:" ]]; then
-    found=1
-    in_kubelet=1
-    printf "%s\n" "$line" >> "${tmp}"
-    continue
-  fi
-
   printf "%s\n" "$line" >> "${tmp}"
 done < "${cfg}"
-
-if [ "${in_kubelet}" -eq 1 ]; then
-  printf "%s\n" "  - \"max-parallel-image-pulls=${MAX_PULLS}\"" >> "${tmp}"
-fi
-
-if [ "${found}" -eq 0 ]; then
-  printf "%s\n" "kubelet-arg:" >> "${tmp}"
-  printf "%s\n" "  - \"max-parallel-image-pulls=${MAX_PULLS}\"" >> "${tmp}"
-fi
 
 mv "${tmp}" "${cfg}"
 

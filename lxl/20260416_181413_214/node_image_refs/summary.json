@@ -1,0 +1,44 @@
+{
+  "manifest": "/home/lxl/k8s/lxl/20260416_181413_214/output/k8s.yaml",
+  "out_dir": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs",
+  "nodes": {
+    "seed-k3s-master": {
+      "image_count": 86,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-master.txt"
+    },
+    "seed-k3s-worker1": {
+      "image_count": 25,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker1.txt"
+    },
+    "seed-k3s-worker2": {
+      "image_count": 15,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker2.txt"
+    },
+    "seed-k3s-worker3": {
+      "image_count": 15,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker3.txt"
+    },
+    "seed-k3s-worker4": {
+      "image_count": 15,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker4.txt"
+    },
+    "seed-k3s-worker5": {
+      "image_count": 15,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker5.txt"
+    },
+    "seed-k3s-worker6": {
+      "image_count": 15,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker6.txt"
+    },
+    "seed-k3s-worker7": {
+      "image_count": 14,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker7.txt"
+    },
+    "seed-k3s-worker8": {
+      "image_count": 14,
+      "file": "/home/lxl/k8s/lxl/20260416_181413_214/node_image_refs/images_seed-k3s-worker8.txt"
+    }
+  },
+  "missing_selector_count": 0,
+  "missing_selector_examples": []
+}

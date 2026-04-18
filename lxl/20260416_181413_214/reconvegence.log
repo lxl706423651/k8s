@@ -1,0 +1,31 @@
+[2026-04-16 10:33:23 UTC] === Reconvergence Experiment Start (seedemu-k3s-real-topo) ===
+[2026-04-16 10:33:23 UTC] Config: chaos=10, verify=4, auto_recover=True
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1304brd-r40-1.40.5.24
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1841brd-r17-1.17.7.49
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1488brd-r12-1.12.5.208
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1485brd-r18-1.18.5.205
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1725brd-r21-1.21.6.189
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1113brd-ix1113-5.89.4.89
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1700brd-r13-1.13.6.164
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1797brd-r12-1.12.7.5
+[2026-04-16 10:33:23 UTC] ⚠️ chaos target missing: as1531brd-r7-1.7.5.251
+[2026-04-16 10:33:23 UTC] ⚠️ verify target missing: as1531brd-r12-1.12.5.251
+[2026-04-16 10:33:23 UTC] ⚠️ verify target missing: as1304brd-r12-1.12.5.24
+[2026-04-16 10:33:23 UTC] ⚠️ verify target missing: as1841brd-r206-1.206.7.49
+[2026-04-16 10:33:23 UTC] Matched chaos pods: 1; verify pods: 1
+[2026-04-16 10:33:23 UTC] 🔎 baseline: collected route counts for 1/1 verify pods
+[2026-04-16 10:33:23 UTC] 💥 Injecting failures with birdc down ...
+[2026-04-16 10:33:23 UTC] 🗡️ birdc down sent to as1277brd-r219-1.219.4.253-7b85c858f6-gmvnp
+[2026-04-16 10:33:23 UTC] ✅ fault injection verification: all 1 target pods reached expected bird state=False
+[2026-04-16 10:33:23 UTC] ⏳ post-failure convergence: waiting for all node load averages to fall below 40.0
+[2026-04-16 10:33:25 UTC] 📈 post-failure convergence round 1: seed-k3s-worker6: 0.16 | seed-k3s-worker7: 0.05 | seed-k3s-worker5: 0.08 | seed-k3s-worker8: 0.03 | seed-k3s-worker2: 0.26 | seed-k3s-worker3: 0.06 | seed-k3s-worker4: 0.07 | seed-k3s-master: 1.14 | seed-k3s-worker1: 0.37
+[2026-04-16 10:33:25 UTC] ✅ post-failure convergence: all nodes stabilized below 40.0
+[2026-04-16 10:33:25 UTC] 🔎 post-failure route snapshot: collected route counts for 1/1 verify pods
+[2026-04-16 10:33:25 UTC] 🔧 Starting recovery by bringing BIRD back on faulted pods ...
+[2026-04-16 10:33:25 UTC] 🔄 recovery command sent to as1277brd-r219-1.219.4.253-7b85c858f6-gmvnp
+[2026-04-16 10:33:26 UTC] ✅ recovery verification: all 1 target pods reached expected bird state=True
+[2026-04-16 10:33:26 UTC] ⏳ post-recovery convergence: waiting for all node load averages to fall below 40.0
+[2026-04-16 10:33:27 UTC] 📈 post-recovery convergence round 1: seed-k3s-worker6: 0.15 | seed-k3s-worker7: 0.05 | seed-k3s-worker5: 0.07 | seed-k3s-worker8: 0.03 | seed-k3s-worker2: 0.24 | seed-k3s-worker3: 0.14 | seed-k3s-worker4: 0.07 | seed-k3s-master: 1.05 | seed-k3s-worker1: 0.37
+[2026-04-16 10:33:27 UTC] ✅ post-recovery convergence: all nodes stabilized below 40.0
+[2026-04-16 10:33:27 UTC] 🔎 post-recovery route snapshot: collected route counts for 1/1 verify pods
+[2026-04-16 10:33:27 UTC] 🎉 Reconvergence experiment finished in 4.59s

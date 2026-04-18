@@ -1,0 +1,976 @@
+time="2026-04-16T10:27:21Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:21Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:21Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r10:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:d87ac2086bc264448d2a2d87ee7586e85b525876460820fb9492820c9844a0e7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:231e792d3fe833b8e3126f9f35d2fa687261b6aa1ce1c1734184fa8773e39d07: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e8f88646d3695bc8a15f3a6400651e44a067233b17253992a27e4f7f7c1e4264:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:56c2f107efa7fd5e0099c17b0dd50774f50247df8909021f9dfa55d57630beb8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:52ec29fd6a2eb1d5e13903d4abee2a83691eef0398026aecddab5345d0ceed13:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d8b1500aa5299d39e001ee18d59e300f307410008de3de6adc9a018d6ce1e470:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2a8905c4c26647408fbdc7bc4fe7f6402d795271fdbf21955458d2522b5dd709:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e03073f122743800383b2e469fc867f2d597dc5a579272ba550ed34e31841704:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:139940066dda669e05883254b920f59d6c46c182e2f0633a66f48aea8883cec6:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5f510db3bfe24e0b3f8d0cd124a5744c0ba60e4ef7dc45d4363e5d464b2199fe:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:d87ac2086bc264448d2a2d87ee7586e85b525876460820fb9492820c9844a0e7...
+done: 21.056462ms	
+time="2026-04-16T10:27:22Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:22Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:22Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r122:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:f3552b547f57d39cf419a38a2d4dcd46f5f75d655dc4eeb83fefcf3b73df39b7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:753d8d4db5823e104e3355be5e524e3f207b9c1437e6a2a8ada2fcb34fbfb616: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:a91b0cae22e65eed7b55bafe21eddfe35575dc135810daa23d6461f82b4afde3:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9286bce0229298c8415fb473d366ffad03e791598e2a70899cb94ab7834a90ee:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:fba26de5ffaf94ba150792e6a855dbc63a12460083ed30c4f3f6557191ccfe75:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:bf1b213d109020760218ce3839597f6ea101ed1c9533b1157491d4633499480c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:0e593f399c532a77ead4a12f22265ff0f04bdc24aa292d16c5217e2f46b714de:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4ad7403320fdefd6c5dd4358702482c6ef8280a8f54bad56251cce4cf8966356:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:19336a1e648b27a7379a6e0ce9c1bb159bbc6d6c9324bb1102506676f3720aa9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:fbdc1ad64db0c239de8983d508fa29e9d44aad571bb9de4cdd27dea301973ccf:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:f3552b547f57d39cf419a38a2d4dcd46f5f75d655dc4eeb83fefcf3b73df39b7...
+done: 19.150661ms	
+time="2026-04-16T10:27:23Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:23Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:23Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r12:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:f17498de97c107fe5f6f0508d253369fc23243574d42fd6e69a8ddec509b611d:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:942a24d0e7d10a62384c0f78d0e4f1a499f57d72e0a7e7d8ebabe928c7aeaec5: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a7184bd6561002cd3ece4ba409a535adb894a3780f32bf01d4aeb75ac7d3bdff:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:d73db4d80be0db4da0e21b7b9d4dc179ab2e887dcbfd95554840500069cdf3a4:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a0c0a055a02ea27aca2dd9542bf9bae8945e936691b856c6985726207222ce0c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e03073f122743800383b2e469fc867f2d597dc5a579272ba550ed34e31841704:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a614ad8991af287f11f6ca9e3dead524af6f699d29db378699c4450c269956eb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:1e6a8d258acc08429d38984c9c741aff285af6e1209065f47d2331b8e82cad2e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:41e6bd20b3cf4d5d418aaf174bf73f22c5e064635e29161142b40858d138fd9b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5bd2a46cd7d3cd18fb40ce28e0ac6d913ff54b62c602c6f9c094f9406f639864:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:f17498de97c107fe5f6f0508d253369fc23243574d42fd6e69a8ddec509b611d...
+done: 21.385144ms	
+time="2026-04-16T10:27:24Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:24Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:24Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r13:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:727ffb2a4c364d5a5ce3a559b4f13c55d6e6ba5e3ecef7c5baf203d4597c97b4:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:aafa84ef55f678da0853bc4bbc05642ef327f27a32c20a9c6d30ef928083fb52: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e7037c9bb0fbc2fd35c769730528ba9a3813b94e91616f6e4a579c6b37670392:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6d17fd9809cf2cec87264ec6a3e4f97f96cf89039674af384f03462ef4946794:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:97835cdb688a7e6837baaa8e21984029d9311e92b61eea0b70fc90beab1b638a:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34f7080ef014e2fec7651de001f5932f5938fa66025848abbe4a72f88b5f7063:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:980fe14689a848340ced2710a6bd950fbe2b4806a2fdd796a2fb0c45ef26db60:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34de7e265c07dff22cb3aa0901dd8b8fbc894db96d22698ef63c12e72d703b79:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8c0eddb8ffc467b847b184466f31a404b7cd0d713a96db0cdc8734583f20b02c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e03073f122743800383b2e469fc867f2d597dc5a579272ba550ed34e31841704:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:727ffb2a4c364d5a5ce3a559b4f13c55d6e6ba5e3ecef7c5baf203d4597c97b4...
+done: 20.094877ms	
+time="2026-04-16T10:27:24Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:24Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r156:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:1954040ac1e349ee5c0ed87f54d4878cabdb75b1034ade0f7640bc1207c27cb9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:1f8222f276aec38fab18d5537eb2007a30e1d76826a67eeb0306391fc53ac5c4: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:96de0896ca7aa57047f7a75b54293e4a465eee9a5a45e0184d758d577e83d8ef:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:23a7ef1f65b6932a10b377cba09abb31983c870115dedc9d95f08b6ba87d198a:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:640c7bd1cc7f9e56189a05809d5a38b0ea0cbc3c5d5426a0cf7981f5ef89607e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:355b5e99df809c55ad79cf7b2e8d009698bd5d040410eba7660bf1609f1611d8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:0a3221c8694c0877ae70293b2fbdf4ccfba95b8d05e899a5bbddd080de524d8c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c938c53c88875e48b7aea39abf20a40e3436c788afd167ea0479bf1ad210aed2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:73a094e0e6664378cdac704c2faa3536b0bccad2aa76505debc8761ff257a188:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:36d9df7ffb3a616d76dd59ab03c43f89ca33e19988f379eb556ab4846cb9dc1d:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:1954040ac1e349ee5c0ed87f54d4878cabdb75b1034ade0f7640bc1207c27cb9...
+done: 17.435319ms	
+time="2026-04-16T10:27:25Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:25Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:25Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r16:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:4a947ac6a748c6bc80bd225d1e13532837359d2f790ea7b947c4b44ccc58f7b1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:ea1479e1277f56ae812004666be76d9f9f5c4cbe7d18c50f4ae6a84a782791fd: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:29811ccafab76910e6cb36b5c96e5f8cb1727c0013642323f6e1d9ddec2d0959:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13a522630f45ece8094e1583c1a0863354619b3022c04ab8630bf5cc749c83a2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:f189cb00f2625ff09da6431b01bdb900b1366dfa404120a1cab992c0c6727fc9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e03073f122743800383b2e469fc867f2d597dc5a579272ba550ed34e31841704:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:97deb798e1363ee4cd566e45514dc9ea43920af7f6f5a82a1c0ec83e37d52b86:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ea370e12dee6bd6f62613cf6e6ed40c9bfbc3628bea88bfdc06f55c738a352f1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7f01b6b75e7360dfea194e4bb296e8442e8008e867f52dda5a97db7a9a7fca51:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8871a02ee33c9cb73a70f3e597b9767885b71eb5db88d1182eea777d0f01e848:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:4a947ac6a748c6bc80bd225d1e13532837359d2f790ea7b947c4b44ccc58f7b1...
+done: 22.147169ms	
+time="2026-04-16T10:27:26Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:26Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:26Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r18:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:68721115d7d921e2d2a52819e318783de3bab44eeb75fa3126ee08a917bac67c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:606187caca067069847e4c801067bac32b53ae6b9d540dcc8eb85eb41d1cf808: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2d4d695f48a8e9cf5afe771dc8c784e7f430495ee90a1d287c5914d70411fcff:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6762276041b7c2997e24270a93b85b3fe68f0951f973a7d5608b4a6d24d959dc:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e359a2dfe40f99f7fd4eda29e61765c0b3c62dadbce07920d9de8a80440534b9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5562b50f0ac27e889ed85bec55bc33fcda72d32cfcb8f7c538fc2ea148769d42:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:61b645a54b790ff3d035b47d94a054c92d9f41dbb82b19a9937bcd35923a2b8d:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a6bb5821321ec7cd8488b8caafff91e761c81ee4f9d0dbd9c40d73547c932fea:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:056a9b4f7f4027a7f581f809dc9b1bcfacd261a57669a96826cf36445ff501f2:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:1dea07b491e3a47e9672255a356c621b436fe05de389491091136c31cb24608a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:68721115d7d921e2d2a52819e318783de3bab44eeb75fa3126ee08a917bac67c...
+done: 20.811571ms	
+time="2026-04-16T10:27:27Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:27Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:27Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r19:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:175167cbaaa62b7c960b97248b418b1ce166ebb3a30b3205cdfb3e5d03425695:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:bc38e9ba08f5d40ee729a2268518b2e6f887e235cb3a9b0bedc2045346b5e64a: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a0e2a50902872cfb63a0cc1769276a4bfdfe2373a3d3352b83904b1ee16a5d6a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:6b40d08cedff1aaf10ff3ad906155f4acb2c89a96c19f7c7a7b5c52eca69ee44:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d0685bf5c41216addbe67c43921d4731fc19e5e8e330723b068d6d5dab0d19ea:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:24f0719e13bb30663660751fed5f649031d0e6a7353b44c23d82a7a5033d0c5f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4e39044db4a23bd51f2a2853bb87a04e17a85c2428602e905e9b82cd046cad44:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e4eb24b67d83eb0339b83c6c8d698dfaf361be8097027fe5caddff809a265dd9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2b65f8be460939349fbb0cc171939c47a72f46e4b7b25b3fe15a58014dff0b07:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:98b444b8a16a5447a2218786936c07672b6597b7435e9fbcdaacdc630549cd67:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:175167cbaaa62b7c960b97248b418b1ce166ebb3a30b3205cdfb3e5d03425695...
+done: 17.52163ms	
+time="2026-04-16T10:27:28Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:28Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:28Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r21:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:7e6cfc41e1f4674c8edd01363d0ec62638e8ac15c152bdef70cfa493e619f99f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:1e1151c8b69dd35a4cb0c8ae4704435198817a13777a033b8e4aca9836e2d122: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ee98eafccd5e506f59f5fc6e917e740d104095aa0028ea8b96785ed329a42827:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4c05d35e9a35fc055d7d3c296a13f3f8696fedf9ebdff2194e109a289f8948ea:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:194d286ae5e75b0fb7e8586f22999a7830870b6cf1177d36b4f2658bcd8669eb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6fa79773fd83f214822083a9a361b28cbef4d6ca598954b992b08a07a327a2d8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:3a74bc8df63022920fc836c364116c4bcc0c0e0d5f56ee008f4b69558b4aaced:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:064aa9df0903061e757a2d1f382afbc9f8f0ed5ea2255b76dddbdcfb319cd8aa:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8c97d814e5fa0f9f40b6e0d1be18d647af69f5c3707bd8b17f8c9933fac1e3bd:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:88ae177197b01f7ab5ef6465d994fc803c6258ee412224d988f3f325fabb3d67:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:7e6cfc41e1f4674c8edd01363d0ec62638e8ac15c152bdef70cfa493e619f99f...
+done: 17.611311ms	
+time="2026-04-16T10:27:29Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:29Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:29Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r22:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:46113c5d425e4243ca625722858148068d2e0a9854d895d79882f3a082a8a971:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:32ae6819885611d999fbc314bf78c3f1db73510430356fc02cfffdcf7c9fcea3: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:a4b34c92ac88c631e6d7884ec4458db80a5013a2701fc8c194739b05acefb031:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6530a069e1792aa58c6ff123dc48d97787550ea6f4103492049669eca3c4f1fc:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:72ce678b31ca6589df18d9db43363d79f8b891b0b3e3dad68c3d62e6cc7fce13:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8e36b6bec20cb66aa6d83d354073d61cbf8e24e4cc51cb3c4d8f36ef0f307e90:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a427c0790a50c1a1bbfe01aab68c52118dcfde482a2c16d9aaec9d48445a981e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6ef30314ec2ed928e51435d0e8f967137b7df11fbd543342093211393c0e07ac:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a4bc128752c0506a7b5abb1012316575bdbda8cce805351b0bba073beef11cd4:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d86ed02930676ecce3cde32d00be12dd4084e862b88d335455625d72837bdedd:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:46113c5d425e4243ca625722858148068d2e0a9854d895d79882f3a082a8a971...
+done: 17.924712ms	
+time="2026-04-16T10:27:30Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:30Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:30Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r237:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:9a4d465af843375365097e6941acd0655b8664da73acb7ca64d197291997e90a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:dc90d14292ddaa6a1ea7d7528d0e274f91c308f9a4ddece4d790bb3ad29c4776: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:05a0c4360c3676a6afb873d7e3a0b387354f2dcf6aa5c22f5e914780c46a8216:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8854cb0d609232060b12b81433186917b30a1d69faf7a8c75f7eaa6c9a51f624:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:73a094e0e6664378cdac704c2faa3536b0bccad2aa76505debc8761ff257a188:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2523347da4e8b34a28eb5c68108dda9e7140abd085c26732c290cff2657621f4:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:06ea2de0c9948c7f99ceb5e1130cebf6d06cfa554b2e761469412c65f127c354:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48a099859e3413840ffb568c54095e09e68dc60358c1e86d9cab3d12d1446b6a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64641d7e8c6a4d7ec3b756d93a271f07eabcdb00eec1218ada414c759ad7571f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:690d0260f9b070f6b7a75a5e94944bc914ab8b6665cfce8451a596dc751e9d5e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:9a4d465af843375365097e6941acd0655b8664da73acb7ca64d197291997e90a...
+done: 19.943976ms	
+time="2026-04-16T10:27:31Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:31Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:31Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r23:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:82a58f6c8e4500070b630a384fdeb97d34b6fa1ab7c0cba424b0ae59d77365f7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:159cedebd5ae30b97a424335941a41a75a612bc1fb50280d704b9783a4d3a7b8: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e8edfc4485f2ad3adf59bae0d68952f37f4e137be597482cf1fa19b4ba29ec07:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:54f6d698725f2807b8ce28c99877577beea20941f2ad5b0508e9f7f208b44158:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13619419a20bfbdce7fb728cfbb810e8668172d187bb05d9ca764137ad8200ca:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ec902ddb9d1dc810c454ddd8d111beb6f850a448e8664efefbc6ce0112497b47:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:0e22fa3390360f076797147c1c6880c6704b9e773ccd7096e3eb6c93c05e43c3:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:91ef8bd4afaaaa88ceb49515845619e96e222c9cfcab2a53121f6829375f8b12:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6e8da5a86ee025dbefb83bec445e0895525616f076e9d23a919f79a6a07524f6:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:0c3e16da6512cc71cbdd9e5f84e771f7ff094630c3984a0c629d7345aa1663c2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:82a58f6c8e4500070b630a384fdeb97d34b6fa1ab7c0cba424b0ae59d77365f7...
+done: 20.260137ms	
+time="2026-04-16T10:27:32Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:32Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:32Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r24:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:ead2b7389907dc11582075fb503eb19fef7f22fb1179020055da808cc7a6ec65:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:7963a7f06a95fca507b617edb446c0c6e48bc0c9dc480d8ff8bea920c9ca149f: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b69385e2404ed85737a2269d29119be8b53b8a5ac3dae076a5b94eb7b3fd43ae:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ffd914abb1b3a62c3051df0f9de991d0dc9577c53d1ee5d5fb9bfedbb2b05d82:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:4a76f0e7a23bf4c5f50f1e3e8e5f5b2f3122bec4ad0c39663e762d9b11ba81ca:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ea0f11002546e0f562a3a12ed7135f7b4d853e4f67e0ff4644233879522d4af8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a19fc48181cab80bc96c88bee15e85ef5413ffc454ade73a1396adbdd1df6c2f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:249b41aee9922b0779880202757fcabcf276369a21f7e8f9258364fb987720db:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:46db26a875e92a9ed120061593e86d1cf3b8b9bcd32d02c50e96d0a710ba853f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e1032d307f1d58c5813a7639c5e65b5b614a915a4037abd96ddaa096e1a61472:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:ead2b7389907dc11582075fb503eb19fef7f22fb1179020055da808cc7a6ec65...
+done: 23.051374ms	
+time="2026-04-16T10:27:33Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:33Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r25:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:955a24f66031d2d2ab59be95fbc641d8a3904d67532082ec488b0b8067cc0379:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:f094f8bb30f9082d7c274c546142ba311e14d704683b46f262b426169d507938: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a5761c0df88a9b1b5d016e037504e306924453be28735afeaed86e42696a94f2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:5a9df45df4843b4004fda79071b19b48b9377fb9982f40184ee5eea13f346ffa:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:0cfc331aa65c8475014d2818e703b3246c2c8b8dd13a8c9df8196487b2a70a67:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c64219a817118e34bdaa3d9c3ff2075693654a74bdd3b5a47328cb5ebfacec3b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:eb19a2dd8db2fd4c63ed39b5c36f9640bc683e04eb9b27bfa7d9108c7f4debb8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8e1341aecd13dc4799507798fa73934855ac814bd362f7bb3152226cff157834:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e1a62abc5aee1f2222736241e66612f848cb9caa4efff800083b24ffd9ec7cf1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:6c17e6f36181f3e121b7bf46bbb58a08f8644f25b64f78a506abcfca76d15a75:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:955a24f66031d2d2ab59be95fbc641d8a3904d67532082ec488b0b8067cc0379...
+done: 16.259763ms	
+time="2026-04-16T10:27:33Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:33Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:33Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r352:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:1e8f35a971a2b0c8a56631f6ff805702595940b603b9b69538a40c60f3359b8b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:d82971bf23ef64ecafbf1a2f02a2aa00b078c692cad90b4211989c48ac73433f: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:ab1c5868984551395933280b2b407f7aee7ed75df92ccefe3df5eef217c4dcb6:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9b87f5268388cae111c7eb2b7963ba45a84376aeeead315aa73eb30f8987641e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:12dca601fc3fbb528b22706494a88543c4faf0b44bcd60e39036261b73225185:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:acded4c6ff7975c7a7f84ab8b9efd01079b2c54a953207d86c578d3d6b9ab6d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e479d1c24cec6e0e6ba4a8e037439297b855ee50bdfa2c75798b64bff2725756:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2dc6a9e9598b787e2f8673e7785cbd24ed850d869e859eb285aa0c37111efd49:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4477ee02aa5070dfe220bb7d7b2eb2c2f297474f33a8fa65e03e39d4941a0893:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:f31a23f2bfc1ce72fc560235a9eddfa118ca5ef8c7b75c251b5f50d4d41f9dbd:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:1e8f35a971a2b0c8a56631f6ff805702595940b603b9b69538a40c60f3359b8b...
+done: 22.493899ms	
+time="2026-04-16T10:27:34Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:34Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:34Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r3:latest:                                      resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:f3894a0684ce8ffed1459c08d821642cd45d2b083478b161a24f5f8f8c83dd2b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:418be460d50598d66748c25bee8d4275ea80451dbe423681153a48ecc8714a3d: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:53d8ca986702986cfb14a6da54930db7adb8fc8c33ce3b9b7d00395a984a10e9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a6c9c410ef326a12f646483095e71da12a122b0c9c3a6e5eb98dc6a45be29d1c:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5444aa7b5a048441574819893cefaf79a6ed582319072b580e113daedab6d0a2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c544ced44b3be78e134d8bbb40fd4f57a730ada310dfe82daf9c848f28362255:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:ee338f3be4bce652181baf778956c3bdffd40f8f86c593cfc612f5f00c8a6c8c:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:fd4d4395fd754138cc20e846090a6690090105289d1e4371fd06245238b7b41f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:1fa17db346b6294c2fe72d3838ab1a501d77a10bdae02cf2c2ce6fa000e233c9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:86a0096ab740e30a1f1bac32a1eae7e43633001cae5eddd7e0c1822d0de31dfb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:f3894a0684ce8ffed1459c08d821642cd45d2b083478b161a24f5f8f8c83dd2b...
+done: 17.002135ms	
+time="2026-04-16T10:27:35Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:35Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:35Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r403:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:f8d360fef0e49da6dec2b56390439bbcfa634a8af3874bd89f48a74a51d0e545:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:a349d6c335d56411e94c9a36b3f5bf14c63f3838866625de716947ffe4f954e4: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c5df4f44e9a98ae1a5c0ed19f4cc03f1d4b36468c7ed4bea2e5e11220327a075:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:aa27609487bbefdc97b8a4b12809b7532e6959d1f7a71314c489afef1e52f48e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:df1af51837e8d65e1e30db620d0aa3a03533c78b3ac524250840b0b8953449d5:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c3e4cf97b9f076051b986c1fd44b7250e7c473472c3cc3c4440f3fc342df97e1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:240cb2f058bd3c6dc1f82f2328d554fbbfe633a763c8d9a6f9feb1c87bf84e62:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:22cee5e65a42dd11f2eaa2ad59717b62e67c39e85eba954bdaa4b38f93ce0b12:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:acded4c6ff7975c7a7f84ab8b9efd01079b2c54a953207d86c578d3d6b9ab6d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2a6bbd570ea9c6ac78e2267575e7bd4cf25ef1df671910f37dddc1fc776858db:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:f8d360fef0e49da6dec2b56390439bbcfa634a8af3874bd89f48a74a51d0e545...
+done: 19.433771ms	
+time="2026-04-16T10:27:36Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:36Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:36Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r43:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:de1b6452004b5d3623738ea69900b4b286fbf80ddfcb7428efa5079f54716ca0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:bb0d528a05b136041072c95c573d58f4c0a05f24c29b288c3324843dc5c96de1: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2991b871ec122ce6ed79f77c8356919a1703c10ee2896ca41ca1f2929d850585:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ffd914abb1b3a62c3051df0f9de991d0dc9577c53d1ee5d5fb9bfedbb2b05d82:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a7d7ce53daa2b206c718fa686d28db4f0d1e6a61d76e1f70d86baa4944a2f9b3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:0bb9e1bdccd257fc0ae08a009d42e214e69dca35f18e14b654f3e09d5aeadfff:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2f62589de4958a2156ef9d48cbf6cb983df53ba06865563c15d00e358d985219:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3cd280ab4f0a903e2973f580c91b5e52ac323639dbc26ed6b558a7eef0169acb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5d238534d3fa279a21890a1ff2782c281335aaae480a4250339c79318b76e87f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a1204130d2a284292e45d077049b68377155351ba728a635a359e1c739d5845:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:de1b6452004b5d3623738ea69900b4b286fbf80ddfcb7428efa5079f54716ca0...
+done: 38.410139ms	
+time="2026-04-16T10:27:37Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:37Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:37Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r495:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:3ba59e1956e21327efeb45a03ff42e49c4c600b3d8d7e74a4840d771ab92be0e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:dadea185e43dadbfb269b4c78611327fafd182f8a9f5bc73533f376a6162b648: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:c6d6e3feff925bc1fd52caeb2a4979b5a6f0f7a7c0888874658e0a997e26ee8e:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:f377ea92871b2475ea69ac48204fb412bf4e4d1c8ef68c26c0d3c6f4133b4f39:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:10584c4c092f5b44de6e76d001a163dcf05c7831e4295c12681c7a11bb2bf319:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8fa26c63c09e845d70d69c1a2aefd7236a9bb30288ac16dd739c4db9e94f7088:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e3612f4c7bd3ecc699408012758ab9bae934986130ebf3624fbca075ecd195b6:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:acded4c6ff7975c7a7f84ab8b9efd01079b2c54a953207d86c578d3d6b9ab6d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:013049a32425e975a36830b914e8f7763dac66ab6a6ac4773022fdd8caa0f71b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:97e606ba3f724f3b5394b31d69799f3534b97a48240db4b9ee9670ded1bc57eb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:3ba59e1956e21327efeb45a03ff42e49c4c600b3d8d7e74a4840d771ab92be0e...
+done: 18.594546ms	
+time="2026-04-16T10:27:38Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:38Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:38Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r4:latest:                                      resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:7cea2a359ffdc674fd364f9774b726357a7065b5f6760b91a008c8367ddabc83:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:acdbffd97087baf2cb1c27df93c363201e035e0946d50059ab6a3e9159e1af0d: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d0c725b65b3338b87e9866707e20ddd8c54bb709218fe48882b5c3758a859201:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:e8a91049890d3dbe5ffb8ed6072b7dd4cc859a79663c2f4ff1f453aa6fc43c94:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c23f5a4c7d5b587a475931aa8be1ecab0937cb703347dcda161d0e70489a4ff3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5919da59da7e7ff31dbd14dd954117b40b6e3261601031ffd18352b964915252:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:76bf1b46d93b7455c45aae2fb7fcb4704618bea140799ea71c96acb1b1275762:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e2075935e0ca55447a4936fc321ae5f54b799184739ae3078b7705f222a59af7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8e7316400844fba2754638def4a6eebdad390c4990701210d5529bbaae51f346:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:41fc5f57cc272193f5848d8ab9b1c1114ee77fbeee0c48bbc76b1b6eba9f419b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:7cea2a359ffdc674fd364f9774b726357a7065b5f6760b91a008c8367ddabc83...
+done: 19.527642ms	
+time="2026-04-16T10:27:39Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:39Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:39Z" level=warning msg="skip to append distribution label: label key and value length (4112 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r518:latest:                                    resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:715b01b7c3c6056de17800421a669c0b5a1e71e2160150e9b65ef862e852a6ae:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:fd5c3b71b5555cfee1738983f023924d6e856d55f8ae934ea9a51a821297f6a3: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d6b6ec4fa0b794e0d27018ffbccc8951b64912255ce1d930e02568aebaf2eea3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:dc547726c84019d9b82d702e4ffcbbe62b16000e05e67192dda58c69c7b85314:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7edd3628a281fe317134f977e09b9d38cd594fab620d6231f907168d6d9c20c2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:5691cf24f27354bcdaaa40a429df5a49df9e411e3e5f7a3ebb8c6a14cd2bd78e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:35b9cead5bc2f734e6f66ae79d1faeb4be2daf115cd3ee0e46ed740cad7df645:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4b282348cddc2ee041b7b3c8f34a918dbd00ee1eeee19990972233c91de92bd2:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:00a962ffef80f3420389217b9050c909a4fc6d7eafe2cd111bc2cccb4741ff57:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ec6a628ff8ba53753736a69f7fe40e11e33b8e11efeda97f7319086b16ec7cc3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:715b01b7c3c6056de17800421a669c0b5a1e71e2160150e9b65ef862e852a6ae...
+done: 16.822454ms	
+time="2026-04-16T10:27:40Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:40Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:40Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r6:latest:                                      resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:67298cb91f992ef87fdf095bf9b748760fdd3324e092a23e0d12f4876eab8f7f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:8b6cb192c915a9cdea005fab686514399a97bfe8db4f8ec461ef08e454ae946a: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a0bf038f90cad4bde160f6a639ac5de7b3ae7fe2df76ecf6424406566ba3dd4a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4a5d8b8a69def36658cf136816c82b451538e9e53de6d379b8f558644e2f4029:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:05bda5df061710638504bc1a782cf147454b7706424e4e8cd8449a7038d92f4f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:f5888c668b0df313c9bac16f5f76de013f6fc9922f3e5ea0c84821b501db8058:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:5cb30af0559e4270ae279f0781e608d92d465a13995b3593cebde0e9741b1a8c:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:1f7268213fd11dd81960958a881fe3f415837eddd4fd8f0fbff62b55ccf59277:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ea4ec2751c4010f6e1fa1753f0afcbb82629da5e5d055b61fb6152e9a1dd0f86:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:abf6c0005f8f2488c15a00f0d4f14aadc0041aa1b7e5b8afd723df3bcafdbcd3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:67298cb91f992ef87fdf095bf9b748760fdd3324e092a23e0d12f4876eab8f7f...
+done: 20.369716ms	
+time="2026-04-16T10:27:41Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:41Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:41Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r71:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:25714b743337db0c3cf010db86c6e713e75f9e4b8b1c9d7962bd2fe4a8c986bb:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:1a343dce7511118a66137d54bd454c99b97555628fb5de790e741ed5b4090fa2: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64340755a58b93813a4015e6c750d7dca43a9e2b302359b45c71c462bf471f94:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3448896b352fa89267915d09bbdca80d60271fb31bbc5c1b069b174349e49bfa:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:bce7a07611eb45db133c1bf9b3f5c7caf04c159e67a97ba9055fbe8847987ae7:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:970471aba47aa02ac8b8f400a090f419295ad721b7a8113f351a8d69f858a7c4:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:129633901f143524a83fe024c8944d6d471ee25f2405e1eddad8a26458a306e8:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:92d53c3c95d95705eb10c63835131acee06bb6641df43725b5e0ec3df18dc26e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:dddb5385ed0ad2799e7e0c4a46f7aa339605798b8f200a097cd1a4c98eaebbd7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2c63b39c7c4b767253edfe27a3f013b8084bed5f396fa3103e56be52612ad087:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:25714b743337db0c3cf010db86c6e713e75f9e4b8b1c9d7962bd2fe4a8c986bb...
+done: 19.114119ms	
+time="2026-04-16T10:27:41Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:42Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4111 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r74:latest:                                     resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:809f3d99ba3436d9954cfe9b50d0f9bcf3d3794472eec8635ee763f87313a8d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:9d6b7f7974c3a8f7b46b1a2f11419e4fb08a6aa3de0e9bf2096181f33a07de9f: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e2d518ad21f08042b070c552e46eeb1499982f234c9a1c3b293eeec90baa19ae:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7184d9fde2b3d361d358cd0fae053147827f5cec78315fd921e633a14de9c7c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:970471aba47aa02ac8b8f400a090f419295ad721b7a8113f351a8d69f858a7c4:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:af3b21ed4f42e414cccc0990be5e57382f9335a41ea38c88594c93b06445da58:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c0b32fe89ac202968ed671464e7c9b6dc77a9dcac21bfdd94e7c92ced161a56a:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:8450c42397e0ac765f09cd84b52527dd5c60b49fd9827cc6690b323af804eb66:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b64983dbfba6454ac522229c5a7c34d934667b375361761b0ffef34c9bc000ff:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:d3a86e2a8160d6a582808c26585aa5e57a50e710e62f3b3f8dd1b780c695e5d9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:809f3d99ba3436d9954cfe9b50d0f9bcf3d3794472eec8635ee763f87313a8d1...
+done: 16.930796ms	
+time="2026-04-16T10:27:42Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:42Z" level=info msg="host will try HTTPS first since it is configured for HTTP with a TLS configuration, consider changing host to HTTPS or removing unused TLS configuration" host="192.168.122.110:5000"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+time="2026-04-16T10:27:42Z" level=warning msg="skip to append distribution label: label key and value length (4110 bytes) greater than maximum size (4096 bytes), key: containerd.io/distribution.source.192.168.122.110: invalid argument"
+192.168.122.110:5000/brdnode_1439_r7:latest:                                      resolved       |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+index-sha256:8c25c16d0abddeea632cc11b5095edfd2487d1c9de759d726d3b6773011f9dbf:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+manifest-sha256:d08c7574a580d945902eb384bd98e4ba0d42db1ec2c7390f692f39e94e9426eb: done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:13b7e930469f6d3575a320709035c6acf6f5485a76abcf03d1b92a64c09c2476:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+config-sha256:1deba74528ddb9d299ab3c032136d975053799e03113e51cb294c218e56917d8:   done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:77183709a8af43a86bbfad904391821c19e36d7afe67529b6c5cb7f167fbf8fc:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:f55459fa5ee5b75aa099e58aa7389337cf67c606a64ab7f9cc59e031d054b9e5:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:34608cb22405250243a5e45518fb618d0bea826f8171514b271e7e4c1bef2752:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:450bb934662efe2c8c55922af96dfccb7cd62066a0861e11b9cc126c9592d6d7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:c954e5f88d9d9be1ed732898db6841e22d90078a4c76cf4717c4cc7edc74403e:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:ea4ec2751c4010f6e1fa1753f0afcbb82629da5e5d055b61fb6152e9a1dd0f86:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4accf72faab4ddbb011f63fff24e0656cd1cc9c9ad5293f7e7c0eaf80ed2872f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:2229323296fd0788580520d9635c12357eabeefb98b33f80240f26f398fd9977:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:8a29a47395cd3a02d8340f4325004f6ec371681754e5efa24afced2dbdd64272:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3ae3efc0fcd8719dbb0e1530ef8652ddbefe6ff54c39d9be7c65de1bfff004a1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:e59b44c60b0e4bef2712435bc1a530efe229ee8e4ce5e002fab156cab513cd4b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:a90ecc07d95569b126170f4aa2768ddd2b6230d10e26578ab30c1e5e906fcde9:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:b1a8b2706032f9c0f354be0daa46f3da6643916a3373ee5d2792dd2def0151d1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:48c63a55731a94aca37cae003a86d51ad1bf47e899bd1a6aeac76bb8688740c7:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:9f441ad30abc48467a6b8a9cda7188811487d4620338337f923a3f1595f847ba:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:64a5d8258ce2b42e67330b08d63621bb09cc797b102a21bad4732b2383fa04c0:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:1fc568b20327f1d09e0ac5a5f916d6dade48a79d7c382fe2d9087a07e9372e2b:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:627d127ec460220d96f3217456e158d7460e136a72b8245ec317808e94bc06b3:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:7a854a832e188116cb1d9b5b49bd38ec6c14f9cb5f01c6a361be34100c8bc74f:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+layer-sha256:3e740608074eeae180aa78f7de93f4e3f506d73c145d279e73868329fd903bd1:    done           |[32m++++++++++++++++++++++++++++++++++++++[0m| 
+elapsed: 0.1 s                                                                    total:   0.0 B (0.0 B/s)                                         
+unpacking linux/amd64 sha256:8c25c16d0abddeea632cc11b5095edfd2487d1c9de759d726d3b6773011f9dbf...
+done: 20.266436ms	
+✅ seed-k3s-worker1 preload completed

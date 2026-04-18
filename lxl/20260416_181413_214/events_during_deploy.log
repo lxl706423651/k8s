@@ -1,0 +1,104 @@
+===== 2026-04-16 18:29:02 namespace events =====
+
+===== 2026-04-16 18:29:38 namespace events =====
+4s          Normal   SuccessfulCreate    replicaset/as1277brd-r42-1.42.4.253-5797c85dfc   Created pod: as1277brd-r42-1.42.4.253-5797c85dfc-q2jnm
+4s          Normal   AddedInterface      pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Add net2 [] from seedemu-k3s-real-topo/net-1277-net-32-33
+4s          Normal   AddedInterface      pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Add eth0 [10.42.18.42/20] from cbr0
+4s          Normal   AddedInterface      pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Add eth0 [10.42.18.41/20] from cbr0
+4s          Normal   AddedInterface      pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Add eth0 [10.42.18.43/20] from cbr0
+4s          Normal   ScalingReplicaSet   deployment/as1277brd-r43-1.43.4.253              Scaled up replica set as1277brd-r43-1.43.4.253-74587f8dcc to 1
+4s          Normal   Started             pod/as1277brd-r25-1.25.4.253-55bd87f98f-4k6lr    Started container main
+4s          Normal   AddedInterface      pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Add net1 [1.33.4.253/16] from seedemu-k3s-real-topo/net-ix-ix33
+4s          Normal   Created             pod/as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk    Created container main
+4s          Normal   ScalingReplicaSet   deployment/as1277brd-r44-1.44.4.253              Scaled up replica set as1277brd-r44-1.44.4.253-5599868fc7 to 1
+4s          Normal   AddedInterface      pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Add net1 [1.34.4.253/16] from seedemu-k3s-real-topo/net-ix-ix34
+4s          Normal   ScalingReplicaSet   deployment/as1277brd-r42-1.42.4.253              Scaled up replica set as1277brd-r42-1.42.4.253-5797c85dfc to 1
+4s          Normal   Pulled              pod/as1277brd-r25-1.25.4.253-55bd87f98f-4k6lr    Container image "192.168.122.110:5000/brdnode_1277_r25:latest" already present on machine
+4s          Normal   SuccessfulCreate    replicaset/as1277brd-r41-1.41.4.253-7dd7fbd4f7   Created pod: as1277brd-r41-1.41.4.253-7dd7fbd4f7-8qbkb
+4s          Normal   ScalingReplicaSet   deployment/as1277brd-r41-1.41.4.253              Scaled up replica set as1277brd-r41-1.41.4.253-7dd7fbd4f7 to 1
+4s          Normal   Started             pod/as1277brd-r28-1.28.4.253-795cffb98b-zg2gl    Started container main
+4s          Normal   AddedInterface      pod/as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-30-31
+4s          Normal   AddedInterface      pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-33-34
+4s          Normal   AddedInterface      pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Add net2 [] from seedemu-k3s-real-topo/net-1277-net-30-31
+4s          Normal   AddedInterface      pod/as1277brd-r29-1.29.4.253-76bbb76864-vbtqw    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-28-29
+4s          Normal   AddedInterface      pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Add eth0 [10.42.18.40/20] from cbr0
+4s          Normal   AddedInterface      pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Add net1 [1.31.4.253/16] from seedemu-k3s-real-topo/net-ix-ix31
+4s          Normal   SuccessfulCreate    replicaset/as1277brd-r40-1.40.4.253-858dccc8cb   Created pod: as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj
+4s          Normal   AddedInterface      pod/as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-31-32
+4s          Normal   AddedInterface      pod/as1277brd-r28-1.28.4.253-795cffb98b-zg2gl    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-26-28
+4s          Normal   AddedInterface      pod/as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-29-30
+4s          Normal   SuccessfulCreate    replicaset/as1277brd-r39-1.39.4.253-578f5c9f9d   Created pod: as1277brd-r39-1.39.4.253-578f5c9f9d-d8c2s
+4s          Normal   Pulled              pod/as1277brd-r28-1.28.4.253-795cffb98b-zg2gl    Container image "192.168.122.110:5000/brdnode_1277_r28:latest" already present on machine
+4s          Normal   Created             pod/as1277brd-r28-1.28.4.253-795cffb98b-zg2gl    Created container main
+4s          Normal   Pulled              pod/as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk    Container image "192.168.122.110:5000/brdnode_1277_r30:latest" already present on machine
+4s          Normal   AddedInterface      pod/as1277brd-r29-1.29.4.253-76bbb76864-vbtqw    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-29-30
+4s          Normal   Created             pod/as1277brd-r25-1.25.4.253-55bd87f98f-4k6lr    Created container main
+3s          Normal   SuccessfulCreate    replicaset/as1277brd-r45-1.45.4.253-77f665b45b   Created pod: as1277brd-r45-1.45.4.253-77f665b45b-fpkr5
+3s          Normal   Created             pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Created container main
+3s          Normal   Started             pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Started container main
+3s          Normal   AddedInterface      pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Add eth0 [10.42.18.44/20] from cbr0
+3s          Normal   AddedInterface      pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Add net1 [1.37.4.253/16] from seedemu-k3s-real-topo/net-ix-ix37
+3s          Normal   Pulled              pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Container image "192.168.122.110:5000/brdnode_1277_r34:latest" already present on machine
+3s          Normal   AddedInterface      pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Add net1 [1.36.4.253/16] from seedemu-k3s-real-topo/net-ix-ix36
+3s          Normal   Started             pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Started container main
+3s          Normal   SuccessfulCreate    replicaset/as1277brd-r50-1.50.4.253-7bc8684bd6   Created pod: as1277brd-r50-1.50.4.253-7bc8684bd6-6qvw8
+3s          Normal   Started             pod/as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9    Started container main
+3s          Normal   Started             pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Started container main
+3s          Normal   ScalingReplicaSet   deployment/as1277brd-r50-1.50.4.253              Scaled up replica set as1277brd-r50-1.50.4.253-7bc8684bd6 to 1
+3s          Normal   AddedInterface      pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-34-35
+3s          Normal   AddedInterface      pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Add net1 [1.35.4.253/16] from seedemu-k3s-real-topo/net-ix-ix35
+3s          Normal   AddedInterface      pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Add net1 [1.38.4.253/16] from seedemu-k3s-real-topo/net-ix-ix38
+3s          Normal   Created             pod/as1277brd-r34-1.34.4.253-794758d777-2kvn2    Created container main
+3s          Normal   Created             pod/as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9    Created container main
+3s          Normal   Started             pod/as1277brd-r29-1.29.4.253-76bbb76864-vbtqw    Started container main
+3s          Normal   ScalingReplicaSet   deployment/as1277brd-r45-1.45.4.253              Scaled up replica set as1277brd-r45-1.45.4.253-77f665b45b to 1
+3s          Normal   Created             pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Created container main
+3s          Normal   Pulled              pod/as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9    Container image "192.168.122.110:5000/brdnode_1277_r32:latest" already present on machine
+3s          Normal   Pulled              pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Container image "192.168.122.110:5000/brdnode_1277_r33:latest" already present on machine
+3s          Normal   Pulled              pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Container image "192.168.122.110:5000/brdnode_1277_r31:latest" already present on machine
+3s          Normal   Created             pod/as1277brd-r29-1.29.4.253-76bbb76864-vbtqw    Created container main
+3s          Normal   Pulled              pod/as1277brd-r29-1.29.4.253-76bbb76864-vbtqw    Container image "192.168.122.110:5000/brdnode_1277_r29:latest" already present on machine
+3s          Normal   SuccessfulCreate    replicaset/as1277brd-r44-1.44.4.253-5599868fc7   Created pod: as1277brd-r44-1.44.4.253-5599868fc7-z9gfb
+3s          Normal   Started             pod/as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk    Started container main
+3s          Normal   AddedInterface      pod/as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-32-33
+3s          Normal   AddedInterface      pod/as1277brd-r31-1.31.4.253-9488495bf-bh56q     Add net3 [] from seedemu-k3s-real-topo/net-1277-net-31-32
+3s          Normal   AddedInterface      pod/as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd     Add net3 [] from seedemu-k3s-real-topo/net-1277-net-33-34
+3s          Normal   SuccessfulCreate    replicaset/as1277brd-r43-1.43.4.253-74587f8dcc   Created pod: as1277brd-r43-1.43.4.253-74587f8dcc-rd4fs
+2s          Normal   AddedInterface      pod/as1277brd-r41-1.41.4.253-7dd7fbd4f7-8qbkb    Add eth0 [10.42.18.46/20] from cbr0
+2s          Normal   AddedInterface      pod/as1277brd-r43-1.43.4.253-74587f8dcc-rd4fs    Add eth0 [10.42.18.48/20] from cbr0
+2s          Normal   AddedInterface      pod/as1277brd-r39-1.39.4.253-578f5c9f9d-d8c2s    Add eth0 [10.42.18.45/20] from cbr0
+2s          Normal   AddedInterface      pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-35-36
+2s          Normal   AddedInterface      pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Add net1 [1.40.4.253/16] from seedemu-k3s-real-topo/net-ix-ix40
+2s          Normal   AddedInterface      pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-38-39
+2s          Normal   AddedInterface      pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-36-37
+2s          Normal   AddedInterface      pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-35-36
+2s          Normal   AddedInterface      pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-40-41
+2s          Normal   AddedInterface      pod/as1277brd-r39-1.39.4.253-578f5c9f9d-d8c2s    Add net1 [1.39.4.253/16] from seedemu-k3s-real-topo/net-ix-ix39
+2s          Normal   AddedInterface      pod/as1277brd-r42-1.42.4.253-5797c85dfc-q2jnm    Add eth0 [10.42.18.47/20] from cbr0
+1s          Normal   Started             pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Started container main
+1s          Normal   AddedInterface      pod/as1277brd-r50-1.50.4.253-7bc8684bd6-6qvw8    Add eth0 [10.42.18.51/20] from cbr0
+1s          Normal   Pulled              pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Container image "192.168.122.110:5000/brdnode_1277_r36:latest" already present on machine
+1s          Normal   Created             pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Created container main
+1s          Normal   Created             pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Created container main
+1s          Normal   Created             pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Created container main
+1s          Normal   Pulled              pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Container image "192.168.122.110:5000/brdnode_1277_r37:latest" already present on machine
+1s          Normal   AddedInterface      pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-37-38
+1s          Normal   AddedInterface      pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-34-35
+1s          Normal   Started             pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Started container main
+1s          Normal   AddedInterface      pod/as1277brd-r41-1.41.4.253-7dd7fbd4f7-8qbkb    Add net1 [1.41.4.253/16] from seedemu-k3s-real-topo/net-ix-ix41
+1s          Normal   Started             pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Started container main
+1s          Normal   AddedInterface      pod/as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-36-37
+1s          Normal   Pulled              pod/as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48    Container image "192.168.122.110:5000/brdnode_1277_r35:latest" already present on machine
+1s          Normal   AddedInterface      pod/as1277brd-r45-1.45.4.253-77f665b45b-fpkr5    Add eth0 [10.42.18.49/20] from cbr0
+1s          Normal   Pulled              pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Container image "192.168.122.110:5000/brdnode_1277_r38:latest" already present on machine
+1s          Normal   AddedInterface      pod/as1277brd-r39-1.39.4.253-578f5c9f9d-d8c2s    Add net2 [] from seedemu-k3s-real-topo/net-1277-net-38-39
+1s          Normal   AddedInterface      pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-39-40
+1s          Normal   Created             pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Created container main
+1s          Normal   Started             pod/as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt    Started container main
+1s          Normal   Pulled              pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Container image "192.168.122.110:5000/brdnode_1277_r40:latest" already present on machine
+1s          Normal   AddedInterface      pod/as1277brd-r42-1.42.4.253-5797c85dfc-q2jnm    Add net1 [1.42.4.253/16] from seedemu-k3s-real-topo/net-ix-ix42
+1s          Normal   AddedInterface      pod/as1277brd-r43-1.43.4.253-74587f8dcc-rd4fs    Add net1 [1.43.4.253/16] from seedemu-k3s-real-topo/net-ix-ix43
+1s          Normal   Created             pod/as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj    Created container main
+1s          Normal   AddedInterface      pod/as1277brd-r37-1.37.4.253-58cb864869-sh9nm    Add net3 [] from seedemu-k3s-real-topo/net-1277-net-37-38
+1s          Normal   AddedInterface      pod/as1277brd-r44-1.44.4.253-5599868fc7-z9gfb    Add eth0 [10.42.18.50/20] from cbr0
+

@@ -1,0 +1,24 @@
+===== 2026-04-16 18:29:02 kubectl top nodes =====
+NAME               CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+seed-k3s-master    2462m        3%       11996Mi         9%          
+seed-k3s-worker1   148m         0%       2354Mi          3%          
+seed-k3s-worker2   222m         0%       2483Mi          4%          
+seed-k3s-worker3   1369m        4%       2011Mi          3%          
+seed-k3s-worker4   969m         3%       1976Mi          3%          
+seed-k3s-worker5   1001m        3%       1987Mi          3%          
+seed-k3s-worker6   100m         0%       1999Mi          3%          
+seed-k3s-worker7   103m         0%       1460Mi          2%          
+seed-k3s-worker8   55m          0%       1716Mi          2%          
+
+===== 2026-04-16 18:29:38 kubectl top nodes =====
+NAME               CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+seed-k3s-master    4153m        6%       12445Mi         10%         
+seed-k3s-worker1   363m         1%       2350Mi          3%          
+seed-k3s-worker2   325m         1%       2476Mi          4%          
+seed-k3s-worker3   279m         0%       1981Mi          3%          
+seed-k3s-worker4   241m         0%       1941Mi          3%          
+seed-k3s-worker5   232m         0%       1971Mi          3%          
+seed-k3s-worker6   175m         0%       1977Mi          3%          
+seed-k3s-worker7   262m         0%       1463Mi          2%          
+seed-k3s-worker8   72m          0%       1739Mi          2%          
+

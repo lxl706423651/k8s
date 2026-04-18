@@ -1,0 +1,1108 @@
+=== Deploy (Batched, 9-node) ===
+Log file: /home/lxl/k8s/lxl/20260416_181413_214/deploy.log
+Cluster nodes:
+  seed-k3s-master -> 192.168.122.110
+  seed-k3s-worker1 -> 192.168.122.111
+  seed-k3s-worker2 -> 192.168.122.112
+  seed-k3s-worker3 -> 192.168.122.113
+  seed-k3s-worker4 -> 192.168.122.114
+  seed-k3s-worker5 -> 192.168.122.115
+  seed-k3s-worker6 -> 192.168.122.116
+  seed-k3s-worker7 -> 192.168.122.117
+  seed-k3s-worker8 -> 192.168.122.118
+Batch size: 40
+Warmup batches: 3 x 10
+Batch sleep: 20s
+Monitor interval: 20s
+Use apply: false
+Pressure limits: pending<=200, creating<=300, notReady<=600, failed<=10
+Creating namespace...
+namespace/seedemu-k3s-real-topo created
+Starting node monitor in background...
+Monitor PID: 2780325
+Splitting manifest...
+Applying CRDs...
+Applying foundation objects...
+[foundation] doc_00001.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-44-45 created
+[foundation] doc_00002.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-147-158 created
+[foundation] doc_00003.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-8-9 created
+[foundation] doc_00004.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-171-189 created
+[foundation] doc_00005.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-135-147 created
+[foundation] doc_00006.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-40-41 created
+[foundation] doc_00007.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-83-94 created
+[foundation] doc_00008.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-41-42 created
+[foundation] doc_00009.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-314-344 created
+[foundation] doc_00010.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-18-19 created
+[foundation] doc_00011.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-9-10 created
+[foundation] doc_00012.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-75-83 created
+[foundation] doc_00013.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-94-96 created
+[foundation] doc_00014.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-96-99 created
+[foundation] doc_00015.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-42-43 created
+[foundation] doc_00016.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-38-39 created
+[foundation] doc_00017.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-68-70 created
+[foundation] doc_00018.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-16-17 created
+[foundation] doc_00019.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-63-68 created
+[foundation] doc_00020.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-12-13 created
+[foundation] doc_00021.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-22-23 created
+[foundation] doc_00022.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-2-347 created
+[foundation] doc_00023.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-237-259 created
+[foundation] doc_00024.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-13-14 created
+[foundation] doc_00025.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-158-167 created
+[foundation] doc_00026.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-50-51 created
+[foundation] doc_00027.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-99-108 created
+[foundation] doc_00028.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-51-52 created
+[foundation] doc_00029.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-23-24 created
+[foundation] doc_00030.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-19-20 created
+[foundation] doc_00031.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-24-25 created
+[foundation] doc_00032.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-55-58 created
+[foundation] doc_00033.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-219-221 created
+[foundation] doc_00034.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-58-60 created
+[foundation] doc_00035.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-20-21 created
+[foundation] doc_00036.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-108-113 created
+[foundation] doc_00037.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-30-31 created
+[foundation] doc_00038.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-45-50 created
+[foundation] doc_00039.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-25-26 created
+[foundation] doc_00040.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-73-75 created
+[foundation] doc_00041.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-259-296 created
+[foundation] doc_00042.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-21-22 created
+[foundation] doc_00043.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-52-55 created
+[foundation] doc_00044.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-14-16 created
+[foundation] doc_00045.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-31-32 created
+[foundation] doc_00046.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-17-18 created
+[foundation] doc_00047.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-10-12 created
+[foundation] doc_00048.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-5-6 created
+[foundation] doc_00049.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-60-61 created
+[foundation] doc_00050.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-189-190 created
+[foundation] doc_00051.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-28-29 created
+[foundation] doc_00052.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-190-219 created
+[foundation] doc_00053.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-71-73 created
+[foundation] doc_00054.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-29-30 created
+[foundation] doc_00055.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-61-62 created
+[foundation] doc_00056.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-126-127 created
+[foundation] doc_00057.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-2-3 created
+[foundation] doc_00058.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-221-227 created
+[foundation] doc_00059.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-62-63 created
+[foundation] doc_00060.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-3-4 created
+[foundation] doc_00061.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-35-36 created
+[foundation] doc_00062.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-127-128 created
+[foundation] doc_00063.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-36-37 created
+[foundation] doc_00064.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-122-125 created
+[foundation] doc_00065.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-344-345 created
+[foundation] doc_00066.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-128-129 created
+[foundation] doc_00067.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-32-33 created
+[foundation] doc_00068.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-4-5 created
+[foundation] doc_00069.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-113-122 created
+[foundation] doc_00070.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-37-38 created
+[foundation] doc_00071.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-6-7 created
+[foundation] doc_00072.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-300-314 created
+[foundation] doc_00073.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-345-346 created
+[foundation] doc_00074.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-33-34 created
+[foundation] doc_00075.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-26-28 created
+[foundation] doc_00076.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-43-44 created
+[foundation] doc_00077.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-70-71 created
+[foundation] doc_00078.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-125-126 created
+[foundation] doc_00079.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-167-171 created
+[foundation] doc_00080.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-346-347 created
+[foundation] doc_00081.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-39-40 created
+[foundation] doc_00082.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-34-35 created
+[foundation] doc_00083.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-129-135 created
+[foundation] doc_00084.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-227-237 created
+[foundation] doc_00085.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-296-300 created
+[foundation] doc_00086.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1277-net-7-8 created
+[foundation] doc_00087.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-3-4 created
+[foundation] doc_00088.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-495-518 created
+[foundation] doc_00089.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-122-156 created
+[foundation] doc_00090.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-4-6 created
+[foundation] doc_00091.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-12-13 created
+[foundation] doc_00092.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-21-22 created
+[foundation] doc_00093.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-74-122 created
+[foundation] doc_00094.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-22-23 created
+[foundation] doc_00095.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-156-237 created
+[foundation] doc_00096.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-10-12 created
+[foundation] doc_00097.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-19-21 created
+[foundation] doc_00098.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-71-74 created
+[foundation] doc_00099.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-7-10 created
+[foundation] doc_00100.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-18-19 created
+[foundation] doc_00101.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-403-495 created
+[foundation] doc_00102.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-25-43 created
+[foundation] doc_00103.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-23-24 created
+[foundation] doc_00104.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-3-518 created
+[foundation] doc_00105.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-13-16 created
+[foundation] doc_00106.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-6-7 created
+[foundation] doc_00107.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-24-25 created
+[foundation] doc_00108.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-16-18 created
+[foundation] doc_00109.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-237-352 created
+[foundation] doc_00110.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-352-403 created
+[foundation] doc_00111.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-1439-net-43-71 created
+[foundation] doc_00112.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-339-403 created
+[foundation] doc_00113.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-23-106 created
+[foundation] doc_00114.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-106-206 created
+[foundation] doc_00115.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-23-533 created
+[foundation] doc_00116.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-206-237 created
+[foundation] doc_00117.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-403-533 created
+[foundation] doc_00118.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-2010-net-237-339 created
+[foundation] doc_00119.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix259 created
+[foundation] doc_00120.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix52 created
+[foundation] doc_00121.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix30 created
+[foundation] doc_00122.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix25 created
+[foundation] doc_00123.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix227 created
+[foundation] doc_00124.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix74 created
+[foundation] doc_00125.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix135 created
+[foundation] doc_00126.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix129 created
+[foundation] doc_00127.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix73 created
+[foundation] doc_00128.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix16 created
+[foundation] doc_00129.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix61 created
+[foundation] doc_00130.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix24 created
+[foundation] doc_00131.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix71 created
+[foundation] doc_00132.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix171 created
+[foundation] doc_00133.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix44 created
+[foundation] doc_00134.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix20 created
+[foundation] doc_00135.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix96 created
+[foundation] doc_00136.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix219 created
+[foundation] doc_00137.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix296 created
+[foundation] doc_00138.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix6 created
+[foundation] doc_00139.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix206 created
+[foundation] doc_00140.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix36 created
+[foundation] doc_00141.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix8 created
+[foundation] doc_00142.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix5 created
+[foundation] doc_00143.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix18 created
+[foundation] doc_00144.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix4 created
+[foundation] doc_00145.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix13 created
+[foundation] doc_00146.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix106 created
+[foundation] doc_00147.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix39 created
+[foundation] doc_00148.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix495 created
+[foundation] doc_00149.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix314 created
+[foundation] doc_00150.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix23 created
+[foundation] doc_00151.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix156 created
+[foundation] doc_00152.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix339 created
+[foundation] doc_00153.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix34 created
+[foundation] doc_00154.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix29 created
+[foundation] doc_00155.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix122 created
+[foundation] doc_00156.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix22 created
+[foundation] doc_00157.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix32 created
+[foundation] doc_00158.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix345 created
+[foundation] doc_00159.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix518 created
+[foundation] doc_00160.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix125 created
+[foundation] doc_00161.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix533 created
+[foundation] doc_00162.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix31 created
+[foundation] doc_00163.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix51 created
+[foundation] doc_00164.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix108 created
+[foundation] doc_00165.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix28 created
+[foundation] doc_00166.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix12 created
+[foundation] doc_00167.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix126 created
+[foundation] doc_00168.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix50 created
+[foundation] doc_00169.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix55 created
+[foundation] doc_00170.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix99 created
+[foundation] doc_00171.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix9 created
+[foundation] doc_00172.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix347 created
+[foundation] doc_00173.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix60 created
+[foundation] doc_00174.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix68 created
+[foundation] doc_00175.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix33 created
+[foundation] doc_00176.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix63 created
+[foundation] doc_00177.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix58 created
+[foundation] doc_00178.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix7 created
+[foundation] doc_00179.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix26 created
+[foundation] doc_00180.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix62 created
+[foundation] doc_00181.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix41 created
+[foundation] doc_00182.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix45 created
+[foundation] doc_00183.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix42 created
+[foundation] doc_00184.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix352 created
+[foundation] doc_00185.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix403 created
+[foundation] doc_00186.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix190 created
+[foundation] doc_00187.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix40 created
+[foundation] doc_00188.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix344 created
+[foundation] doc_00189.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix19 created
+[foundation] doc_00190.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix38 created
+[foundation] doc_00191.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix237 created
+[foundation] doc_00192.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix35 created
+[foundation] doc_00193.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix189 created
+[foundation] doc_00194.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix158 created
+[foundation] doc_00195.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix10 created
+[foundation] doc_00196.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix75 created
+[foundation] doc_00197.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix147 created
+[foundation] doc_00198.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix70 created
+[foundation] doc_00199.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix3 created
+[foundation] doc_00200.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix127 created
+[foundation] doc_00201.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix94 created
+[foundation] doc_00202.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix221 created
+[foundation] doc_00203.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix346 created
+[foundation] doc_00204.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix37 created
+[foundation] doc_00205.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix21 created
+[foundation] doc_00206.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix2 created
+[foundation] doc_00207.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix113 created
+[foundation] doc_00208.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix300 created
+[foundation] doc_00209.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix14 created
+[foundation] doc_00210.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix167 created
+[foundation] doc_00211.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix17 created
+[foundation] doc_00212.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix43 created
+[foundation] doc_00213.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix83 created
+[foundation] doc_00214.yaml
+networkattachmentdefinition.k8s.cni.cncf.io/net-ix-ix128 created
+[foundation] doc_00215.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r2-1.2.4.253 created
+[foundation] doc_00216.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r3-1.3.4.253 created
+[foundation] doc_00217.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r4-1.4.4.253 created
+[foundation] doc_00218.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r5-1.5.4.253 created
+[foundation] doc_00219.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r6-1.6.4.253 created
+[foundation] doc_00220.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r7-1.7.4.253 created
+[foundation] doc_00221.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r8-1.8.4.253 created
+[foundation] doc_00222.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r9-1.9.4.253 created
+[foundation] doc_00223.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r10-1.10.4.253 created
+[foundation] doc_00224.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r12-1.12.4.253 created
+[foundation] doc_00225.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r13-1.13.4.253 created
+[foundation] doc_00226.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r14-1.14.4.253 created
+[foundation] doc_00227.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r16-1.16.4.253 created
+[foundation] doc_00228.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r17-1.17.4.253 created
+[foundation] doc_00229.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r18-1.18.4.253 created
+[foundation] doc_00230.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r19-1.19.4.253 created
+[foundation] doc_00231.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r20-1.20.4.253 created
+[foundation] doc_00232.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r21-1.21.4.253 created
+[foundation] doc_00233.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r22-1.22.4.253 created
+[foundation] doc_00234.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r23-1.23.4.253 created
+[foundation] doc_00235.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r24-1.24.4.253 created
+[foundation] doc_00236.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r25-1.25.4.253 created
+[foundation] doc_00237.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r26-1.26.4.253 created
+[foundation] doc_00238.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r28-1.28.4.253 created
+[foundation] doc_00239.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r29-1.29.4.253 created
+[foundation] doc_00240.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r30-1.30.4.253 created
+[foundation] doc_00241.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r31-1.31.4.253 created
+[foundation] doc_00242.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r32-1.32.4.253 created
+[foundation] doc_00243.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r33-1.33.4.253 created
+[foundation] doc_00244.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r34-1.34.4.253 created
+[foundation] doc_00245.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r35-1.35.4.253 created
+[foundation] doc_00246.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r36-1.36.4.253 created
+[foundation] doc_00247.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r37-1.37.4.253 created
+[foundation] doc_00248.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r38-1.38.4.253 created
+[foundation] doc_00249.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r39-1.39.4.253 created
+[foundation] doc_00250.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r40-1.40.4.253 created
+[foundation] doc_00251.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r41-1.41.4.253 created
+[foundation] doc_00252.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r42-1.42.4.253 created
+[foundation] doc_00253.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r43-1.43.4.253 created
+[foundation] doc_00254.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r44-1.44.4.253 created
+[foundation] doc_00255.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r45-1.45.4.253 created
+[foundation] doc_00256.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r50-1.50.4.253 created
+[foundation] doc_00257.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r51-1.51.4.253 created
+[foundation] doc_00258.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r52-1.52.4.253 created
+[foundation] doc_00259.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r55-1.55.4.253 created
+[foundation] doc_00260.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r58-1.58.4.253 created
+[foundation] doc_00261.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r60-1.60.4.253 created
+[foundation] doc_00262.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r61-1.61.4.253 created
+[foundation] doc_00263.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r62-1.62.4.253 created
+[foundation] doc_00264.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r63-1.63.4.253 created
+[foundation] doc_00265.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r68-1.68.4.253 created
+[foundation] doc_00266.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r70-1.70.4.253 created
+[foundation] doc_00267.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r71-1.71.4.253 created
+[foundation] doc_00268.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r73-1.73.4.253 created
+[foundation] doc_00269.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r75-1.75.4.253 created
+[foundation] doc_00270.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r83-1.83.4.253 created
+[foundation] doc_00271.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r94-1.94.4.253 created
+[foundation] doc_00272.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r96-1.96.4.253 created
+[foundation] doc_00273.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r99-1.99.4.253 created
+[foundation] doc_00274.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r108-1.108.4.253 created
+[foundation] doc_00275.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r113-1.113.4.253 created
+[foundation] doc_00276.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r122-1.122.4.253 created
+[foundation] doc_00277.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r125-1.125.4.253 created
+[foundation] doc_00278.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r126-1.126.4.253 created
+[foundation] doc_00279.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r127-1.127.4.253 created
+[foundation] doc_00280.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r128-1.128.4.253 created
+[foundation] doc_00281.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r129-1.129.4.253 created
+[foundation] doc_00282.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r135-1.135.4.253 created
+[foundation] doc_00283.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r147-1.147.4.253 created
+[foundation] doc_00284.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r158-1.158.4.253 created
+[foundation] doc_00285.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r167-1.167.4.253 created
+[foundation] doc_00286.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r171-1.171.4.253 created
+[foundation] doc_00287.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r189-1.189.4.253 created
+[foundation] doc_00288.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r190-1.190.4.253 created
+[foundation] doc_00289.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r219-1.219.4.253 created
+[foundation] doc_00290.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r221-1.221.4.253 created
+[foundation] doc_00291.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r227-1.227.4.253 created
+[foundation] doc_00292.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r237-1.237.4.253 created
+[foundation] doc_00293.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r259-2.3.4.253 created
+[foundation] doc_00294.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r296-2.40.4.253 created
+[foundation] doc_00295.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r300-2.44.4.253 created
+[foundation] doc_00296.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r314-2.58.4.253 created
+[foundation] doc_00297.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r344-2.88.4.253 created
+[foundation] doc_00298.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r345-2.89.4.253 created
+[foundation] doc_00299.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r346-2.90.4.253 created
+[foundation] doc_00300.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1277brd-r347-2.91.4.253 created
+[foundation] doc_00301.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r3-1.3.5.159 created
+[foundation] doc_00302.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r4-1.4.5.159 created
+[foundation] doc_00303.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r6-1.6.5.159 created
+[foundation] doc_00304.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r7-1.7.5.159 created
+[foundation] doc_00305.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r10-1.10.5.159 created
+[foundation] doc_00306.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r12-1.12.5.159 created
+[foundation] doc_00307.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r13-1.13.5.159 created
+[foundation] doc_00308.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r16-1.16.5.159 created
+[foundation] doc_00309.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r18-1.18.5.159 created
+[foundation] doc_00310.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r19-1.19.5.159 created
+[foundation] doc_00311.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r21-1.21.5.159 created
+[foundation] doc_00312.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r22-1.22.5.159 created
+[foundation] doc_00313.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r23-1.23.5.159 created
+[foundation] doc_00314.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r24-1.24.5.159 created
+[foundation] doc_00315.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r25-1.25.5.159 created
+[foundation] doc_00316.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r43-1.43.5.159 created
+[foundation] doc_00317.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r71-1.71.5.159 created
+[foundation] doc_00318.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r74-1.74.5.159 created
+[foundation] doc_00319.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r122-1.122.5.159 created
+[foundation] doc_00320.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r156-1.156.5.159 created
+[foundation] doc_00321.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r237-1.237.5.159 created
+[foundation] doc_00322.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r352-2.96.5.159 created
+[foundation] doc_00323.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r403-2.147.5.159 created
+[foundation] doc_00324.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r495-2.239.5.159 created
+[foundation] doc_00325.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as1439brd-r518-3.6.5.159 created
+[foundation] doc_00326.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r23-1.23.7.218 created
+[foundation] doc_00327.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r106-1.106.7.218 created
+[foundation] doc_00328.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r206-1.206.7.218 created
+[foundation] doc_00329.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r237-1.237.7.218 created
+[foundation] doc_00330.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r339-2.83.7.218 created
+[foundation] doc_00331.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r403-2.147.7.218 created
+[foundation] doc_00332.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2010brd-r533-3.21.7.218 created
+[foundation] doc_00333.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as259brd-ix259-2.3.1.3 created
+[foundation] doc_00334.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as52brd-ix52-1.52.0.52 created
+[foundation] doc_00335.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as30brd-ix30-1.30.0.30 created
+[foundation] doc_00336.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as25brd-ix25-1.25.0.25 created
+[foundation] doc_00337.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as227brd-ix227-1.227.0.227 created
+[foundation] doc_00338.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as74brd-ix74-1.74.0.74 created
+[foundation] doc_00339.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as135brd-ix135-1.135.0.135 created
+[foundation] doc_00340.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as129brd-ix129-1.129.0.129 created
+[foundation] doc_00341.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as73brd-ix73-1.73.0.73 created
+[foundation] doc_00342.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as16brd-ix16-1.16.0.16 created
+[foundation] doc_00343.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as61brd-ix61-1.61.0.61 created
+[foundation] doc_00344.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as24brd-ix24-1.24.0.24 created
+[foundation] doc_00345.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as71brd-ix71-1.71.0.71 created
+[foundation] doc_00346.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as171brd-ix171-1.171.0.171 created
+[foundation] doc_00347.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as44brd-ix44-1.44.0.44 created
+[foundation] doc_00348.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as20brd-ix20-1.20.0.20 created
+[foundation] doc_00349.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as96brd-ix96-1.96.0.96 created
+[foundation] doc_00350.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as219brd-ix219-1.219.0.219 created
+[foundation] doc_00351.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as296brd-ix296-2.40.1.40 created
+[foundation] doc_00352.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as6brd-ix6-1.6.0.6 created
+[foundation] doc_00353.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as206brd-ix206-1.206.0.206 created
+[foundation] doc_00354.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as36brd-ix36-1.36.0.36 created
+[foundation] doc_00355.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as8brd-ix8-1.8.0.8 created
+[foundation] doc_00356.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as5brd-ix5-1.5.0.5 created
+[foundation] doc_00357.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as18brd-ix18-1.18.0.18 created
+[foundation] doc_00358.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as4brd-ix4-1.4.0.4 created
+[foundation] doc_00359.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as13brd-ix13-1.13.0.13 created
+[foundation] doc_00360.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as106brd-ix106-1.106.0.106 created
+[foundation] doc_00361.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as39brd-ix39-1.39.0.39 created
+[foundation] doc_00362.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as495brd-ix495-2.239.1.239 created
+[foundation] doc_00363.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as314brd-ix314-2.58.1.58 created
+[foundation] doc_00364.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as23brd-ix23-1.23.0.23 created
+[foundation] doc_00365.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as156brd-ix156-1.156.0.156 created
+[foundation] doc_00366.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as339brd-ix339-2.83.1.83 created
+[foundation] doc_00367.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as34brd-ix34-1.34.0.34 created
+[foundation] doc_00368.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as29brd-ix29-1.29.0.29 created
+[foundation] doc_00369.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as122brd-ix122-1.122.0.122 created
+[foundation] doc_00370.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as22brd-ix22-1.22.0.22 created
+[foundation] doc_00371.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as32brd-ix32-1.32.0.32 created
+[foundation] doc_00372.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as345brd-ix345-2.89.1.89 created
+[foundation] doc_00373.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as518brd-ix518-3.6.2.6 created
+[foundation] doc_00374.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as125brd-ix125-1.125.0.125 created
+[foundation] doc_00375.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as533brd-ix533-3.21.2.21 created
+[foundation] doc_00376.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as31brd-ix31-1.31.0.31 created
+[foundation] doc_00377.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as51brd-ix51-1.51.0.51 created
+[foundation] doc_00378.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as108brd-ix108-1.108.0.108 created
+[foundation] doc_00379.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as28brd-ix28-1.28.0.28 created
+[foundation] doc_00380.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as12brd-ix12-1.12.0.12 created
+[foundation] doc_00381.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as126brd-ix126-1.126.0.126 created
+[foundation] doc_00382.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as50brd-ix50-1.50.0.50 created
+[foundation] doc_00383.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as55brd-ix55-1.55.0.55 created
+[foundation] doc_00384.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as99brd-ix99-1.99.0.99 created
+[foundation] doc_00385.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as9brd-ix9-1.9.0.9 created
+[foundation] doc_00386.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as347brd-ix347-2.91.1.91 created
+[foundation] doc_00387.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as60brd-ix60-1.60.0.60 created
+[foundation] doc_00388.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as68brd-ix68-1.68.0.68 created
+[foundation] doc_00389.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as33brd-ix33-1.33.0.33 created
+[foundation] doc_00390.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as63brd-ix63-1.63.0.63 created
+[foundation] doc_00391.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as58brd-ix58-1.58.0.58 created
+[foundation] doc_00392.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as7brd-ix7-1.7.0.7 created
+[foundation] doc_00393.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as26brd-ix26-1.26.0.26 created
+[foundation] doc_00394.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as62brd-ix62-1.62.0.62 created
+[foundation] doc_00395.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as41brd-ix41-1.41.0.41 created
+[foundation] doc_00396.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as45brd-ix45-1.45.0.45 created
+[foundation] doc_00397.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as42brd-ix42-1.42.0.42 created
+[foundation] doc_00398.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as352brd-ix352-2.96.1.96 created
+[foundation] doc_00399.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as403brd-ix403-2.147.1.147 created
+[foundation] doc_00400.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as190brd-ix190-1.190.0.190 created
+[foundation] doc_00401.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as40brd-ix40-1.40.0.40 created
+[foundation] doc_00402.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as344brd-ix344-2.88.1.88 created
+[foundation] doc_00403.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as19brd-ix19-1.19.0.19 created
+[foundation] doc_00404.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as38brd-ix38-1.38.0.38 created
+[foundation] doc_00405.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as237brd-ix237-1.237.0.237 created
+[foundation] doc_00406.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as35brd-ix35-1.35.0.35 created
+[foundation] doc_00407.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as189brd-ix189-1.189.0.189 created
+[foundation] doc_00408.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as158brd-ix158-1.158.0.158 created
+[foundation] doc_00409.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as10brd-ix10-1.10.0.10 created
+[foundation] doc_00410.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as75brd-ix75-1.75.0.75 created
+[foundation] doc_00411.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as147brd-ix147-1.147.0.147 created
+[foundation] doc_00412.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as70brd-ix70-1.70.0.70 created
+[foundation] doc_00413.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as3brd-ix3-1.3.0.3 created
+[foundation] doc_00414.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as127brd-ix127-1.127.0.127 created
+[foundation] doc_00415.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as94brd-ix94-1.94.0.94 created
+[foundation] doc_00416.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as221brd-ix221-1.221.0.221 created
+[foundation] doc_00417.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as346brd-ix346-2.90.1.90 created
+[foundation] doc_00418.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as37brd-ix37-1.37.0.37 created
+[foundation] doc_00419.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as21brd-ix21-1.21.0.21 created
+[foundation] doc_00420.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as2brd-ix2-1.2.0.2 created
+[foundation] doc_00421.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as113brd-ix113-1.113.0.113 created
+[foundation] doc_00422.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as300brd-ix300-2.44.1.44 created
+[foundation] doc_00423.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as14brd-ix14-1.14.0.14 created
+[foundation] doc_00424.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as167brd-ix167-1.167.0.167 created
+[foundation] doc_00425.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as17brd-ix17-1.17.0.17 created
+[foundation] doc_00426.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as43brd-ix43-1.43.0.43 created
+[foundation] doc_00427.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as83brd-ix83-1.83.0.83 created
+[foundation] doc_00428.yaml
+Warning: metadata.name: this is used in Pod names and hostnames, which can result in surprising behavior; a DNS label is recommended: [must not contain dots]
+deployment.apps/as128brd-ix128-1.128.0.128 created
+Applying services...
+Applying controllers in node-balanced batches...
+[controllers] no resources
+
+Deploy submitted successfully.
+This still does NOT mean all pods are Running/Ready.
+Next step:
+  /home/lxl/k8s/lxl/wait-ready
+
+Quick checks:
+  kubectl get pods -n seedemu-k3s-real-topo -o wide
+  kubectl get events -n seedemu-k3s-real-topo --sort-by='.lastTimestamp'
+  kubectl top nodes

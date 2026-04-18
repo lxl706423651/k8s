@@ -1,0 +1,8 @@
+{
+  "generated_at": "2026-04-16T10:30:51.179899+00:00",
+  "namespace": "seedemu-k3s-real-topo",
+  "targets": 214,
+  "status": "PASS",
+  "failure_reason": "",
+  "strategy": "node-aware-concurrency"
+}

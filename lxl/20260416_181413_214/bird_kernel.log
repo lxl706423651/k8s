@@ -1,0 +1,16 @@
+[2026-04-16 10:32:10 UTC] === K8s BIRD Kernel Switcher (ALL Mode) (Node-Aware) ===
+[2026-04-16 10:32:10 UTC] 🚀 Grouped 214 targets into 9 nodes.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker8] finished: Switched 14/14 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker7] finished: Switched 14/14 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker2] finished: Switched 15/15 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker4] finished: Switched 15/15 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker5] finished: Switched 15/15 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker3] finished: Switched 15/15 pods.
+[2026-04-16 10:32:19 UTC] ✅ Node [seed-k3s-worker6] finished: Switched 15/15 pods.
+[2026-04-16 10:32:26 UTC] ✅ Node [seed-k3s-worker1] finished: Switched 25/25 pods.
+[2026-04-16 10:32:42 UTC]  -> Node [seed-k3s-master] Progress: Switched 50/86 pods...
+[2026-04-16 10:33:06 UTC] ✅ Node [seed-k3s-master] finished: Switched 86/86 pods.
+[2026-04-16 10:33:06 UTC] Waiting 15 seconds for Kernel routing injection to begin...
+[2026-04-16 10:33:21 UTC] ⏳ Waiting for Kernel Route injection convergence (Load < 40.0) across 9 nodes...
+[2026-04-16 10:33:22 UTC] ✅ Kernel routing stabilized! Final loads: seed-k3s-worker3: 0.06 🟢, seed-k3s-worker4: 0.07 🟢, seed-k3s-worker5: 0.08 🟢, seed-k3s-worker6: 0.16 🟢, seed-k3s-worker7: 0.06 🟢, seed-k3s-worker8: 0.03 🟢, seed-k3s-worker2: 0.26 🟢, seed-k3s-master: 1.14 🟢, seed-k3s-worker1: 0.37 🟢
+[2026-04-16 10:33:22 UTC] 🎉 Kernel Switch to [all] completed flawlessly in 72.62s!

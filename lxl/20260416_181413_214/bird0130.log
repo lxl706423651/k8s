@@ -1,0 +1,29 @@
+[2026-04-16 10:30:50 UTC] === K8s BIRD Orchestrator (Node-Aware Concurrency) ===
+[2026-04-16 10:30:51 UTC] 🚀 Phase 1: Grouped 214 targets into 9 nodes.
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker3 -> 15 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker4 -> 15 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker5 -> 15 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker6 -> 15 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker7 -> 14 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker8 -> 14 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker2 -> 15 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-master -> 86 pods
+[2026-04-16 10:30:51 UTC]  - Node: seed-k3s-worker1 -> 25 pods
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker8] finished: Started 14/14 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker7] finished: Started 14/14 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker2] finished: Started 15/15 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker3] finished: Started 15/15 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker6] finished: Started 15/15 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker4] finished: Started 15/15 pods.
+[2026-04-16 10:30:54 UTC]  -> Node [seed-k3s-worker5] finished: Started 15/15 pods.
+[2026-04-16 10:30:56 UTC]  -> Node [seed-k3s-worker1] finished: Started 25/25 pods.
+[2026-04-16 10:31:10 UTC]  -> Node [seed-k3s-master] finished: Started 86/86 pods.
+[2026-04-16 10:31:10 UTC] Waiting 20 seconds before initial load check...
+[2026-04-16 10:31:30 UTC] ⏳ Waiting for BGP convergence (Load < 40) across 9 nodes...
+[2026-04-16 10:31:32 UTC] [Load Check] seed-k3s-worker3: 0.23 🟢 | seed-k3s-worker4: 0.26 🟢 | seed-k3s-worker5: 0.32 🟢 | seed-k3s-worker6: 0.43 🟢 | seed-k3s-worker7: 0.38 🟢 | seed-k3s-worker8: 0.20 🟢 | seed-k3s-worker2: 0.60 🟢 | seed-k3s-master: 5.10 🟢 | seed-k3s-worker1: 1.48 🟢 (Target: <40)
+[2026-04-16 10:31:32 UTC] ✅ All cluster nodes stabilized! Final loads: seed-k3s-worker3: 0.23 🟢, seed-k3s-worker4: 0.26 🟢, seed-k3s-worker5: 0.32 🟢, seed-k3s-worker6: 0.43 🟢, seed-k3s-worker7: 0.38 🟢, seed-k3s-worker8: 0.20 🟢, seed-k3s-worker2: 0.60 🟢, seed-k3s-master: 5.10 🟢, seed-k3s-worker1: 1.48 🟢
+[2026-04-16 10:31:32 UTC] 🔎 Phase 3 round 1: verifying birdc status across 214 pods...
+[2026-04-16 10:32:07 UTC] 🔎 Phase 3 round 1: checked 200/214 pods, pending=0
+[2026-04-16 10:32:10 UTC] 🔎 Phase 3 round 1: checked 214/214 pods, pending=0
+[2026-04-16 10:32:10 UTC] ✅ Phase 3: All target pods respond to birdc show status!
+[2026-04-16 10:32:10 UTC] 🎉 Orchestration Completed flawlessly in 79.46s!

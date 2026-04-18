@@ -1,0 +1,359 @@
+===== 2026-04-16 18:29:02 node=192.168.122.110 =====
+--- uptime ---
+ 10:29:03 up  5:12,  0 users,  load average: 3.24, 4.61, 4.06
+--- /proc/loadavg ---
+3.24 4.61 4.06 4/3810 553731
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:          120731        4091       98960           4       17679      115471
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 3  0      0 101335640 1500144 16603228    0    0     7   122    9    5  3  6 91  0  0
+ 1  0      0 101337168 1500144 16603228    0    0     0  1572 68462 132841  2  1 96  0  0
+--- top (batch) ---
+top - 10:29:04 up  5:12,  0 users,  load average: 3.24, 4.61, 4.06
+Tasks: 652 total,   1 running, 651 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.3 us,  1.9 sy,  0.0 ni, 95.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem : 120731.0 total,  98962.6 free,   4089.3 used,  17679.1 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 115473.2 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   1269 root      20   0 8363976   1.4g   1.4g S 172.2   1.2  54:19.96 contain+
+   4263 root      20   0   22.1g   7.5g   6.7g S 127.8   6.3 122:03.58 dockerd
+ 553734 ubuntu    20   0   11744   4484   3408 R  22.2   0.0   0:00.07 top
+  27051 root      20   0 7763640 884180 121972 S  16.7   0.7 403:45.63 k3s-ser+
+      1 root      20   0  186912  31940   8392 S   0.0   0.0   3:22.17 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.34 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+
+===== 2026-04-16 18:29:04 node=192.168.122.111 =====
+--- uptime ---
+ 10:29:04 up 18:57,  0 users,  load average: 0.17, 0.11, 0.15
+--- /proc/loadavg ---
+0.17 0.11 0.15 1/596 3302744
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1635       55027           3        3598       57936
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 56348412 571192 3113524    0    0     1    22   10   16  1  1 99  0  0
+ 0  0      0 56348412 571192 3113524    0    0     0     0  386  671  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:05 up 18:57,  0 users,  load average: 0.17, 0.11, 0.15
+Tasks: 355 total,   1 running, 354 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.2 us,  0.3 sy,  0.0 ni, 99.3 id,  0.2 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  55027.3 free,   1635.7 used,   3598.4 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  57935.5 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3302747 ubuntu    20   0   11340   4104   3260 R  11.8   0.0   0:00.04 top
+      1 root      20   0  186904  32472   8284 S   0.0   0.1   8:55.68 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.35 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.97 ksoftir+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:41.94 rcu_sch+
+
+===== 2026-04-16 18:29:05 node=192.168.122.112 =====
+--- uptime ---
+ 10:29:06 up 18:56,  0 users,  load average: 0.04, 0.12, 0.25
+--- /proc/loadavg ---
+0.04 0.12 0.25 1/670 3227390
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1740       54392           3        4127       57830
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 55698140 578132 3648596    0    0     1    22    9   14  1  1 99  0  0
+ 0  0      0 55697920 578132 3648596    0    0     0     0  820 1371  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:07 up 18:56,  0 users,  load average: 0.04, 0.12, 0.25
+Tasks: 364 total,   1 running, 363 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.2 us,  0.7 sy,  0.0 ni, 99.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  54392.7 free,   1740.9 used,   4127.7 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  57830.4 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+  11163 root      20   0 5560268 235164 106740 S   5.9   0.4  79:26.36 k3s-age+
+3227393 ubuntu    20   0   11472   4236   3396 R   5.9   0.0   0:00.03 top
+      1 root      20   0  192420  38024   8456 S   0.0   0.1   8:28.88 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.35 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.28 ksoftir+
+
+===== 2026-04-16 18:29:07 node=192.168.122.113 =====
+--- uptime ---
+ 10:29:08 up 18:53,  0 users,  load average: 0.12, 0.05, 0.07
+--- /proc/loadavg ---
+0.12 0.05 0.07 1/731 2631056
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1662       53699           3        4899       57908
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 54987552  90512 4926776    0    0     0    21   17    1  1  1 99  0  0
+ 0  0      0 54986396  90512 4926800    0    0     0     0  478  821  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:09 up 18:53,  0 users,  load average: 0.12, 0.05, 0.07
+Tasks: 351 total,   1 running, 350 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.3 us,  0.5 sy,  0.0 ni, 99.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  53697.2 free,   1664.4 used,   4899.7 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  57906.8 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+2631059 ubuntu    20   0   11340   4180   3344 R  11.8   0.0   0:00.03 top
+   7597 root      20   0 5559036 236456 109448 S   5.9   0.4  82:08.88 k3s-age+
+      1 root      20   0  192456  37444   8560 S   0.0   0.1   6:40.02 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.15 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.04 ksoftir+
+
+===== 2026-04-16 18:29:09 node=192.168.122.114 =====
+--- uptime ---
+ 10:29:10 up 18:53,  0 users,  load average: 0.16, 0.08, 0.07
+--- /proc/loadavg ---
+0.16 0.08 0.07 1/560 3310609
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1645       53675           3        4940       57925
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 54963656  89860 4968912    0    0     0    24    5   14  1  1 99  0  0
+ 0  0      0 54967720  89860 4968908    0    0     0     0 2166 1145  1  0 99  0  0
+--- top (batch) ---
+top - 10:29:11 up 18:53,  0 users,  load average: 0.16, 0.08, 0.07
+Tasks: 350 total,   1 running, 349 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.5 sy,  0.0 ni, 99.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  53680.4 free,   1640.7 used,   4940.2 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  57930.6 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3310612 ubuntu    20   0   11336   4328   3480 R   5.9   0.0   0:00.03 top
+      1 root      20   0  192408  37304   8480 S   0.0   0.1   7:13.41 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.12 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.10 ksoftir+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:34.39 rcu_sch+
+
+===== 2026-04-16 18:29:11 node=192.168.122.115 =====
+--- uptime ---
+ 10:29:11 up 18:53,  0 users,  load average: 0.25, 0.28, 0.26
+--- /proc/loadavg ---
+0.25 0.28 0.26 3/602 2816107
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1486       53933           3        4841       58085
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 55227640  88508 4869584    0    0     0    22   18    4  1  1 99  0  0
+ 0  0      0 55227388  88508 4869584    0    0     0     0  453  662  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:13 up 18:53,  0 users,  load average: 0.25, 0.28, 0.26
+Tasks: 349 total,   1 running, 348 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.2 us,  0.3 sy,  0.0 ni, 99.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  53932.8 free,   1486.7 used,   4841.9 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  58084.7 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+2816116 ubuntu    20   0   11340   4188   3348 R  11.8   0.0   0:00.03 top
+      1 root      20   0  192348  37300   8548 S   0.0   0.1   6:53.33 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.13 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.55 ksoftir+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:36.22 rcu_sch+
+
+===== 2026-04-16 18:29:13 node=192.168.122.116 =====
+--- uptime ---
+ 10:29:13 up 18:53,  0 users,  load average: 0.27, 0.11, 0.11
+--- /proc/loadavg ---
+0.27 0.11 0.11 1/685 2438748
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1645       53769           3        4845       57925
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 55059820 122640 4839300    0    0     0    20   12   15  1  1 99  0  0
+ 0  0      0 55060076 122640 4839300    0    0     0     0  426  643  0  1 99  0  0
+--- top (batch) ---
+top - 10:29:14 up 18:53,  0 users,  load average: 0.25, 0.10, 0.11
+Tasks: 349 total,   1 running, 348 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.2 us,  0.7 sy,  0.0 ni, 99.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  53769.9 free,   1645.8 used,   4845.6 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  57925.6 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   6069 root      20   0 5560548 229160 107212 S   5.9   0.4  82:19.36 k3s-age+
+2438751 ubuntu    20   0   11336   4296   3452 R   5.9   0.0   0:00.03 top
+      1 root      20   0  187744  32892   8520 S   0.0   0.1   6:07.92 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.12 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.27 ksoftir+
+
+===== 2026-04-16 18:29:15 node=192.168.122.117 =====
+--- uptime ---
+ 10:29:15 up 18:53,  0 users,  load average: 0.31, 0.08, 0.03
+--- /proc/loadavg ---
+0.31 0.08 0.03 1/698 2734974
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1451       54535           3        4274       58119
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 55844156 110824 4266176    0    0     0    14    6    4  0  1 99  0  0
+ 0  0      0 55842232 110824 4266332    0    0     0     0  748 1283  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:16 up 18:53,  0 users,  load average: 0.31, 0.08, 0.03
+Tasks: 347 total,   1 running, 346 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.2 us,  0.5 sy,  0.0 ni, 99.2 id,  0.2 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  54533.4 free,   1453.3 used,   4274.6 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  58118.1 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+2734977 ubuntu    20   0   11336   4180   3344 R  11.8   0.0   0:00.04 top
+      1 root      20   0  188076  32972   8308 S   0.0   0.1   6:31.12 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.12 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:02.54 ksoftir+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:31.93 rcu_sch+
+
+===== 2026-04-16 18:29:16 node=192.168.122.118 =====
+--- uptime ---
+ 10:29:17 up 18:53,  0 users,  load average: 0.17, 0.05, 0.02
+--- /proc/loadavg ---
+0.17 0.05 0.02 1/614 3521331
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:           60261        1438       54560           3        4262       58133
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 0  0      0 55869304 116092 4248952    0    0     0    15   15   17  0  1 99  0  0
+ 0  0      0 55869304 116092 4248952    0    0     0     0  531  940  0  0 100  0  0
+--- top (batch) ---
+top - 10:29:18 up 18:53,  0 users,  load average: 0.17, 0.05, 0.02
+Tasks: 347 total,   1 running, 346 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.3 us,  0.3 sy,  0.0 ni, 99.3 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  60261.3 total,  54559.6 free,   1438.9 used,   4262.7 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  58132.4 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+3521334 ubuntu    20   0   11336   4320   3480 R  11.8   0.0   0:00.03 top
+3405723 root      20   0       0      0      0 I   5.9   0.0   1:10.77 kworker+
+      1 root      20   0  188132  32876   8204 S   0.0   0.1   7:29.67 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.11 kthreadd
+      3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 slub_fl+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 netns
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     10 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_perc+
+     11 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     12 root      20   0       0      0      0 S   0.0   0.0   0:00.00 rcu_tas+
+     13 root      20   0       0      0      0 S   0.0   0.0   0:01.93 ksoftir+
+
+===== 2026-04-16 18:29:39 node=192.168.122.110 =====
+--- uptime ---
+ 10:29:57 up  5:12,  0 users,  load average: 21.77, 8.81, 5.49
+--- /proc/loadavg ---
+21.77 8.81 5.49 10/5282 584823
+--- free -m ---
+               total        used        free      shared  buff/cache   available
+Mem:          120731        5279       97720          20       17730      114266
+Swap:              0           0           0
+--- vmstat 1 2 ---
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 8  0      0 100065352 1501308 16655164    0    0     7   122   11    7  3  6 91  0  0
+23  0      0 100040000 1501308 16655848    0    0     0  6400 39362 39679  8 16 76  0  0
+--- top (batch) ---
+top - 10:29:58 up  5:12,  0 users,  load average: 21.77, 8.81, 5.49
+Tasks: 1237 total,   6 running, 1231 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 12.7 us, 17.6 sy,  0.0 ni, 69.2 id,  0.1 wa,  0.0 hi,  0.3 si,  0.1 st
+MiB Mem : 120731.0 total,  97691.9 free,   5307.3 used,  17731.8 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 114238.9 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+  27051 root      20   0 7763972 967516 121972 S 305.3   0.8 405:10.54 k3s-ser+
+   1007 root      20   0   25340   8648   4720 R 100.0   0.0   4:29.30 systemd+
+   1247 systemd+  20   0   28744  16776   9244 R 100.0   0.0   9:31.81 systemd+
+   1266 root      20   0 3402992  43016  25288 S  36.8   0.0   0:59.32 snapd
+ 584931 ubuntu    20   0   12416   5324   3472 R  26.3   0.0   0:00.08 top
+ 584933 ubuntu    20   0   12416   5300   3452 R  26.3   0.0   0:00.08 top
+ 584962 root      20   0   14776   6004   5080 R  21.1   0.0   0:00.04 systemd+
+ 554089 root      20   0   25064   5972   2152 S  15.8   0.0   0:00.92 systemd+
+ 584965 root      20   0   14676   5976   5156 R  15.8   0.0   0:00.03 systemd+
+ 554004 root      20   0   24952   5864   2152 S  10.5   0.0   0:00.94 systemd+
+ 554009 root      20   0   25064   5712   1896 S  10.5   0.0   0:00.82 systemd+
+ 554015 root      20   0   24992   5712   1960 S  10.5   0.0   0:00.75 systemd+
+ 554029 root      20   0   24968   5880   2152 S  10.5   0.0   0:00.98 systemd+

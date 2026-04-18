@@ -28,7 +28,7 @@ export SEED_CLUSTER_INVENTORY_PATH="${SEED_CLUSTER_INVENTORY_PATH:-${HOME}/k8s/c
 
 # ============ 拓扑配置（必须修改）=======================
 # 拓扑规模
-export SEED_TOPOLOGY_SIZE="${SEED_TOPOLOGY_SIZE:-3083}"
+export SEED_TOPOLOGY_SIZE="${SEED_TOPOLOGY_SIZE:-4954}"
 # 拓扑文件目录
 export SEED_REAL_TOPOLOGY_DIR="${SEED_REAL_TOPOLOGY_DIR:-$HOME/seed-emulator/topology}"
 

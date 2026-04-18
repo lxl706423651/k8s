@@ -18,7 +18,7 @@ ROLE_SET = {"r", "brd", "rs"}
 EXIT_BIRD_START_FAILED = 10
 
 # Node 内部的逐个启动微小延迟，保护 Kubelet 和隧道
-START_DELAY = 0.05             
+START_DELAY = 0.08             
 
 # 每台虚拟机有 12 核，当 1 分钟 Load Average 低于此值时，认为该节点 BGP 收敛完毕。
 SYSTEM_LOAD_THRESHOLD = 40  
@@ -268,7 +268,7 @@ def main() -> int:
 
     # ================= Phase 2: 集群多点独立负载监控 =================
     log(log_path, "Waiting 20 seconds before initial load check...")
-    time.sleep(20)
+    time.sleep(60)
     wait_for_cluster_idle(namespace, nodes_map, log_path, exec_timeout)
 
     # ================= Phase 3: 最终存活状态验收 =================

@@ -1,0 +1,1286 @@
+[
+  {
+    "name": "as2brd-ix2-1.2.0.2-6c7966b69d-6nrjx",
+    "asn": "2",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as3brd-ix3-1.3.0.3-bb6bc4659-824gj",
+    "asn": "3",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as4brd-ix4-1.4.0.4-7d499fc4d8-6q7dn",
+    "asn": "4",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as5brd-ix5-1.5.0.5-7687bbc84f-n2smt",
+    "asn": "5",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as6brd-ix6-1.6.0.6-68d7745f94-lhkfn",
+    "asn": "6",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as7brd-ix7-1.7.0.7-64fbcfdc99-jgvkm",
+    "asn": "7",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as8brd-ix8-1.8.0.8-594b766db6-h6qtl",
+    "asn": "8",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as9brd-ix9-1.9.0.9-67f459c659-wh2dk",
+    "asn": "9",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as10brd-ix10-1.10.0.10-58fc594768-fm5ll",
+    "asn": "10",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as12brd-ix12-1.12.0.12-795db7fc4c-5mrc2",
+    "asn": "12",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as13brd-ix13-1.13.0.13-77d89744d6-wrgg8",
+    "asn": "13",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as14brd-ix14-1.14.0.14-54556b5c57-zn8zx",
+    "asn": "14",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as16brd-ix16-1.16.0.16-555767b4b6-ptn5t",
+    "asn": "16",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as17brd-ix17-1.17.0.17-7c49b54bbf-cbbh4",
+    "asn": "17",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as18brd-ix18-1.18.0.18-5bf66c8f8d-ttjhz",
+    "asn": "18",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as19brd-ix19-1.19.0.19-7c485f645f-qc4np",
+    "asn": "19",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as20brd-ix20-1.20.0.20-5c89d78ff8-svltk",
+    "asn": "20",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as21brd-ix21-1.21.0.21-95768845c-c4l5t",
+    "asn": "21",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as22brd-ix22-1.22.0.22-864757b974-hllms",
+    "asn": "22",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as23brd-ix23-1.23.0.23-5dc6755b8f-tq5wq",
+    "asn": "23",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as24brd-ix24-1.24.0.24-5696bf894d-nzmh9",
+    "asn": "24",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as25brd-ix25-1.25.0.25-64dfd6f4ff-k7k48",
+    "asn": "25",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as26brd-ix26-1.26.0.26-5c4b5bdcd-rvcjx",
+    "asn": "26",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as28brd-ix28-1.28.0.28-7666d9ffcc-ldd2w",
+    "asn": "28",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as29brd-ix29-1.29.0.29-64fbfd948b-zqp5n",
+    "asn": "29",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as30brd-ix30-1.30.0.30-54b4975685-79455",
+    "asn": "30",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as31brd-ix31-1.31.0.31-96b9dc86d-bw56w",
+    "asn": "31",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as32brd-ix32-1.32.0.32-6695b89c87-zhm2z",
+    "asn": "32",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as33brd-ix33-1.33.0.33-75744fbf4b-5nh2d",
+    "asn": "33",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as34brd-ix34-1.34.0.34-6b6979ccc7-7hx48",
+    "asn": "34",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as35brd-ix35-1.35.0.35-7c4b564f9d-bpkq5",
+    "asn": "35",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as36brd-ix36-1.36.0.36-6cc7446cb5-2f8jx",
+    "asn": "36",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as37brd-ix37-1.37.0.37-5787789cdd-6pdg8",
+    "asn": "37",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as38brd-ix38-1.38.0.38-bccc7b499-6xhxg",
+    "asn": "38",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as39brd-ix39-1.39.0.39-58b445f7d-pmnbf",
+    "asn": "39",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as40brd-ix40-1.40.0.40-bd9d85f69-9lt9p",
+    "asn": "40",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as41brd-ix41-1.41.0.41-6b6bf87658-m8sf9",
+    "asn": "41",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as42brd-ix42-1.42.0.42-56964688bf-cqrsc",
+    "asn": "42",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as43brd-ix43-1.43.0.43-764b96d4dd-zl6ql",
+    "asn": "43",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as44brd-ix44-1.44.0.44-5978b4b547-fs67x",
+    "asn": "44",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as45brd-ix45-1.45.0.45-bd67bcf66-7xvjs",
+    "asn": "45",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as50brd-ix50-1.50.0.50-75ccdc7fb5-4tx5r",
+    "asn": "50",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as51brd-ix51-1.51.0.51-fc66bff55-xj255",
+    "asn": "51",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as52brd-ix52-1.52.0.52-59b6b99cfd-59cgz",
+    "asn": "52",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as55brd-ix55-1.55.0.55-7986f84cc7-nmcr7",
+    "asn": "55",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as58brd-ix58-1.58.0.58-6578b6bb4-89vmr",
+    "asn": "58",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as60brd-ix60-1.60.0.60-677f9b59f9-s9bbq",
+    "asn": "60",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as61brd-ix61-1.61.0.61-5d77d6445d-k6xg6",
+    "asn": "61",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as62brd-ix62-1.62.0.62-6948c5c9c-b2nd5",
+    "asn": "62",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as63brd-ix63-1.63.0.63-7b44c95cc5-nfg9n",
+    "asn": "63",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as68brd-ix68-1.68.0.68-5f8674495d-w4xpv",
+    "asn": "68",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as70brd-ix70-1.70.0.70-766dcccc57-n89c5",
+    "asn": "70",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as71brd-ix71-1.71.0.71-5dd5684df6-4bcn5",
+    "asn": "71",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as73brd-ix73-1.73.0.73-7d4dbc4cf9-b7m79",
+    "asn": "73",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as74brd-ix74-1.74.0.74-58ff95db8b-8mjhw",
+    "asn": "74",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as75brd-ix75-1.75.0.75-555d479bfc-ft5nd",
+    "asn": "75",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as83brd-ix83-1.83.0.83-564bb9599-q7r6t",
+    "asn": "83",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as94brd-ix94-1.94.0.94-696f4c9746-krnhj",
+    "asn": "94",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as96brd-ix96-1.96.0.96-f6bbd55c7-5jhc8",
+    "asn": "96",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as99brd-ix99-1.99.0.99-58f6897bbd-hm5pz",
+    "asn": "99",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as106brd-ix106-1.106.0.106-54f7876b9c-6qsch",
+    "asn": "106",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as108brd-ix108-1.108.0.108-5dd467d8dd-zrqqd",
+    "asn": "108",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as113brd-ix113-1.113.0.113-545589b74c-srcqd",
+    "asn": "113",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as122brd-ix122-1.122.0.122-5c5858c88f-t77dj",
+    "asn": "122",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as125brd-ix125-1.125.0.125-5fd4c9db94-5s9kb",
+    "asn": "125",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as126brd-ix126-1.126.0.126-b84d96b47-tdpxd",
+    "asn": "126",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as127brd-ix127-1.127.0.127-7bb4ffcc9b-9sfng",
+    "asn": "127",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as128brd-ix128-1.128.0.128-5f77884769-k8llx",
+    "asn": "128",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as129brd-ix129-1.129.0.129-5697dfd746-rddgs",
+    "asn": "129",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as135brd-ix135-1.135.0.135-6c4b869b99-s8z2z",
+    "asn": "135",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as147brd-ix147-1.147.0.147-6bbc8b68bc-pqcnn",
+    "asn": "147",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as156brd-ix156-1.156.0.156-8546445d74-vzlp9",
+    "asn": "156",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as158brd-ix158-1.158.0.158-774f854969-wn4sk",
+    "asn": "158",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as167brd-ix167-1.167.0.167-744ffdb9d4-q24nm",
+    "asn": "167",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as171brd-ix171-1.171.0.171-75cc68c857-c5bzf",
+    "asn": "171",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as189brd-ix189-1.189.0.189-5bb97c9b5d-9g6lj",
+    "asn": "189",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as190brd-ix190-1.190.0.190-dbd47677-ffv68",
+    "asn": "190",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as206brd-ix206-1.206.0.206-687596f955-phkkl",
+    "asn": "206",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as219brd-ix219-1.219.0.219-7c5f855994-n6gv9",
+    "asn": "219",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as221brd-ix221-1.221.0.221-bfd4d65c5-wmvkk",
+    "asn": "221",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as227brd-ix227-1.227.0.227-74c8bd469d-j96l2",
+    "asn": "227",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as237brd-ix237-1.237.0.237-ff786f58c-t5nct",
+    "asn": "237",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as259brd-ix259-2.3.1.3-b9b744484-f4jbd",
+    "asn": "259",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as296brd-ix296-2.40.1.40-5bc7cd999-gs284",
+    "asn": "296",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as300brd-ix300-2.44.1.44-7f569b4445-tncdw",
+    "asn": "300",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as314brd-ix314-2.58.1.58-65fff5594d-mp8rx",
+    "asn": "314",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as339brd-ix339-2.83.1.83-5d8b8d4549-knnvm",
+    "asn": "339",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as344brd-ix344-2.88.1.88-59f4758dbb-rrlkm",
+    "asn": "344",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as345brd-ix345-2.89.1.89-89c6bd9f7-9d8n2",
+    "asn": "345",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as346brd-ix346-2.90.1.90-5c856589d-nxljp",
+    "asn": "346",
+    "role": "brd",
+    "node": "seed-k3s-worker7"
+  },
+  {
+    "name": "as347brd-ix347-2.91.1.91-596d8599bf-v79cv",
+    "asn": "347",
+    "role": "brd",
+    "node": "seed-k3s-worker8"
+  },
+  {
+    "name": "as352brd-ix352-2.96.1.96-7bb75654b5-w6scd",
+    "asn": "352",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as403brd-ix403-2.147.1.147-56b8857d74-hh2q6",
+    "asn": "403",
+    "role": "brd",
+    "node": "seed-k3s-worker3"
+  },
+  {
+    "name": "as495brd-ix495-2.239.1.239-6fbdf49579-vhpfp",
+    "asn": "495",
+    "role": "brd",
+    "node": "seed-k3s-worker4"
+  },
+  {
+    "name": "as518brd-ix518-3.6.2.6-c4dc44d84-m5mv2",
+    "asn": "518",
+    "role": "brd",
+    "node": "seed-k3s-worker5"
+  },
+  {
+    "name": "as533brd-ix533-3.21.2.21-5969b7fbff-xt46p",
+    "asn": "533",
+    "role": "brd",
+    "node": "seed-k3s-worker6"
+  },
+  {
+    "name": "as1277brd-r10-1.10.4.253-6cc9656885-rpxkc",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r108-1.108.4.253-7cf66d7dcb-cmq5l",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r113-1.113.4.253-5c89867969-bl92q",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r12-1.12.4.253-59b77bf854-p2ck2",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r122-1.122.4.253-78fc48d6d-bv84t",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r125-1.125.4.253-668678575c-hfnsg",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r126-1.126.4.253-84796f5747-68qxm",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r127-1.127.4.253-d7ff4fbc-d2pbf",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r128-1.128.4.253-85b8b69887-rrt55",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r129-1.129.4.253-7ff759f767-htw9t",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r13-1.13.4.253-f4677bfb5-6sqh4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r135-1.135.4.253-5f9b6b844f-5v6dt",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r14-1.14.4.253-66dfcc7954-8vnrf",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r147-1.147.4.253-56889b77b8-9dh4c",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r158-1.158.4.253-868dd479d7-tn4bq",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r16-1.16.4.253-5c5c7789f8-q96fv",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r167-1.167.4.253-7d858bd944-zvkns",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r17-1.17.4.253-5f45798957-px9f4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r171-1.171.4.253-5df4f4fc5c-h9bpn",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r18-1.18.4.253-74b5bc4585-dt87m",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r189-1.189.4.253-646b946568-c6l6r",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r19-1.19.4.253-6bb99bdbf4-7m6vb",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r190-1.190.4.253-6bb65b9d8f-4b9dq",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r2-1.2.4.253-d8dbcfddd-ntj2l",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r20-1.20.4.253-6ccfccc9b4-6v64j",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r21-1.21.4.253-6497d5495c-jzwq7",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r219-1.219.4.253-7b85c858f6-gmvnp",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r22-1.22.4.253-5b98887f4f-5jb7t",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r221-1.221.4.253-6ddd576cb-t5zkx",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r227-1.227.4.253-54dcd4fc58-vw46w",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r23-1.23.4.253-7fdd88785-55ldp",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r237-1.237.4.253-85d5ffd544-mz27j",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r24-1.24.4.253-77569bfb8f-pgdrt",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r25-1.25.4.253-55bd87f98f-4k6lr",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r259-2.3.4.253-fdb79b756-fvlv4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r26-1.26.4.253-64b47485db-bgd2k",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r28-1.28.4.253-795cffb98b-zg2gl",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r29-1.29.4.253-76bbb76864-vbtqw",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r296-2.40.4.253-69c6995c44-mbtcb",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r3-1.3.4.253-857898458c-6ttm4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r30-1.30.4.253-6c74fccf5d-knbpk",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r300-2.44.4.253-b7b489bbd-q98qg",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r31-1.31.4.253-9488495bf-bh56q",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r314-2.58.4.253-5dfc7445b7-wqnjj",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r32-1.32.4.253-795cfbbdbf-c4nb9",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r33-1.33.4.253-b5cc7b6d5-xksrd",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r34-1.34.4.253-794758d777-2kvn2",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r344-2.88.4.253-59c9b5f9f7-7skpc",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r345-2.89.4.253-69cb97cb5c-khg9t",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r346-2.90.4.253-5664f8d7b-4n74v",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r347-2.91.4.253-559cd9dfb9-czgnn",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r35-1.35.4.253-65ff4ddc5c-xzp48",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r36-1.36.4.253-68ffc9bb6f-gf6w4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r37-1.37.4.253-58cb864869-sh9nm",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r38-1.38.4.253-6466f78cdf-gtmnt",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r39-1.39.4.253-578f5c9f9d-d8c2s",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r4-1.4.4.253-95b8c448c-nf9xc",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r40-1.40.4.253-858dccc8cb-4bkcj",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r41-1.41.4.253-7dd7fbd4f7-8qbkb",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r42-1.42.4.253-5797c85dfc-q2jnm",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r43-1.43.4.253-74587f8dcc-rd4fs",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r44-1.44.4.253-5599868fc7-z9gfb",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r45-1.45.4.253-77f665b45b-fpkr5",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r5-1.5.4.253-75f98bf5ff-2f9v6",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r50-1.50.4.253-7bc8684bd6-6qvw8",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r51-1.51.4.253-f9f67b877-46dtn",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r52-1.52.4.253-7d88d9f48c-nf9vj",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r55-1.55.4.253-7496b68cbf-cqfjt",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r58-1.58.4.253-5c8545fc5-svx56",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r6-1.6.4.253-b6d8784c9-r5g2w",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r60-1.60.4.253-7f68968867-vhd4b",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r61-1.61.4.253-7484766889-frc67",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r62-1.62.4.253-789df7bff7-rbwfc",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r63-1.63.4.253-76d49d7949-xnj5d",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r68-1.68.4.253-b6d4d46d7-kzbqn",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r7-1.7.4.253-757b6d9df5-nt274",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r70-1.70.4.253-5d6977c845-84p8l",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r71-1.71.4.253-5ff7d6989b-gjxv5",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r73-1.73.4.253-859968bb97-ggjx9",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r75-1.75.4.253-68bbcc8656-8x58h",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r8-1.8.4.253-7dff5cf95f-rhxcx",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r83-1.83.4.253-6b5c99f784-cqrs7",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r9-1.9.4.253-5984cf5bb6-7w7wg",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r94-1.94.4.253-b6bfd4fff-ltxhh",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r96-1.96.4.253-6b5676cb9b-sk5k7",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1277brd-r99-1.99.4.253-77cf69787c-6kkh4",
+    "asn": "1277",
+    "role": "brd",
+    "node": "seed-k3s-master"
+  },
+  {
+    "name": "as1439brd-r10-1.10.5.159-66f989c8b4-krhs4",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r12-1.12.5.159-74bf47748c-4g4zh",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r122-1.122.5.159-5dd698f95c-8dqxb",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r13-1.13.5.159-5595767f5b-6rfxp",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r156-1.156.5.159-6f94757d59-phkb8",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r16-1.16.5.159-77796ff7fc-dc672",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r18-1.18.5.159-6599b74b75-dgznf",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r19-1.19.5.159-b67b8c9f6-dktb6",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r21-1.21.5.159-67d468d6c4-x4mnf",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r22-1.22.5.159-85d594c4b6-xw4q8",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r23-1.23.5.159-554776b78b-fg5cj",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r237-1.237.5.159-d5f4f8c84-rk2cv",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r24-1.24.5.159-6f58d56b58-rkgpg",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r25-1.25.5.159-6749778fff-vgvh8",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r3-1.3.5.159-6cb747447b-5zfmb",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r352-2.96.5.159-7588f474bf-w9z4n",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r4-1.4.5.159-8678dbd4c9-qr8m2",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r403-2.147.5.159-676fb6fc68-kzh7d",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r43-1.43.5.159-86b4fddd6c-lbbv6",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r495-2.239.5.159-79998785b-r5dzf",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r518-3.6.5.159-7cfb76d55c-2r7x5",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r6-1.6.5.159-795f6dc6b9-nbmr8",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r7-1.7.5.159-78bfd56bf9-2z9sh",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r71-1.71.5.159-5bf688478b-4fbjt",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as1439brd-r74-1.74.5.159-7b7fcdc559-h2vq8",
+    "asn": "1439",
+    "role": "brd",
+    "node": "seed-k3s-worker1"
+  },
+  {
+    "name": "as2010brd-r106-1.106.7.218-68b4ff9d9b-tjgzc",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r206-1.206.7.218-6d7dcb775d-dzbrs",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r23-1.23.7.218-656f75c4b5-q6f9c",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r237-1.237.7.218-694586d86b-psp6r",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r339-2.83.7.218-5947d997bc-k4pzf",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r403-2.147.7.218-67ffd8b687-xv69j",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  },
+  {
+    "name": "as2010brd-r533-3.21.7.218-877c95757-x6qm7",
+    "asn": "2010",
+    "role": "brd",
+    "node": "seed-k3s-worker2"
+  }
+]

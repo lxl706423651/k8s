@@ -1,0 +1,15 @@
+=== Wait Ready ===
+Log file: /home/lxl/k8s/lxl/20260416_181413_214/wait-ready.log
+Namespace: seedemu-k3s-real-topo
+Check interval: 60s
+Timeout: 7200s
+[0s] all pods: total=100, running=69, ready=69
+[0s] seedemu pods: total=100, running=69, ready=69
+[0s] router-like pods(r/brd/rs): total=100, running=69, ready=69
+Not ready yet. Checking again in 60s...
+
+[61s] all pods: total=214, running=214, ready=214
+[61s] seedemu pods: total=214, running=214, ready=214
+[61s] router-like pods(r/brd/rs): total=214, running=214, ready=214
+
+All pods in namespace seedemu-k3s-real-topo are Running and Ready.

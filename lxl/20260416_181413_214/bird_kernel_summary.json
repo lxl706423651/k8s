@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-04-16T10:32:10.713353+00:00",
+  "namespace": "seedemu-k3s-real-topo",
+  "targets": 214,
+  "kernel_export_mode": "all",
+  "status": "PASS",
+  "failure_reason": "",
+  "strategy": "node-aware-concurrency",
+  "processed": 214,
+  "failures": []
+}
