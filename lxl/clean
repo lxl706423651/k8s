@@ -9,7 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # 加载环境变量
-if [ -f "${SCRIPT_DIR}/env.sh" ]; then
+if [ -f "${SCRIPT_DIR}/env_9node.sh" ]; then
+    source "${SCRIPT_DIR}/env_9node.sh"
+elif [ -f "${SCRIPT_DIR}/env.sh" ]; then
     source "${SCRIPT_DIR}/env.sh"
 fi
 
@@ -47,28 +49,86 @@ if [ "${CLEAN_NAMESPACE}" != "true" ]; then
     exit 0
 fi
 
-if ! kubectl get namespace "${NS}" >/dev/null 2>&1; then
-    echo "Namespace ${NS} does not exist. Nothing to clean."
-    log_end "clean"
-    exit 0
-fi
-
-safe_count_resources() {
+count_namespaced_kind() {
     local resource="$1"
-    kubectl -n "${NS}" get "${resource}" --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo "0"
+    kubectl -n "${NS}" get "${resource}" --ignore-not-found --no-headers 2>/dev/null \
+        | wc -l | tr -d ' '
+}
+
+residual_resource_summary() {
+    local pod_count deploy_count sts_count ds_count job_count nad_count configmap_count secret_count
+    local sa_count svc_count role_count rb_count total
+    pod_count="$(count_namespaced_kind pods)"
+    deploy_count="$(count_namespaced_kind deploy)"
+    sts_count="$(count_namespaced_kind sts)"
+    ds_count="$(count_namespaced_kind ds)"
+    job_count="$(count_namespaced_kind jobs.batch)"
+    nad_count="$(count_namespaced_kind network-attachment-definitions.k8s.cni.cncf.io)"
+    configmap_count="$(count_namespaced_kind configmaps)"
+    secret_count="$(count_namespaced_kind secrets)"
+    sa_count="$(count_namespaced_kind serviceaccounts)"
+    svc_count="$(count_namespaced_kind services)"
+    role_count="$(count_namespaced_kind roles.rbac.authorization.k8s.io)"
+    rb_count="$(count_namespaced_kind rolebindings.rbac.authorization.k8s.io)"
+    total=$((pod_count + deploy_count + sts_count + ds_count + job_count + nad_count + configmap_count + secret_count + sa_count + svc_count + role_count + rb_count))
+    printf 'total=%s pods=%s deploy=%s sts=%s ds=%s jobs=%s nads=%s cm=%s secrets=%s sa=%s svc=%s roles=%s rolebindings=%s\n' \
+        "${total}" "${pod_count}" "${deploy_count}" "${sts_count}" "${ds_count}" "${job_count}" "${nad_count}" "${configmap_count}" "${secret_count}" "${sa_count}" "${svc_count}" "${role_count}" "${rb_count}"
+}
+
+residual_summary_value() {
+    local summary="$1"
+    local key="$2"
+    awk -v k="${key}" '
+        {
+            for (i = 1; i <= NF; i++) {
+                split($i, kv, "=")
+                if (kv[1] == k) {
+                    print kv[2]
+                    exit
+                }
+            }
+        }
+    ' <<< "${summary}"
+}
+
+namespaced_api_resources() {
+    kubectl api-resources --verbs=list --namespaced -o name 2>/dev/null | sort -u
+}
+
+delete_all_namespaced_resources() {
+    local resource
+    while IFS= read -r resource; do
+        [ -n "${resource}" ] || continue
+        kubectl -n "${NS}" delete "${resource}" --all --ignore-not-found --wait=false >/dev/null 2>&1 || true
+    done < <(namespaced_api_resources)
+}
+
+namespace_exists() {
+    kubectl get namespace "${NS}" >/dev/null 2>&1
+}
+
+ensure_namespace_exists_if_residuals_present() {
+    local summary total
+    summary="$(residual_resource_summary)"
+    total="$(residual_summary_value "${summary}" total)"
+    if namespace_exists; then
+        return 0
+    fi
+    if [ "${total:-0}" -gt 0 ]; then
+        echo "Namespace object is absent, but residual namespaced resources still exist: ${summary}"
+        echo "Recreating namespace ${NS} temporarily so cleanup can remove the leftover objects cleanly..."
+        kubectl create namespace "${NS}" >/dev/null 2>&1 || true
+        return 0
+    fi
+    return 1
 }
 
 print_namespace_snapshot() {
     local elapsed="$1"
-    local ns_phase pod_count deploy_count sts_count ds_count job_count
+    local ns_phase summary
     ns_phase="$(kubectl get namespace "${NS}" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")"
-    pod_count="$(safe_count_resources pods)"
-    deploy_count="$(safe_count_resources deploy)"
-    sts_count="$(safe_count_resources sts)"
-    ds_count="$(safe_count_resources ds)"
-    job_count="$(safe_count_resources jobs)"
-
-    echo "[${elapsed}s] Namespace still exists. phase=${ns_phase}, pods=${pod_count}, deploy=${deploy_count}, sts=${sts_count}, ds=${ds_count}, jobs=${job_count}"
+    summary="$(residual_resource_summary)"
+    echo "[${elapsed}s] Namespace still exists. phase=${ns_phase}, ${summary}"
 }
 
 dump_timeout_diagnostics() {
@@ -141,23 +201,23 @@ PY
     rm -f "${tmp_py}"
 
     local pod_count deploy_count sts_count ds_count job_count
-    pod_count="$(safe_count_resources pods)"
-    deploy_count="$(safe_count_resources deploy)"
-    sts_count="$(safe_count_resources sts)"
-    ds_count="$(safe_count_resources ds)"
-    job_count="$(safe_count_resources jobs)"
-
-    [ "${pod_count}" = "0" ] &&
-    [ "${deploy_count}" = "0" ] &&
-    [ "${sts_count}" = "0" ] &&
-    [ "${ds_count}" = "0" ] &&
-    [ "${job_count}" = "0" ]
+    local summary total
+    summary="$(residual_resource_summary)"
+    total="$(residual_summary_value "${summary}" total)"
+    [ "${total:-1}" = "0" ]
 }
 
+if ! namespace_exists; then
+    if ! ensure_namespace_exists_if_residuals_present; then
+        echo "Namespace ${NS} does not exist and no residual namespaced resources were detected. Nothing to clean."
+        log_end "clean"
+        exit 0
+    fi
+fi
+
 echo ""
-echo "[1/3] Fast-delete major workloads first..."
-kubectl delete deploy,sts,ds --all -n "${NS}" --wait=false || true
-kubectl delete jobs --all -n "${NS}" --wait=false || true
+echo "[1/3] Fast-delete namespaced resources first..."
+delete_all_namespaced_resources
 
 echo ""
 echo "[2/3] Submit namespace deletion..."

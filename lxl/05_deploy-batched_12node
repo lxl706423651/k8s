@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_SCRIPT="${SCRIPT_DIR}/05_deploy-batched_9node"
+TMP_SCRIPT="$(mktemp "${SCRIPT_DIR}/tmp.deploy12.XXXXXX")"
+trap 'rm -f "${TMP_SCRIPT}"' EXIT
+
+sed \
+  -e 's/env_9node\.sh/env_12node.sh/g' \
+  -e 's/01_cluster_nodes_9node\.sh/01_cluster_nodes_12node.sh/g' \
+  -e 's/Deploy (Batched, 9-node)/Deploy (Batched, 12-node)/g' \
+  -e 's/check_cni0_bridge_state_9node\.sh/check_cni0_bridge_state_12node.sh/g' \
+  -e 's|\${SCRIPT_DIR}/wait-ready|\${SCRIPT_DIR}/wait-ready_12node|g' \
+  "${BASE_SCRIPT}" > "${TMP_SCRIPT}"
+
+chmod +x "${TMP_SCRIPT}"
+exec "${TMP_SCRIPT}" "$@"

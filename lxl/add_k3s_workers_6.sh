@@ -351,8 +351,8 @@ apply_ultimate_tuning() {
         append_if_missing() {
             local pattern=\"\$1\"
             local line=\"\$2\"
-            if ! sudo -n grep -qF \"\$pattern\" \"${LIMITS_FILE}\"; then
-                printf '%s\n' \"\$line\" | sudo -n tee -a \"${LIMITS_FILE}\" >/dev/null
+            if ! sudo -n grep -qF \"\$pattern\" \"\${LIMITS_FILE}\"; then
+                printf '%s\n' \"\$line\" | sudo -n tee -a \"\${LIMITS_FILE}\" >/dev/null
             fi
         }
 

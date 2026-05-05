@@ -4,8 +4,8 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-source "${SCRIPT_DIR}/env_9node.sh"
-source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+source "${SCRIPT_DIR}/env_12node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_12node.sh"
 seed_load_cluster_nodes
 
 create_experiment_dir
@@ -35,7 +35,7 @@ export KUBECONFIG="${REPO_ROOT}/output/kubeconfigs/${SEED_K3S_CLUSTER_NAME}.yaml
 : "${DEPLOY_MAX_FAILED_PODS:=10}"
 : "${DEPLOY_REQUIRE_ALL_NODES_READY:=true}"
 
-echo "=== Deploy (Batched, 9-node) ==="
+echo "=== Deploy (Batched, 12-node) ==="
 echo "Log file: ${LOG_FILE}"
 seed_print_cluster_nodes
 echo "Batch size: ${DEPLOY_BATCH_SIZE}"
@@ -598,7 +598,7 @@ echo ""
 echo "Deploy submitted successfully."
 echo "This still does NOT mean all pods are Running/Ready."
 echo "Next step:"
-echo "  ${SCRIPT_DIR}/wait-ready"
+echo "  ${SCRIPT_DIR}/wait-ready_12node"
 echo ""
 echo "Quick checks:"
 echo "  kubectl get pods -n ${SEED_NAMESPACE} -o wide"

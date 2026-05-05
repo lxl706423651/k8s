@@ -4,16 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-source "${SCRIPT_DIR}/env_9node.sh"
-source "${SCRIPT_DIR}/01_cluster_nodes_9node.sh"
+source "${SCRIPT_DIR}/env_12node.sh"
+source "${SCRIPT_DIR}/01_cluster_nodes_12node.sh"
 seed_load_cluster_nodes
 
-# 04_build_9node is the single authoritative build+preload entrypoint.
-# Force preload mode here so stale caller environment cannot silently fall back
-# to older registry-only or legacy preload paths.
 export SEED_IMAGE_DISTRIBUTION_MODE="preload"
-# The remote build phase still has to publish images into the registry.
-# Preload then imports from that registry into each node's containerd.
 REMOTE_BUILD_DISTRIBUTION_MODE="registry"
 
 create_experiment_dir
@@ -43,7 +38,7 @@ SSH_OPTS=(
   -o ConnectTimeout=10
 )
 
-echo "=== Build (9-node) ==="
+echo "=== Build (12-node) ==="
 echo "Log file: ${LOG_FILE}"
 echo "Workflow distribution mode: ${SEED_IMAGE_DISTRIBUTION_MODE}"
 echo "Remote build publish mode: ${REMOTE_BUILD_DISTRIBUTION_MODE}"
@@ -58,13 +53,12 @@ if ! ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
     if ! ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
         "curl -m 5 -fsS http://${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}/v2/ >/dev/null" 2>&1; then
         echo "Registry is still not reachable after repair."
-        echo "This build flow depends on the master registry for preload verification and node import."
         exit 1
     fi
 fi
 
 if [ ! -d "${OUTPUT_DIR}" ]; then
-    echo "Error: Output directory not found. Please run 03_compile_9node first."
+    echo "Error: Output directory not found. Please run 03_compile_12node first."
     exit 1
 fi
 
@@ -127,8 +121,7 @@ printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q' \
     "${SEED_REGISTRY_PUSH_RETRIES:-5}" \
     "${SEED_REGISTRY_PUSH_BACKOFF_SECONDS:-5}" \
     "${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS:-180}"
-ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
-    "${REMOTE_CMD}"
+ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" "${REMOTE_CMD}"
 rm -f /tmp/build_remote.sh
 
 ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
@@ -136,8 +129,6 @@ ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
 
 if rg -q "Preloading to master|using registry fallback|Cluster preload phase completed" "${LOG_FILE}" "${EXPERIMENT_DIR}/build_remote.log" 2>/dev/null; then
     echo "Error: detected legacy preload/fallback path in remote build output."
-    echo "04_build_9node is expected to use only the node-specific 9-node preload flow."
-    echo "Please rerun this build with the patched 04_build_9node so preload stays under local orchestration."
     exit 1
 fi
 

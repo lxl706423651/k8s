@@ -2,10 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 如果脚本在 scripts/ 目录下，而代码在根目录，这里需要确保 REPO_ROOT 指向正确
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)" 
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-source "${SCRIPT_DIR}/env_9node.sh"
+source "${SCRIPT_DIR}/env_12node.sh"
 
 create_experiment_dir
 log_start "compile"
@@ -13,7 +12,7 @@ log_start "compile"
 LOG_FILE="${EXPERIMENT_DIR}/compile.log"
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
-echo "=== Compile (9-node) ==="
+echo "=== Compile (12-node) ==="
 echo "Log file: ${LOG_FILE}"
 
 OUTPUT_DIR="${EXPERIMENT_DIR}/output"
@@ -21,20 +20,16 @@ mkdir -p "${OUTPUT_DIR}"
 
 TOPOLOGY_FILE="${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt"
 ASSIGNMENT_FILE="${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
-
-# 检查 JSON 文件是否存在
 EXPECTED_JSON="/tmp/placement_expected.json"
-if [ ! -f "$EXPECTED_JSON" ]; then
-    echo "Error: $EXPECTED_JSON not found."
+
+if [ ! -f "${EXPECTED_JSON}" ]; then
+    echo "Error: ${EXPECTED_JSON} not found."
     exit 1
 fi
 
-# --- 核心修改部分 ---
 cd "${REPO_ROOT}"
 
-# 打印当前目录和文件列表，用于调试路径对不对
 echo "Current Dir: $(pwd)"
-# ls examples/kubernetes/real_topology_k3s_compile.py || echo "File not found!"
 
 PYTHONPATH="${REPO_ROOT}" \
 PYTHONNOUSERSITE=1 \
@@ -45,13 +40,13 @@ SEED_CNI_MASTER_INTERFACE="${SEED_CNI_MASTER_INTERFACE}" \
 SEED_SCHEDULING_STRATEGY="${SEED_SCHEDULING_STRATEGY}" \
 SEED_PLACEMENT_MODE="${SEED_PLACEMENT_MODE}" \
 SEED_IMAGE_PULL_POLICY="${SEED_IMAGE_PULL_POLICY}" \
-SEED_NODE_LABELS_FILE="$EXPECTED_JSON" \
+SEED_NODE_LABELS_FILE="${EXPECTED_JSON}" \
 SEED_OUTPUT_DIR="${OUTPUT_DIR}" \
 SEED_REAL_TOPOLOGY_DIR="${SEED_REAL_TOPOLOGY_DIR}" \
 SEED_TOPOLOGY_SIZE="${SEED_TOPOLOGY_SIZE}" \
 SEED_TOPOLOGY_FILE="${TOPOLOGY_FILE}" \
 SEED_ASSIGNMENT_FILE="${ASSIGNMENT_FILE}" \
-python3 examples/kubernetes/real_topology_k3s_compile.py # 请确认此相对路径在 REPO_ROOT 下存在
+python3 examples/kubernetes/real_topology_k3s_compile.py
 
 echo "Compile completed. Output: ${OUTPUT_DIR}/k8s.yaml"
 log_end "compile"

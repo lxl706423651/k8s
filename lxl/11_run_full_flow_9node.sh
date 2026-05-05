@@ -29,7 +29,7 @@ run_step() {
   "$@"
 }
 
-run_step "03_compile_9node" "${SCRIPT_DIR}/03_compile_9node"
+#run_step "03_compile_9node" "${SCRIPT_DIR}/03_compile_9node"
 run_step "04_build_9node" "${SCRIPT_DIR}/04_build_9node"
 run_step "05_deploy-batched_9node" "${SCRIPT_DIR}/05_deploy-batched_9node"
 

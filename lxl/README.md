@@ -940,6 +940,262 @@ source ./env_9node.sh
 
 这样可以先避免 Multus 兼容路径问题再次把业务 Pod 卡在 `ContainerCreating`，从源头减少后续 control-plane 被异常对象拖慢的概率。
 
+### 问题 7：宿主机根分区写满，libvirt 将 KVM 自动暂停为 `paused (I/O error)`
+
+现象：
+
+- 7001 规模实验运行到中途后，`kubectl` 开始报：
+
+```text
+dial tcp 192.168.122.110:6443: connect: no route to host
+```
+
+- `ssh ubuntu@192.168.122.110` 失败
+- `virsh list --all` 显示多台 VM 仍然存在，但 `kubectl` / SSH 都不通
+- `virsh domstate --reason seed-k3s-master` 显示：
+
+```text
+paused (I/O error)
+```
+
+- 本次实际排查结果不是只有 master 一台出问题，而是 9 台 KVM 里有 8 台都进入了 `paused`
+
+根因：
+
+- 不是内存不足
+- 不是 CPU 不够
+- 不是单纯 `k3s` 进程异常
+- 真正原因是宿主机根分区 `/` 被实验数据和 VM 磁盘写满，QEMU 对 guest 磁盘写入失败，于是 libvirt 自动把 VM 暂停为 `paused (I/O error)`
+
+本次实际证据：
+
+```bash
+df -h /
+```
+
+输出曾经是：
+
+```text
+/dev/sdb2  878G  833G  116M  100%  /
+```
+
+而内存并没有耗尽：
+
+```bash
+free -h
+```
+
+当时仍然显示：
+
+- 总内存约 `1.0TiB`
+- `available` 约 `582Gi`
+
+所以这次故障是“宿主机磁盘满”，不是“宿主机内存满”。
+
+本次磁盘占用拆解：
+
+- 宿主机根分区总大小：`878G`
+- VM 磁盘目录：
+  - `/home/lxl/k8s/output/kvm_lab/disks`
+  - 实际占用约 `338G`
+- 宿主机大目录：
+  - `/home/lxl/seed-emulator/topology` 约 `400G`
+  - `/home/lxl/k8s/lxl/logs` 约 `3.5G`
+  - `/var/lib/containerd` 约 `6.1G`
+  - `/var/lib/docker.bak` 约 `4.0G`
+
+其中单个 VM 磁盘的实际占用中，master 最大：
+
+- `seed-k3s-master.qcow2` 约 `284G`
+
+为什么这会让 `k3s` 整体断开：
+
+- guest 磁盘底层写失败后，VM 会直接被 `paused`
+- guest 被暂停后：
+  - SSH 不通
+  - `k3s server`/`k3s-agent` 无法继续运行
+  - kube-apiserver、worker kubelet 全部失联
+- 所以最终现象看起来像是“k3s 集群突然断开”，但根因其实在宿主机磁盘
+
+这次 7001 规模实验中，上一轮日志的实际结论：
+
+- 目录：
+  - `/home/lxl/k8s/lxl/logs/20260418_030310_7001`
+- `full_flow.log` 明确进入了 `03_compile_9node`
+- `build.log` 末尾仍在大量 `docker build` / `docker push`
+- 没有 `deploy.log`
+- `bird0130.log`、`bird_kernel.log`、`reconvegence.log` 基本为空
+
+这说明：
+
+- 这轮实验没有真正跑到 deploy / bird / reconvergence
+- 它是在 build 阶段持续写盘时把宿主机根分区打满
+- 随后 VM 出现 `paused (I/O error)`，整个集群被拖断
+
+本次实际修复步骤：
+
+#### 1. 先释放宿主机根分区空间
+
+优先判断：
+
+```bash
+df -h /
+free -h
+timeout 10s sudo -n virsh domstate --reason seed-k3s-master
+```
+
+如果出现：
+
+- `/` 接近或达到 `100%`
+- `domstate --reason` 显示 `paused (I/O error)`
+
+就应立刻停止继续跑实验，不要继续 `build/deploy`。
+
+#### 2. 把 topology 大目录迁到更空的磁盘，并保留原路径
+
+本次选择把整个：
+
+- `/home/lxl/seed-emulator/topology`
+
+迁到：
+
+- `/data/lxl/seed-emulator/topology`
+
+迁移方式不是直接硬 `mv`，而是：
+
+1. 先 `rsync`
+2. 再 `rsync --dry-run` 校验
+3. 最后把原目录切换成符号链接
+
+最终结果：
+
+```text
+/home/lxl/seed-emulator/topology -> /data/lxl/seed-emulator/topology
+```
+
+这样做的好处：
+
+- 实际数据移出根分区
+- 现有脚本路径完全不需要改
+- 降低再次把 `/` 打满的风险
+
+本次实际迁移后：
+
+- 根分区 `/` 从只剩 `116M` 恢复到约 `400G` 可用
+- `/data` 仍有约 `41T` 可用
+
+#### 3. 恢复被暂停的 KVM
+
+先看有哪些 VM 仍然是 paused：
+
+```bash
+timeout 10s sudo -n virsh list --all
+```
+
+然后对 paused 的 VM 执行：
+
+```bash
+sudo virsh resume seed-k3s-master
+sudo virsh resume seed-k3s-worker1
+sudo virsh resume seed-k3s-worker3
+sudo virsh resume seed-k3s-worker4
+sudo virsh resume seed-k3s-worker5
+sudo virsh resume seed-k3s-worker6
+sudo virsh resume seed-k3s-worker7
+sudo virsh resume seed-k3s-worker8
+```
+
+本次恢复后：
+
+- master 与大多数 worker 能直接恢复到 `running`
+- 其中 `worker1` 虽然恢复为 `running`，但 guest 内部网络没有立即恢复
+
+#### 4. 对异常单点 VM 再做 guest 级修复
+
+这次 `worker1` 的实际现象是：
+
+- `virsh domstate --reason seed-k3s-worker1` 显示 `running (unpaused)`
+- 但 `virsh domifaddr seed-k3s-worker1` 一开始拿不到地址
+- SSH 到 `192.168.122.111` 报 `No route to host`
+- 在 k3s 中显示 `NotReady`
+
+本次最小修复动作是：
+
+```bash
+sudo virsh reboot seed-k3s-worker1
+```
+
+重启后：
+
+- `domifaddr` 重新拿到 `192.168.122.111/24`
+- SSH 恢复
+- `k3s-agent` 最初仍卡在 containerd 启动期
+
+随后补一次：
+
+```bash
+ssh ubuntu@192.168.122.111 'sudo systemctl restart k3s-agent'
+```
+
+最终 `worker1` 回到 `Ready`。
+
+#### 5. 用 preflight 收尾确认集群已恢复可重跑
+
+本次最后实际执行：
+
+```bash
+cd /home/lxl/k8s/lxl
+source ./env_9node.sh
+./02_preflight_9node
+```
+
+最终结果：
+
+```text
+Preflight completed
+```
+
+说明：
+
+- 9 个节点全部 `Ready`
+- Multus 正常
+- registry 连通性正常
+- 已经恢复到可继续重跑实验的状态
+
+这类问题下不要做的事：
+
+- 不要先给 VM 加 CPU
+- 不要先给 VM 加内存
+- 不要误以为是 `k3s` 单独挂了就一直重启 `k3s`
+- 在宿主机根分区仍然接近满盘时，不要继续 `build`
+
+长期建议：
+
+1. 不要把大规模实验的持久产物长期堆在根分区
+   - 尤其是：
+     - `~/seed-emulator/topology`
+     - `~/k8s/lxl/logs`
+     - KVM `qcow2` 磁盘
+
+2. 更合理的布局是：
+   - 把 `topology` 放到大盘（本次已经完成）
+   - 后续有条件的话，把 KVM 磁盘目录也迁到专用大盘
+
+3. 如果再次出现：
+   - `kubectl` 报 `no route to host`
+   - 多台 VM 明明存在但 SSH 不通
+   - `k3s` 看起来像“突然整片断开”
+
+   首先检查：
+
+```bash
+df -h /
+timeout 10s sudo -n virsh list --all
+timeout 10s sudo -n virsh domstate --reason seed-k3s-master
+```
+
+而不是先假设代码、BGP、Multus 或 `k3s` 本身出了问题。
+
 ---
 
 ## 环境变量说明（env.sh）
@@ -1568,3 +1824,161 @@ ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyCh
      /etc/cni/net.d/multus.d -> /var/lib/rancher/k3s/agent/etc/cni/net.d/multus.d
      ```
    - 如果缺少这条桥接，业务 Pod 会反复出现 `FailedCreatePodSandBox`，并长期停留在 `ContainerCreating`
+
+---
+
+## 问题 8：9955 规模 deploy / wait-ready 长时间卡住，随后 API 超时
+
+现象：
+
+- `deploy` 可以提交大部分对象，但 `wait-ready` 长时间停在类似：
+
+```text
+all pods: total=9955, running=9204, ready=9204
+```
+
+- 随后开始出现：
+
+```text
+Warning: failed to fetch pod JSON
+Unable to connect to the server: dial tcp 192.168.122.110:6443: i/o timeout
+```
+
+- 再往后 cluster 会进入失稳状态：
+  - 部分 worker `NotReady`
+  - API 变慢甚至超时
+  - 再次 `deploy` / `clean` 都会越来越慢
+
+本次实际判断：
+
+- 这次没有证据表明是“单纯内存不足”
+  - `MemoryPressure=False`
+  - worker 节点多数内存占用并不高
+- 这次也没有在故障现场拿到足够证据，证明一定是 `cni0/veth/FDB` 硬上限
+  - 它们仍然是可疑项
+  - 但不能在缺少故障现场计数的情况下直接下结论
+- 当前更可信的根因是：
+  - `9955` 在现有 9 节点规模下，把 worker 侧 `k3s-agent/CNI/网络 churn` 推高
+  - 随后 control-plane 被大量对象状态更新和事件拖慢
+  - 最终 `state.db` 里积压了大量 `seedemu-k3s-real-topo` 键，API 明显失稳
+
+本次恢复时的直接证据：
+
+- 一次恢复里，清理 `state.db` 前后大致是：
+  - `before_total=46533`
+  - `before_ns_rows=45723`
+  - `after_total=810`
+  - `after_ns_rows=0`
+
+这说明卡死后真正拖垮 control-plane 的往往不是某一个 Pod，而是：
+
+- namespace 下大量残留对象键
+- 节点失稳后产生的状态 churn
+
+### 已验证有效的恢复脚本
+
+脚本：
+
+- `/home/lxl/k8s/lxl/15_recover_stuck_deploy_9node.sh`
+
+用途：
+
+- 停掉本地残留的 `full-flow / deploy / wait-ready`
+- 对 9 台 VM 做 VM 级恢复（必要时 `destroy + start`）
+- 在 master 上备份并清理 `state.db` 中 `seedemu-k3s-real-topo` 的键
+- 重启 `k3s-agent`
+- 等待 9/9 节点重新 `Ready`
+- 确认旧 namespace 已不存在
+
+使用：
+
+```bash
+cd /home/lxl/k8s/lxl
+source ./env_9node.sh
+./15_recover_stuck_deploy_9node.sh
+```
+
+### 用于抓故障现场的新脚本
+
+脚本：
+
+- `/home/lxl/k8s/lxl/16_run_deploy_with_monitor_9node_bg.sh`
+
+用途：
+
+- `nohup` 后台启动 `05_deploy-batched_9node`
+- 默认继续跑 `wait-ready`，方便抓住真正失稳时刻
+- 持续采样：
+  - `kubectl get nodes`
+  - namespace Pod 状态汇总
+  - `readyz`
+  - `kubectl top`
+  - events
+  - host 侧 `virsh domstate --reason`
+  - host 磁盘 / 内存 / QEMU RSS
+  - 各节点 `uptime` / `loadavg` / `free`
+  - 各节点 `cni0 hash_max / FDB / veth` 计数
+- 如果 deploy 或 wait-ready 失败，会额外抓：
+  - `nodes describe`
+  - namespace 资源快照
+  - 各节点 `journalctl -u k3s / k3s-agent`
+  - 各节点 `dmesg`
+
+默认行为：
+
+- 默认 `DEPLOY_DEBUG_RUN_WAIT_READY=true`
+- 如果只想跑 deploy，不想自动接 wait-ready：
+
+```bash
+export DEPLOY_DEBUG_RUN_WAIT_READY=false
+```
+
+使用：
+
+```bash
+cd /home/lxl/k8s/lxl
+export EXPERIMENT_DIR=/home/lxl/k8s/lxl/logs/$(date +%Y%m%d_%H%M%S)_9955
+source ./env_9node.sh
+./16_run_deploy_with_monitor_9node_bg.sh
+```
+
+主要输出：
+
+- `${EXPERIMENT_DIR}/deploy_debug_runner.log`
+- `${EXPERIMENT_DIR}/deploy_debug_monitor/`
+- `${EXPERIMENT_DIR}/deploy_debug_failure_artifacts/`
+- `${EXPERIMENT_DIR}/deploy.log`
+- `${EXPERIMENT_DIR}/wait-ready.log`
+
+推荐排查顺序：
+
+1. 先看：
+
+```bash
+tail -f ${EXPERIMENT_DIR}/deploy_debug_runner.log
+```
+
+2. 再看：
+
+```bash
+tail -f ${EXPERIMENT_DIR}/wait-ready.log
+```
+
+3. 如果失败，优先看：
+
+```bash
+ls ${EXPERIMENT_DIR}/deploy_debug_failure_artifacts
+```
+
+4. 特别关注：
+   - `host_snapshot.txt`
+   - `cni0_bridge_state.txt`
+   - `nodes_describe.txt`
+   - `nodes/*_failure.txt`
+
+当前建议：
+
+- `9955` 在当前 9 节点上已经明显接近或超过稳定边界
+- 先用上面的监测脚本抓全现场，再判断是：
+  - 继续细化 `CNI/veth/FDB` 方向
+  - 还是直接认定需要更多节点 / 分阶段 deploy
