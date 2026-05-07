@@ -117,7 +117,7 @@ class Routing(Layer):
         rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
         # Senior default: do not auto-start bird here. K3s runtime starts bird in a
         # separate phased step after Deploy so operators can watch the evidence.
-        #rs_node.appendStartCommand('bird -d', True)
+        rs_node.appendStartCommand('bird -d', True)
         self._log("Bootstrapping bird.conf for RS {}...".format(rs_node.getName()))
 
         rs_ifaces = rs_node.getInterfaces()
@@ -147,7 +147,7 @@ class Routing(Layer):
         rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
         # Senior default: do not auto-start bird here. K3s runtime starts bird in a
         # separate phased step after Deploy so operators can watch the evidence.
-        #rnode.appendStartCommand('bird -d', True)
+        rnode.appendStartCommand('bird -d', True)
         if has_localnet:
             rnode.addProtocol('direct', 'local_nets',
                               RoutingFileTemplates['rnode_bird_direct'].format(interfaces = ifaces))
@@ -221,7 +221,7 @@ class Routing(Layer):
                 content1 = '\ninclude "/etc/bird/conf/*.conf";\n'
                 rnode.appendFile('/etc/bird/bird.conf',content1)
                 t=60000+random.randint(0, 12000)
-                rnode.setFile("/etc/bird/conf/kernel.conf",RoutingFileTemplates["kernel1"].format(interval=t))
+                rnode.setFile("/etc/bird/conf/kernel.conf",RoutingFileTemplates["kernel2"].format(interval=t))
 
             if type == 'rnode':
                 rnode: Router = obj
