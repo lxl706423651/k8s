@@ -5,10 +5,11 @@ import shutil
 import sqlite3
 import sys
 import time
+import os
 from pathlib import Path
 
 DB = Path("/var/lib/rancher/k3s/server/db/state.db")
-NS = "seedemu-k3s-real-topo"
+NS = os.environ.get("SEED_NAMESPACE", "seedemu-k3s-real-topo").strip() or "seedemu-k3s-real-topo"
 PATTERN = f"/registry/%{NS}%"
 BACKUP_DIR = DB.parent / "backup_manual"
 

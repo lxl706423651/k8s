@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Cluster identity and inventory
+export SEED_K3S_CLUSTER_NAME="${SEED_K3S_CLUSTER_NAME:-seedemu-k3s}"
+export SEED_CLUSTER_INVENTORY="${SEED_CLUSTER_INVENTORY:-seedemu-k3s-12node}"
+export SEED_CLUSTER_INVENTORY_PATH="${SEED_CLUSTER_INVENTORY_PATH:-${HOME}/k8s/configs/clusters/seedemu-k3s-12node.yaml}"
+
+# Access
+export SEED_K3S_USER="${SEED_K3S_USER:-ubuntu}"
+export SEED_K3S_SSH_KEY="${SEED_K3S_SSH_KEY:-$HOME/.ssh/id_ed25519}"
+
+# Topology / namespace
+export SEED_NAMESPACE="${SEED_NAMESPACE:-seedemu-k3s-real-topo}"
+export SEED_REAL_TOPOLOGY_DIR="${SEED_REAL_TOPOLOGY_DIR:-$HOME/seed-emulator/topology}"
+
+# Registry / placement
+export SEED_K3S_MASTER_IP="${SEED_K3S_MASTER_IP:-192.168.122.110}"
+export SEED_REGISTRY_HOST="${SEED_REGISTRY_HOST:-${SEED_K3S_MASTER_IP}}"
+export SEED_REGISTRY_PORT="${SEED_REGISTRY_PORT:-5000}"
+export SEED_REGISTRY="${SEED_REGISTRY:-${SEED_REGISTRY_HOST}:${SEED_REGISTRY_PORT}}"
+export SEED_CNI_TYPE="${SEED_CNI_TYPE:-macvlan}"
+export SEED_CNI_MASTER_INTERFACE="${SEED_CNI_MASTER_INTERFACE:-ens2}"
+export SEED_SCHEDULING_STRATEGY="${SEED_SCHEDULING_STRATEGY:-by_as_hard}"
+export SEED_PLACEMENT_MODE="${SEED_PLACEMENT_MODE:-by_as_hard}"
+export SEED_IMAGE_PULL_POLICY="${SEED_IMAGE_PULL_POLICY:-IfNotPresent}"
+export SEED_IMAGE_DISTRIBUTION_MODE="${SEED_IMAGE_DISTRIBUTION_MODE:-preload}"
