@@ -46,7 +46,9 @@ Then run the stages in order:
 ./deploy.sh     "${EXPERIMENT_DIR}"
 ./wait-ready.sh "${EXPERIMENT_DIR}"
 ./start_bird.sh "${EXPERIMENT_DIR}"
+./verify_bird.sh "${EXPERIMENT_DIR}"
 ./start_bird_kernel.sh "${EXPERIMENT_DIR}"
+./verify_bird_kernel.sh "${EXPERIMENT_DIR}"
 ```
 
 Do not skip `compile.sh`. `build.sh` consumes `${EXPERIMENT_DIR}/output/k8s.yaml`
@@ -56,12 +58,14 @@ you must rerun `./compile.sh` for that experiment directory before `./build.sh`.
 Meaning of each stage:
 
 - `preflight.sh`: checks kubeconfig, inventory, registry reachability from all nodes, kube-system health, topology inputs, and namespace baseline.
-- `compile.sh`: runs `examples/kubernetes/real_topology_k3s_compile.py` and writes compile artifacts into `${EXPERIMENT_DIR}/output`.
+- `compile.sh`: captures the current Ready node set, generates by-AS hard placement, runs `examples/kubernetes/real_topology_k3s_compile.py`, and writes compile artifacts into `${EXPERIMENT_DIR}/output`.
 - `build.sh`: uploads compile artifacts to the master, uses `BuildKit=1`, runs remote image builds, generates per-node image refs, and preloads images with 3-node concurrency.
 - `deploy.sh`: creates the namespace, splits the manifest, and submits controllers in batched round-robin order with pressure/backpressure control.
 - `wait-ready.sh`: polls pod readiness until all pods in the namespace are Running and Ready.
-- `start_bird.sh`: starts BIRD inside all router-like `seedemu` pods and verifies `birdc show status` across the namespace.
-- `start_bird_kernel.sh`: rewrites `/etc/bird/conf/kernel.conf` inside router-like pods and reloads kernel export mode.
+- `start_bird.sh`: starts BIRD inside all router-like `seedemu` pods and waits for node load to stabilize.
+- `verify_bird.sh`: verifies `birdc show status` across router-like pods with multi-node concurrency.
+- `start_bird_kernel.sh`: rewrites `/etc/bird/conf/kernel.conf` inside router-like pods, reloads kernel export mode, and waits for node load to stabilize.
+- `verify_bird_kernel.sh`: verifies kernel protocol state across router-like pods with multi-node concurrency.
 
 After a successful deploy, do not run `deploy.sh` again against the same live namespace.
 `deploy.sh` is intentionally not a rolling update script for an already-running experiment.
@@ -81,7 +85,9 @@ Each stage writes a log file into the experiment directory:
 - `${EXPERIMENT_DIR}/deploy.log`
 - `${EXPERIMENT_DIR}/wait-ready.log`
 - `${EXPERIMENT_DIR}/start_bird.log`
+- `${EXPERIMENT_DIR}/verify_bird.log`
 - `${EXPERIMENT_DIR}/start_bird_kernel.log`
+- `${EXPERIMENT_DIR}/verify_bird_kernel.log`
 - `${EXPERIMENT_DIR}/clean.log`
 
 Important generated artifacts:
@@ -92,8 +98,12 @@ Important generated artifacts:
 - `${EXPERIMENT_DIR}/build_remote.log`
 - `${EXPERIMENT_DIR}/start_bird_targets.json`
 - `${EXPERIMENT_DIR}/start_bird_summary.json`
+- `${EXPERIMENT_DIR}/verify_bird_targets.json`
+- `${EXPERIMENT_DIR}/verify_bird_summary.json`
 - `${EXPERIMENT_DIR}/start_bird_kernel_targets.json`
 - `${EXPERIMENT_DIR}/start_bird_kernel_summary.json`
+- `${EXPERIMENT_DIR}/verify_bird_kernel_targets.json`
+- `${EXPERIMENT_DIR}/verify_bird_kernel_summary.json`
 
 ## 4. If the cluster is unhealthy before running
 
@@ -122,7 +132,7 @@ You can also repair specific workers:
 `test/compile.sh` 是 standalone compile 入口。它本身不直接生成 YAML，而是做三件事：
 
 - 确定实验上下文，例如 `EXPERIMENT_DIR`、`topology_size`、`output/` 目录。
-- 准备 placement mapping，也就是“每个 ASN 应该落到哪个 Kubernetes node”。
+- 基于当前 Ready 节点集合生成 placement mapping，也就是“每个 ASN 应该落到哪个 Kubernetes node”。
 - 调用真正的 Python 编译入口 `examples/kubernetes/real_topology_k3s_compile.py`。
 
 这个 Python 编译入口会读取：
@@ -167,7 +177,7 @@ You can also repair specific workers:
 ### 5.3 `seed_k8s_plan_real_topology_by_as.py` 如何参与 compile
 
 `/home/lxl/k8s/lxl/seed_k8s_plan_real_topology_by_as.py` 不是 compiler 本体，
-而是 compiler 前面的“放置规划器”。
+而是 `compile.sh` 在正式进入 compiler 之前调用的“放置规划器”。
 
 它读取三类输入：
 
@@ -257,40 +267,41 @@ You can also repair specific workers:
 - `placement_plan.json`
   - placement 调试和审计用
 - `nodes.ready.json`
-  - 记录当次 preflight 看到的 Ready 节点快照
+  - 记录当次 compile 看到的 Ready 节点快照
 - `node_image_refs/`
   - build 前后生成，供 per-node preload 使用
 
-### 5.6 Preflight 里的 “Generating by-AS placement mapping” 是什么
+### 5.6 Compile 里的 “Generating by-AS placement mapping” 是什么
 
-`preflight.sh` 里的 “Generating by-AS placement mapping”，本质上就是提前运行
+这一步现在属于 `compile.sh`，本质上就是在真正进入 compiler 之前运行
 `seed_k8s_plan_real_topology_by_as.py`，把这次实验所需的放置计划先算出来。
 
 它的作用有三层：
 
-- 提前验证当前集群节点是否 Ready、是否足够承载该 topology。
+- 基于当前集群节点视图，判断该 topology 在当前节点集合下如何分配。
 - 把 `ASN -> kubernetes node` 的映射固定下来，供后续 compile 使用。
-- 提前把 placement 结果落盘，避免 build/deploy 时才发现 compile 产物没有硬 placement。
+- 把 placement 结果落盘，供后续 compiler、build、排障使用。
 
 可以把它理解成：
 
-- `preflight` 负责“先看当前集群能不能承载，并给出放置计划”
-- `compile` 负责“把这个放置计划正式编译进 `k8s.yaml`”
+- `preflight` 负责“先看当前集群和输入条件是否允许继续执行”
+- `compile` 负责“根据当前节点状态计算放置计划，并把它正式编译进 `k8s.yaml`”
 
 ### 5.7 是不是每次执行前都需要 preflight
 
 建议是：每次正式执行一个实验目录前，都先跑一次 `preflight.sh`。
 
-原因是它不只是做格式检查，还会检查和生成与当前集群状态相关的内容：
+原因是它不只是做格式检查，还会检查与当前集群状态直接相关的内容：
 
 - 当前哪些节点是 Ready
 - registry 从所有节点是否可达
 - kube-system 是否健康
 - 目标 namespace 是否已存在
-- 当前集群快照下的 by-AS placement mapping
 
-严格来说，如果下面这些条件都没有变化，理论上可以复用上一次 preflight 生成的
-placement 文件：
+而 placement mapping 现在属于 compile 阶段，因此真正需要每次重新生成 placement 的是 `compile.sh`。
+
+严格来说，如果下面这些条件都没有变化，理论上可以复用上一次 compile 生成的
+placement 和 `k8s.yaml`：
 
 - 集群节点集合没变
 - Ready 状态没变
@@ -299,7 +310,7 @@ placement 文件：
 - placement 策略没变
 
 但工程上不建议这样做。因为这套实验的核心瓶颈就在“每节点 pod 密度”和当前节点健康状态，
-而 placement mapping 又直接依赖当前 Ready 节点快照。为了避免 stale planning，推荐流程始终是：
+而 placement mapping 又直接依赖 compile 时刻的 Ready 节点快照。为了避免 stale planning，推荐流程始终是：
 
 ```bash
 ./preflight.sh  "${EXPERIMENT_DIR}"

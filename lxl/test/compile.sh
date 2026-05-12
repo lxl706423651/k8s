@@ -29,20 +29,23 @@ case "${SEED_SCHEDULING_STRATEGY}" in
         ;;
 esac
 
-if [ ! -f "${PLACEMENT_MAPPING_FILE}" ]; then
-    echo "Placement mapping missing; generating ${PLACEMENT_MAPPING_FILE}"
-    kubectl get nodes -o json > "${NODES_JSON}"
-    generate_as_placement_plan \
-        "${TOPOLOGY_FILE}" \
-        "${ASSIGNMENT_FILE}" \
-        "${NODES_JSON}" \
-        "${PLACEMENT_MAPPING_FILE}" \
-        "${PLACEMENT_PLAN_FILE}"
-fi
+echo "[1/3] Capturing current Ready node set"
+kubectl get nodes -o json > "${NODES_JSON}"
+ls -lh "${NODES_JSON}"
+
+echo "[2/3] Generating by-AS hard placement mapping"
+generate_as_placement_plan \
+    "${TOPOLOGY_FILE}" \
+    "${ASSIGNMENT_FILE}" \
+    "${NODES_JSON}" \
+    "${PLACEMENT_MAPPING_FILE}" \
+    "${PLACEMENT_PLAN_FILE}"
+ls -lh "${PLACEMENT_MAPPING_FILE}" "${PLACEMENT_PLAN_FILE}"
 
 require_file "${PLACEMENT_MAPPING_FILE}"
 SEED_NODE_LABELS_JSON="$(cat "${PLACEMENT_MAPPING_FILE}")"
 
+echo "[3/3] Running Kubernetes compile"
 echo "EXPERIMENT_DIR=${EXPERIMENT_DIR}"
 echo "SEED_TOPOLOGY_SIZE=${SEED_TOPOLOGY_SIZE}"
 echo "SEED_CLUSTER_INVENTORY_PATH=${SEED_CLUSTER_INVENTORY_PATH}"

@@ -14,6 +14,11 @@ from typing import List, Tuple, Dict, Any
 
 import networkx as nx
 
+# Always prefer the repo-local seedemu package for this compile entrypoint.
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 from seedemu.compiler import KubernetesCompiler, SchedulingStrategy
 from seedemu.core import Binding, Filter, Emulator, Router, AutonomousSystem
 from seedemu.layers import Base, Routing, Ebgp, Ibgp, Ospf, PeerRelationship, EtcHosts
@@ -402,7 +407,12 @@ def run():
         "SEED_SCHEDULING_STRATEGY",
         SchedulingStrategy.BY_AS_HARD,
     ).strip().lower()
-    node_labels = parse_node_labels_json(os.environ.get("SEED_NODE_LABELS_JSON", ""))
+    if 'SEED_NODE_LABELS_FILE' in os.environ:
+        with open(os.environ['SEED_NODE_LABELS_FILE'], 'r') as f:
+            node_labels = json.load(f)
+    else:
+        node_labels_raw = os.environ.get('SEED_NODE_LABELS_JSON', '{}')
+        node_labels = json.loads(node_labels_raw)
     enable_internet_map = env_bool("SEED_ENABLE_INTERNET_MAP", default=False)
 
     output_dir = os.environ.get("SEED_OUTPUT_DIR", "./output_k3s")

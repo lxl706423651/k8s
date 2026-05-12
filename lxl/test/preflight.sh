@@ -35,21 +35,6 @@ require_file "${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt"
 require_file "${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
 ls -lh "${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt" "${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl"
 
-[ -d "${OUTPUT_DIR}" ] || mkdir -p "${OUTPUT_DIR}"
-NODES_JSON="${EXPERIMENT_DIR}/nodes.ready.json"
-PLACEMENT_MAPPING_FILE="$(placement_mapping_file)"
-PLACEMENT_PLAN_FILE="$(placement_plan_file)"
-
-echo "[4.1/5] Generating by-AS placement mapping"
-kubectl get nodes -o json > "${NODES_JSON}"
-generate_as_placement_plan \
-    "${SEED_REAL_TOPOLOGY_DIR}/real_topology_${SEED_TOPOLOGY_SIZE}.txt" \
-    "${SEED_REAL_TOPOLOGY_DIR}/assignment.pkl" \
-    "${NODES_JSON}" \
-    "${PLACEMENT_MAPPING_FILE}" \
-    "${PLACEMENT_PLAN_FILE}"
-ls -lh "${PLACEMENT_MAPPING_FILE}" "${PLACEMENT_PLAN_FILE}"
-
 echo "[5/5] Namespace baseline"
 kubectl get ns "${SEED_NAMESPACE}" >/dev/null 2>&1 && {
     echo "Namespace ${SEED_NAMESPACE} already exists; clean it before running deploy" >&2
