@@ -1,0 +1,10 @@
+master:
+  vcpus: 12
+  memory_mb: 10240
+  disk_gb: 80
+
+workers:
+  count: 2
+  vcpus: 6
+  memory_mb: 10240
+  disk_gb: 80

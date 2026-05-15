@@ -1,0 +1,32 @@
+cluster_name: seedemu-k3s
+
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+
+# Vagrant-style explicit node selection. Exactly one node must be master.
+nodes:
+  - name: seed-k3s-master2
+    role: master
+    ip: 192.168.122.122
+  - name: seed-k3s-worker12
+    role: worker
+    ip: 192.168.122.123
+  - name: seed-k3s-worker13
+    role: worker
+    ip: 192.168.122.124
+
+# All fields below are optional. Defaults are suitable for the current SEED K3s flow.
+k3s:
+  version: v1.28.5+k3s1
+  force_reinstall: true
+  cluster_cidr: 10.42.0.0/16
+  service_cidr: 10.43.0.0/16
+  node_cidr_mask_size_ipv4: 20
+  max_pods: 4000
+
+registry:
+  port: 5000
+
+outputs:
+  kubeconfig: /home/lxl/k8s/origin_k8s/setup/seedemu-k3s.kubeconfig.yaml
