@@ -10,6 +10,11 @@ HOST_DOCKER_IO_MIRROR="${HOST_DOCKER_IO_MIRROR:-docker.m.daocloud.io}"
 PREPARE_FORCE="${PREPARE_FORCE:-false}"
 REGISTRY_BOOTSTRAP_IMAGE="registry:2"
 MULTUS_BOOTSTRAP_IMAGE="ghcr.io/k8snetworkplumbingwg/multus-cni:snapshot"
+K3S_SYSTEM_BOOTSTRAP_IMAGES=(
+    "rancher/mirrored-coredns-coredns:1.10.1"
+    "rancher/mirrored-metrics-server:v0.6.3"
+    "rancher/local-path-provisioner:v0.0.24"
+)
 SEED_EMULATOR_DOCKER_DIR="${SEED_EMULATOR_DOCKER_DIR:-/home/lxl/seed-emulator/docker_images/multiarch}"
 SEED_BASE_SOURCE_IMAGE="handsonsecurity/seedemu-multiarch-base:buildx-latest"
 SEED_ROUTER_SOURCE_IMAGE="handsonsecurity/seedemu-multiarch-router:buildx-latest"
@@ -163,6 +168,9 @@ prepare_image_cache() {
 
     save_host_image_tarball "${REGISTRY_BOOTSTRAP_IMAGE}"
     save_host_image_tarball "${MULTUS_BOOTSTRAP_IMAGE}"
+    for image in "${K3S_SYSTEM_BOOTSTRAP_IMAGES[@]}"; do
+        save_host_image_tarball "${image}"
+    done
     save_host_image_tarball "${SEED_UBUNTU_BUILD_IMAGE}"
     save_host_image_tarball "${SEED_BASE_SOURCE_IMAGE}"
     save_host_image_tarball "${SEED_ROUTER_SOURCE_IMAGE}"

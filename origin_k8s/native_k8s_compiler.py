@@ -15,6 +15,12 @@ from seedemu.compiler.Docker import Docker
 from seedemu.core import Network, Node
 
 
+INTERNET_MAP_META_PREFIX = "org.seedsecuritylabs.seedemu.meta."
+# Border routers are already represented through the router node path in SEED's
+# registry. Compiling "brdnode" again creates duplicate Deployment names.
+SEEDEMU_NODE_TYPES = ["rnode", "csnode", "hnode", "rs", "snode"]
+
+
 class NativeKubernetesCompiler(Docker):
     """Minimal Kubernetes compiler for a k8s-native baseline.
 
@@ -85,7 +91,7 @@ class NativeKubernetesCompiler(Docker):
                 self.__manifests.append(self._compileNetK8s(obj))
 
         for ((_, obj_type, _), obj) in registry.getAll().items():
-            if obj_type in ["rnode", "csnode", "hnode", "rs", "snode"]:
+            if obj_type in SEEDEMU_NODE_TYPES:
                 self.__manifests.append(self._compileNodeK8s(obj))
 
         with open("k8s.yaml", "w", encoding="utf-8") as handle:
@@ -134,7 +140,11 @@ class NativeKubernetesCompiler(Docker):
         return {
             "apiVersion": "k8s.cni.cncf.io/v1",
             "kind": "NetworkAttachmentDefinition",
-            "metadata": {"name": name, "namespace": self.__namespace},
+            "metadata": {
+                "name": name,
+                "namespace": self.__namespace,
+                "annotations": self._getInternetMapNetMeta(net),
+            },
             "spec": {"config": json.dumps(config)},
         }
 
@@ -163,7 +173,7 @@ class NativeKubernetesCompiler(Docker):
         asn = str(node.getAsn())
         role = self._nodeRoleToString(node.getRole())
 
-        annotations: Dict[str, str] = {}
+        annotations = self._getInternetMapNodeMeta(node)
         net_specs = []
         for iface in node.getInterfaces():
             net = iface.getNet()
@@ -217,6 +227,68 @@ class NativeKubernetesCompiler(Docker):
                 },
             },
         }
+
+    def _metaKey(self, key: str) -> str:
+        return f"{INTERNET_MAP_META_PREFIX}{key}"
+
+    def _nodeInternetMapRole(self, node: Node) -> str:
+        _scope, obj_type, _name = node.getRegistryInfo()
+        if obj_type == "hnode":
+            return "Host"
+        if obj_type == "rnode":
+            return "Router"
+        if obj_type == "brdnode":
+            return "BorderRouter"
+        if obj_type == "csnode":
+            return "SCION Control Service"
+        if obj_type == "snode":
+            return "Emulator Service Worker"
+        if obj_type == "rs":
+            return "Route Server"
+        return obj_type
+
+    def _getInternetMapNodeMeta(self, node: Node) -> Dict[str, str]:
+        _scope, _obj_type, name = node.getRegistryInfo()
+        meta = {
+            self._metaKey("asn"): str(node.getAsn()),
+            self._metaKey("nodename"): str(name),
+            self._metaKey("role"): self._nodeInternetMapRole(node),
+        }
+
+        if node.getDisplayName() is not None:
+            meta[self._metaKey("displayname")] = str(node.getDisplayName())
+        if node.getDescription() is not None:
+            meta[self._metaKey("description")] = str(node.getDescription())
+        if len(node.getClasses()) > 0:
+            meta[self._metaKey("class")] = json.dumps(node.getClasses())
+
+        for key, value in node.getLabel().items():
+            meta[self._metaKey(key)] = str(value)
+
+        for index, iface in enumerate(node.getInterfaces()):
+            net = iface.getNet()
+            meta[self._metaKey(f"net.{index}.name")] = str(net.getName())
+            meta[self._metaKey(f"net.{index}.address")] = (
+                f"{iface.getAddress()}/{net.getPrefix().prefixlen}"
+            )
+
+        return meta
+
+    def _getInternetMapNetMeta(self, net: Network) -> Dict[str, str]:
+        scope, _obj_type, name = net.getRegistryInfo()
+        meta = {
+            self._metaKey("type"): "global" if scope == "ix" else "local",
+            self._metaKey("scope"): str(scope),
+            self._metaKey("name"): str(name),
+            self._metaKey("prefix"): str(net.getPrefix()),
+        }
+
+        if net.getDisplayName() is not None:
+            meta[self._metaKey("displayname")] = str(net.getDisplayName())
+        if net.getDescription() is not None:
+            meta[self._metaKey("description")] = str(net.getDescription())
+
+        return meta
 
     def _patch_interface_setup_context(self, dockerfile_path: Path) -> None:
         dockerfile = dockerfile_path.read_text(encoding="utf-8")

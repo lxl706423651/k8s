@@ -4,7 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 HELPER="${SCRIPT_DIR}/k3s_config.py"
-PLAYBOOK_PATH="${REPO_ROOT}/ansible/k3s-install.yml"
+if [ -f "${SCRIPT_DIR}/ansible/k3s-install.yml" ]; then
+    PLAYBOOK_PATH="${SCRIPT_DIR}/ansible/k3s-install.yml"
+else
+    PLAYBOOK_PATH="${REPO_ROOT}/ansible/k3s-install.yml"
+fi
 INPUT_PATH="${1:-}"
 SOURCE_KIND=""
 NODES_TSV=""
@@ -17,6 +21,11 @@ HOST_IMAGE_CACHE_DIR="${SCRIPT_DIR}/image-cache"
 HOST_DOCKER_IO_MIRROR="docker.m.daocloud.io"
 REGISTRY_BOOTSTRAP_IMAGE="registry:2"
 MULTUS_BOOTSTRAP_IMAGE="ghcr.io/k8snetworkplumbingwg/multus-cni:snapshot"
+K3S_SYSTEM_BOOTSTRAP_IMAGES=(
+    "rancher/mirrored-coredns-coredns:1.10.1"
+    "rancher/mirrored-metrics-server:v0.6.3"
+    "rancher/local-path-provisioner:v0.0.24"
+)
 SEED_EMULATOR_DOCKER_DIR="/home/lxl/seed-emulator/docker_images/multiarch"
 SEED_BASE_SOURCE_IMAGE="handsonsecurity/seedemu-multiarch-base:buildx-latest"
 SEED_ROUTER_SOURCE_IMAGE="handsonsecurity/seedemu-multiarch-router:buildx-latest"
@@ -60,7 +69,7 @@ run_with_timeout() {
 }
 
 cleanup_tmp() {
-    [ -n "${AUTO_NODES_TSV}" ] && rm -f "${AUTO_NODES_TSV}"
+    [ -n "${AUTO_NODES_TSV}" ] && rm -f "${AUTO_NODES_TSV}" || true
 }
 
 resolve_input() {
@@ -358,11 +367,19 @@ fetch_kubeconfig() {
     echo "kubeconfig=${SEED_OUTPUT_KUBECONFIG}"
 }
 
-preload_multus_image_all_nodes() {
-    echo "[6/9] Preloading Multus image from host into all K3s containerd nodes"
+preload_k3s_bootstrap_images_all_nodes() {
+    echo "[6/9] Preloading K3s system and Multus images from host into all K3s containerd nodes"
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
-        import_k3s_image_to_node "${MULTUS_BOOTSTRAP_IMAGE}" "${name}" "${ip}"
+        for image in "${K3S_SYSTEM_BOOTSTRAP_IMAGES[@]}" "${MULTUS_BOOTSTRAP_IMAGE}"; do
+            import_k3s_image_to_node "${image}" "${name}" "${ip}"
+        done
     done < <(helper nodes-tsv)
+    kubectl --kubeconfig "${SEED_OUTPUT_KUBECONFIG}" -n kube-system delete pod -l k8s-app=kube-dns \
+        --force --grace-period=0 --wait=false >/dev/null 2>&1 || true
+    kubectl --kubeconfig "${SEED_OUTPUT_KUBECONFIG}" -n kube-system delete pod -l k8s-app=metrics-server \
+        --force --grace-period=0 --wait=false >/dev/null 2>&1 || true
+    kubectl --kubeconfig "${SEED_OUTPUT_KUBECONFIG}" -n kube-system delete pod -l app=local-path-provisioner \
+        --force --grace-period=0 --wait=false >/dev/null 2>&1 || true
     kubectl --kubeconfig "${SEED_OUTPUT_KUBECONFIG}" -n kube-system delete pod -l name=multus \
         --force --grace-period=0 --wait=false >/dev/null 2>&1 || true
 }
@@ -478,7 +495,7 @@ main() {
     ensure_registry
     prepare_master_workload_build_images
     fetch_kubeconfig
-    preload_multus_image_all_nodes
+    preload_k3s_bootstrap_images_all_nodes
     apply_tuning_all_nodes
     verify_cluster
     write_outputs

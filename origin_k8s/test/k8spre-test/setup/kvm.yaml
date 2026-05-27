@@ -1,0 +1,26 @@
+clusterName: seedemu-k3s
+master:
+  vcpus: 12
+  memoryMb: 10240
+  diskGb: 80
+workers:
+  count: 2
+  vcpus: 6
+  memoryMb: 10240
+  diskGb: 80
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+registry:
+  port: 5000
+kvm:
+  storageDir: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup
+  diskDir: /data/lxl/k8spre/k8spre-test-dce02673/disks
+  cloudInitDir: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/cloud-init
+  baseImagePath: /data/lxl/k8spre/k8spre-test-dce02673/base/jammy-server-cloudimg-amd64.img
+outputs:
+  tmpDir: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/tmp
+  kubeconfig: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/seedemu-k3s.kubeconfig.yaml
+  inventory: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/seedemu-k3s.inventory.yaml
+  k3sConfig: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/configK3s.yaml
+  kvmState: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/kvmState.yaml

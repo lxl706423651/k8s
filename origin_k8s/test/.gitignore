@@ -1,0 +1,5 @@
+k8spre-generated/
+k8spre-e2e/
+k8spre-e2e-current-*/
+*.log
+__pycache__/

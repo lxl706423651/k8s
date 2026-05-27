@@ -68,6 +68,37 @@ def namespace(args: argparse.Namespace) -> None:
     raise SystemExit(f"No Namespace object found in {args.manifest}")
 
 
+def validate_manifest(args: argparse.Namespace) -> None:
+    seen = {}
+    duplicate_errors = []
+    with open(args.manifest, "r", encoding="utf-8") as fh:
+        for index, doc in enumerate(yaml.safe_load_all(fh), 1):
+            if not isinstance(doc, dict):
+                continue
+            kind = doc.get("kind")
+            metadata = doc.get("metadata") or {}
+            name = metadata.get("name")
+            namespace_name = metadata.get("namespace") or ""
+            if not kind or not name:
+                continue
+            key = (kind, namespace_name, name)
+            if key in seen:
+                duplicate_errors.append(
+                    f"{kind}/{name} namespace={namespace_name or '<cluster>'} "
+                    f"appears in docs {seen[key]} and {index}"
+                )
+            else:
+                seen[key] = index
+
+    if duplicate_errors:
+        print(f"Duplicate Kubernetes resources in {args.manifest}:", flush=True)
+        for error in duplicate_errors[:30]:
+            print(f"  {error}", flush=True)
+        if len(duplicate_errors) > 30:
+            print(f"  ... {len(duplicate_errors) - 30} more", flush=True)
+        raise SystemExit(1)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -92,6 +123,10 @@ def main() -> int:
     ns = subparsers.add_parser("namespace")
     ns.add_argument("--manifest", required=True)
     ns.set_defaults(func=namespace)
+
+    validate = subparsers.add_parser("validate-manifest")
+    validate.add_argument("--manifest", required=True)
+    validate.set_defaults(func=validate_manifest)
 
     args = parser.parse_args()
     args.func(args)

@@ -1,0 +1,16 @@
+clusterName: seedemu-k3s
+
+nodes:
+- name: 
+  role: master
+  ip: 10.202.236.88
+  ssh:
+    user: lxl
+    key: /home/lxl/.ssh/id_ed25519
+- name: 
+  role: worker
+  ip: 10.202.191.39
+  ssh:
+    user: seed
+    key: /home/lxl/.ssh/id_ed25519
+    #password: dees

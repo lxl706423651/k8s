@@ -1,0 +1,4 @@
+setupConfig: /home/lxl/k8s/origin_k8s/test/k8spre-test/setup/configK3s.yaml
+outputDir: /home/lxl/k8s/origin_k8s/emulate/output
+imageRegistryPrefix: seedemu
+rolloutTimeoutSeconds: 1800

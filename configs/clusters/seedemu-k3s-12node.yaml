@@ -1,0 +1,99 @@
+cluster_name: seedemu-k3s
+reference_cluster: false
+runtime: k3s
+max_validated_topology_size: 12000
+k3s:
+  cluster_cidr: 10.42.0.0/16
+  service_cidr: 10.43.0.0/16
+  node_cidr_mask_size_ipv4: 20
+  max_pods: 4000
+network_tuning:
+  cni0_hash_max: 16384
+  user_max_net_namespaces: 65536
+  neigh_gc_thresh1: 1048576
+  neigh_gc_thresh2: 4194304
+  neigh_gc_thresh3: 8388608
+  netdev_max_backlog: 1000000
+  optmem_max: 25165824
+ssh:
+  user: ubuntu
+  key_path_env: SEED_K3S_SSH_KEY
+  default_key_path: ~/.ssh/id_ed25519
+registry:
+  host: 192.168.122.110
+  port: 5000
+cni:
+  default_master_interface: ens2
+nodes:
+  - name: seed-k3s-master
+    role: master
+    management_ip: 192.168.122.110
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-master
+  - name: seed-k3s-worker1
+    role: worker
+    management_ip: 192.168.122.111
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker1
+  - name: seed-k3s-worker2
+    role: worker
+    management_ip: 192.168.122.112
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker2
+  - name: seed-k3s-worker3
+    role: worker
+    management_ip: 192.168.122.113
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker3
+  - name: seed-k3s-worker4
+    role: worker
+    management_ip: 192.168.122.114
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker4
+  - name: seed-k3s-worker5
+    role: worker
+    management_ip: 192.168.122.115
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker5
+  - name: seed-k3s-worker6
+    role: worker
+    management_ip: 192.168.122.116
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker6
+  - name: seed-k3s-worker7
+    role: worker
+    management_ip: 192.168.122.117
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker7
+  - name: seed-k3s-worker8
+    role: worker
+    management_ip: 192.168.122.118
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker8
+  - name: seed-k3s-worker9
+    role: worker
+    management_ip: 192.168.122.119
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker9
+  - name: seed-k3s-worker10
+    role: worker
+    management_ip: 192.168.122.120
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker10
+  - name: seed-k3s-worker11
+    role: worker
+    management_ip: 192.168.122.121
+    runtime: k3s
+    labels:
+      kubernetes.io/hostname: seed-k3s-worker11

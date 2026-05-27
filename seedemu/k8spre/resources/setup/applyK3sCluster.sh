@@ -19,6 +19,7 @@ ansibleTimeout="3600s"
 # Do not make fresh VMs pull these images from the public internet during setup.
 HOST_IMAGE_CACHE_DIR="${SCRIPT_DIR}/image-cache"
 HOST_DOCKER_IO_MIRROR="docker.m.daocloud.io"
+dockerPullTimeoutSeconds=180
 REGISTRY_BOOTSTRAP_IMAGE="registry:2"
 MULTUS_BOOTSTRAP_IMAGE="ghcr.io/k8snetworkplumbingwg/multus-cni:snapshot"
 K3S_SYSTEM_BOOTSTRAP_IMAGES=(
@@ -83,6 +84,10 @@ loadConfigVars() {
         return 1
     fi
     eval "${vars_output}"
+    MASTER_IS_LOCAL=false
+    if [ "${k3sMasterConnection:-ssh}" = "local" ]; then
+        MASTER_IS_LOCAL=true
+    fi
     SSH_OPTS=(
         -i "${k3sSshKey}"
         -o StrictHostKeyChecking=no
@@ -104,6 +109,10 @@ loadNodeSshContext() {
     # SSH/scp operations. Master-only operations keep using SSH_OPTS.
     local name="$1"
     eval "$(helper node-ssh-vars --name "${name}")"
+    if [ "${nodeConnection:-ssh}" = "local" ]; then
+        NODE_SSH_OPTS=()
+        return 0
+    fi
     [ -f "${nodeSshKey}" ] || {
         echo "SSH key not found for ${name}: ${nodeSshKey}" >&2
         exit 1
@@ -122,26 +131,131 @@ loadNodeSshContext() {
     )
 }
 
+resolveSeedEmulatorDockerDir() {
+    # Resolve the host path containing seedemu-base and seedemu-router
+    # Dockerfiles. Existing YAML value wins; common source-tree locations are
+    # tried as fallbacks for physical-server workflows.
+    local cursor="${SCRIPT_DIR}"
+    while [ "${cursor}" != "/" ]; do
+        if [ -d "${cursor}/docker_images/multiarch/seedemu-base" ] &&
+            [ -d "${cursor}/docker_images/multiarch/seedemu-router" ]; then
+            seedEmulatorDockerDir="${cursor}/docker_images/multiarch"
+            return 0
+        fi
+        cursor="$(dirname "${cursor}")"
+    done
+
+    local candidate
+    for candidate in \
+        "${seedEmulatorDockerDir}" \
+        "${HOME}/seed-emulator-k8s-new/docker_images/multiarch" \
+        "${HOME}/k8s/seed-emulator/docker_images/multiarch" \
+        "${REPO_ROOT}/../seed-emulator/docker_images/multiarch"; do
+        if [ -d "${candidate}/seedemu-base" ] && [ -d "${candidate}/seedemu-router" ]; then
+            seedEmulatorDockerDir="$(cd "${candidate}" && pwd)"
+            return 0
+        fi
+    done
+}
+
+runMasterCommand() {
+    # Args:
+    #   $1: shell command to run on the K3s master.
+    # Uses local execution when configK3s.yaml points the master at this host;
+    # otherwise uses the configured master SSH account.
+    local command="$1"
+    if [ "${MASTER_IS_LOCAL}" = "true" ]; then
+        bash -lc "${command}"
+    else
+        ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" "${command}"
+    fi
+}
+
+copyFileToMaster() {
+    # Args:
+    #   $1: local source path.
+    #   $2: destination path on the master.
+    local source="$1"
+    local target="$2"
+    if [ "${MASTER_IS_LOCAL}" = "true" ]; then
+        cp "${source}" "${target}"
+    else
+        scp "${SSH_OPTS[@]}" "${source}" "${k3sUser}@${k3sMasterIp}:${target}" >/dev/null
+    fi
+}
+
+readMasterFile() {
+    # Args:
+    #   $1: absolute file path to read from the master with sudo.
+    local path="$1"
+    if [ "${MASTER_IS_LOCAL}" = "true" ]; then
+        sudo -n cat "${path}"
+    else
+        ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" "sudo -n cat '${path}'"
+    fi
+}
+
+runNodeCommand() {
+    # Args:
+    #   $1: node name from configK3s.yaml.
+    #   $2: node management IP.
+    #   $3: shell command to run on that node.
+    local name="$1"
+    local ip="$2"
+    local command="$3"
+    loadNodeSshContext "${name}"
+    if [ "${nodeConnection:-ssh}" = "local" ]; then
+        bash -lc "${command}"
+    else
+        ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "${command}"
+    fi
+}
+
+copyFileToNode() {
+    # Args:
+    #   $1: node name from configK3s.yaml.
+    #   $2: node management IP.
+    #   $3: local source path.
+    #   $4: destination path on the node.
+    local name="$1"
+    local ip="$2"
+    local source="$3"
+    local target="$4"
+    loadNodeSshContext "${name}"
+    if [ "${nodeConnection:-ssh}" = "local" ]; then
+        cp "${source}" "${target}"
+    else
+        scp "${NODE_SSH_OPTS[@]}" "${source}" "${nodeSshUser}@${ip}:${target}" >/dev/null
+    fi
+}
+
 printPlan() {
     echo "config=${CONFIG_PATH}"
     echo "K3s node plan:"
     helper nodes-tsv | awk -F '\t' '{printf "  %-24s role=%-6s ip=%-15s mac=%s\n", $1, $2, $3, $4}'
     echo "master=${k3sMasterName} (${k3sMasterIp})"
+    echo "master_connection=${k3sMasterConnection:-ssh}"
+    echo "seedemu_docker_dir=${seedEmulatorDockerDir}"
     echo "kubeconfig=${outputKubeconfig}"
 }
 
 verifyConnectivity() {
-    echo "[1/9] Verifying SSH and sudo on all nodes"
+    echo "[1/10] Verifying SSH and sudo on all nodes"
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
         echo "  ${name} ${ip}"
         loadNodeSshContext "${name}"
-        runWithTimeout 12s ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "echo ssh-ok" >/dev/null
-        runWithTimeout 12s ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "sudo -n true" >/dev/null
+        if [ "${nodeConnection:-ssh}" = "local" ]; then
+            runWithTimeout 12s bash -lc "echo local-ok >/dev/null"
+            runWithTimeout 12s sudo -n true >/dev/null
+        else
+            runWithTimeout 12s ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "echo ssh-ok" >/dev/null
+            runWithTimeout 12s ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "sudo -n true" >/dev/null
+        fi
     done < <(helper nodes-tsv)
 }
 
 runAnsibleInstall() {
-    echo "[2/9] Installing K3s via generated Ansible inventory"
+    echo "[2/10] Installing K3s via generated Ansible inventory"
     local inventory_tmp playbook_tmp node_count
     mkdir -p "${setupTmpDir}"
     inventory_tmp="$(mktemp "${setupTmpDir}/ansible-inventory.XXXXXX.yml")"
@@ -187,13 +301,13 @@ ensureHostDockerImage() {
     fi
 
     echo "  host docker pull ${image}" >&2
-    if docker pull "${image}" >/dev/null; then
+    if runWithTimeout "${dockerPullTimeoutSeconds}s" docker pull "${image}" >/dev/null; then
         return 0
     fi
 
     if mirror_image="$(dockerIoMirrorRef "${image}")"; then
         echo "  host docker pull ${mirror_image}" >&2
-        docker pull "${mirror_image}" >/dev/null
+        runWithTimeout "${dockerPullTimeoutSeconds}s" docker pull "${mirror_image}" >/dev/null
         docker tag "${mirror_image}" "${image}" >/dev/null
         return 0
     fi
@@ -225,9 +339,8 @@ loadDockerImageToMaster() {
     tar_path="$(saveHostImageTarball "${image}")"
     remote_tar="/tmp/$(basename "${tar_path}")"
     echo "  copy ${image} to ${k3sMasterName}:${remote_tar}"
-    scp "${SSH_OPTS[@]}" "${tar_path}" "${k3sUser}@${k3sMasterIp}:${remote_tar}" >/dev/null
-    runWithTimeout 180s ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" \
-        "sudo -n docker load -i '${remote_tar}' >/dev/null && rm -f '${remote_tar}'"
+    copyFileToMaster "${tar_path}" "${remote_tar}"
+    runMasterCommand "sudo -n docker load -i '${remote_tar}' >/dev/null && rm -f '${remote_tar}'"
 }
 
 importK3sImageToNode() {
@@ -238,17 +351,16 @@ importK3sImageToNode() {
     tar_path="$(saveHostImageTarball "${image}")"
     remote_tar="/tmp/$(basename "${tar_path}")"
     echo "  import ${image} to ${node_name}"
-    loadNodeSshContext "${node_name}"
-    scp "${NODE_SSH_OPTS[@]}" "${tar_path}" "${nodeSshUser}@${node_ip}:${remote_tar}" >/dev/null
-    runWithTimeout 180s ssh -n "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${node_ip}" \
+    copyFileToNode "${node_name}" "${node_ip}" "${tar_path}" "${remote_tar}"
+    runNodeCommand "${node_name}" "${node_ip}" \
         "sudo -n k3s ctr -n k8s.io images import '${remote_tar}' >/dev/null && rm -f '${remote_tar}'"
 }
 
 ensureRegistry() {
-    echo "[3/9] Ensuring private registry on master"
+    echo "[3/10] Ensuring private registry on master"
     echo "  preparing ${REGISTRY_BOOTSTRAP_IMAGE} on host and loading it into master Docker"
     loadDockerImageToMaster "${REGISTRY_BOOTSTRAP_IMAGE}"
-    runWithTimeout 180s ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" "
+    runMasterCommand "
         set -euo pipefail
         if ! docker buildx version >/dev/null 2>&1; then
             sudo -n apt-get update >/dev/null
@@ -281,7 +393,7 @@ ensureSeedemuHostBuildImages() {
 }
 
 prepareMasterWorkloadBuildImages() {
-    echo "[4/9] Preparing workload build base images on master Docker"
+    echo "[4/10] Preparing workload build base images on master Docker"
     [ -d "${seedEmulatorDockerDir}/seedemu-base" ] || {
         echo "Missing host seedemu base image directory: ${seedEmulatorDockerDir}/seedemu-base" >&2
         exit 1
@@ -297,14 +409,14 @@ prepareMasterWorkloadBuildImages() {
     loadDockerImageToMaster "${seedRouterSourceImage}"
 
     echo "  ensuring stable compiler hash tags on master Docker"
-    runWithTimeout 120s ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" "
+    runMasterCommand "
         set -euo pipefail
         sudo -n docker tag '${seedBaseSourceImage}' '${seedBaseHashImage}'
         sudo -n docker tag '${seedRouterSourceImage}' '${seedRouterHashImage}'
     "
 
     echo "  pushing seedemu base/router images into master local registry"
-    runWithTimeout 600s ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" "
+    runMasterCommand "
         set -euo pipefail
         sudo -n docker tag '${seedBaseSourceImage}' \
             '127.0.0.1:${registryPort}/${seedBaseSourceImage}'
@@ -316,16 +428,15 @@ prepareMasterWorkloadBuildImages() {
 }
 
 fetchKubeconfig() {
-    echo "[5/9] Fetching kubeconfig"
+    echo "[5/10] Fetching kubeconfig"
     mkdir -p "$(dirname "${outputKubeconfig}")"
-    runWithTimeout 30s ssh "${SSH_OPTS[@]}" "${k3sUser}@${k3sMasterIp}" \
-        "sudo -n cat /etc/rancher/k3s/k3s.yaml" > "${outputKubeconfig}"
+    readMasterFile "/etc/rancher/k3s/k3s.yaml" > "${outputKubeconfig}"
     sed -i "s|127.0.0.1|${k3sMasterIp}|g" "${outputKubeconfig}"
     echo "kubeconfig=${outputKubeconfig}"
 }
 
 preloadK3sBootstrapImagesAllNodes() {
-    echo "[6/9] Preloading K3s system and Multus images from host into all K3s containerd nodes"
+    echo "[6/10] Preloading K3s system and Multus images from host into all K3s containerd nodes"
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
         for image in "${K3S_SYSTEM_BOOTSTRAP_IMAGES[@]}" "${MULTUS_BOOTSTRAP_IMAGE}"; do
             importK3sImageToNode "${image}" "${name}" "${ip}"
@@ -341,12 +452,28 @@ preloadK3sBootstrapImagesAllNodes() {
         --force --grace-period=0 --wait=false >/dev/null 2>&1 || true
 }
 
+installOvnFabricIfConfigured() {
+    # Install Kube-OVN after K3s and Multus are available. OVN is a Kubernetes
+    # CNI add-on, so it cannot be prepared in the physical-node preflight stage.
+    if [ "${fabricType}" != "ovn" ] && [ "${fabricType}" != "kube-ovn" ]; then
+        return 0
+    fi
+    echo "[7/10] Installing Kube-OVN non-primary CNI"
+    bash "${SCRIPT_DIR}/ovn/installKubeOvnFabric.sh" "${CONFIG_PATH}"
+}
+
 applyNodeK3sTuning() {
     local name="$1"
     local ip="$2"
+    local remote_runner=()
     echo "  tuning K3s on ${name} (${ip})"
     loadNodeSshContext "${name}"
-    ssh "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "sudo -n bash -s" -- \
+    if [ "${nodeConnection:-ssh}" = "local" ]; then
+        remote_runner=(sudo -n bash -s --)
+    else
+        remote_runner=(ssh "${NODE_SSH_OPTS[@]}" "${nodeSshUser}@${ip}" "sudo -n bash -s" --)
+    fi
+    "${remote_runner[@]}" \
         "${k3sMaxPods}" \
         "${kubeletRegistryQps}" \
         "${kubeletRegistryBurst}" \
@@ -400,14 +527,14 @@ EOF_REMOTE
 }
 
 applyTuningAllNodes() {
-    echo "[7/9] Applying K3s runtime tuning"
+    echo "[8/10] Applying K3s runtime tuning"
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
         applyNodeK3sTuning "${name}" "${ip}"
     done < <(helper nodes-tsv)
 }
 
 verifyCluster() {
-    echo "[8/9] Waiting for K3s nodes"
+    echo "[9/10] Waiting for K3s nodes"
     kubectl --kubeconfig "${outputKubeconfig}" wait --for=condition=Ready node --all --timeout=300s
     kubectl --kubeconfig "${outputKubeconfig}" -n kube-system rollout status daemonset/kube-multus-ds --timeout=300s
     kubectl --kubeconfig "${outputKubeconfig}" get nodes -o wide
@@ -416,7 +543,7 @@ verifyCluster() {
 }
 
 writeOutputs() {
-    echo "[9/9] Writing inventory output"
+    echo "[10/10] Writing inventory output"
     helper write-cluster-inventory >/dev/null
     echo "inventory=${outputInventory}"
     echo "kubeconfig=${outputKubeconfig}"
@@ -431,7 +558,6 @@ main() {
     requireCommand ssh
     requireCommand kubectl
     requireCommand sed
-    requireCommand virsh
     [ -f "${PLAYBOOK_PATH}" ] || {
         echo "K3s Ansible playbook not found: ${PLAYBOOK_PATH}" >&2
         exit 1
@@ -439,11 +565,12 @@ main() {
 
     resolveInput
     loadConfigVars
+    resolveSeedEmulatorDockerDir
 
-    [ -f "${k3sSshKey}" ] || {
+    if [ "${MASTER_IS_LOCAL}" != "true" ] && [ ! -f "${k3sSshKey}" ]; then
         echo "SSH key not found: ${k3sSshKey}" >&2
         exit 1
-    }
+    fi
 
     printPlan
     verifyConnectivity
@@ -452,6 +579,7 @@ main() {
     prepareMasterWorkloadBuildImages
     fetchKubeconfig
     preloadK3sBootstrapImagesAllNodes
+    installOvnFabricIfConfigured
     applyTuningAllNodes
     verifyCluster
     writeOutputs

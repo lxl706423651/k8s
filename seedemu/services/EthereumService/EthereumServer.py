@@ -17,6 +17,7 @@ class EthereumServer(Server):
     _id: int
     _blockchain: Blockchain
     _is_bootnode: bool
+    _is_beaconviewer: bool
     _bootnode_http_port: int
     _smart_contract: SmartContract
     _accounts: List[AccountStructure]
@@ -55,6 +56,7 @@ class EthereumServer(Server):
         self._id = id
         self._blockchain = blockchain
         self._is_bootnode = False
+        self._is_beaconviewer = False
         self._bootnode_http_port = 8088
         self._smart_contract = None
         self._accounts = []
@@ -161,30 +163,51 @@ class EthereumServer(Server):
         
         # copy keystore to the proper folder
         for account in self._accounts:
+            # if isinstance(self, PoSGethServer) or isinstance(self, PoAServer):
             node.appendStartCommand("cp /tmp/keystore/{} /root/.ethereum/keystore/".format(account.keystore_filename))
 
         if self._is_bootnode:
-            # generate enode url. other nodes will access this to bootstrap the network.
-            node.appendStartCommand('[ ! -e "/root/.ethereum/geth/bootkey" ] && bootnode -genkey /root/.ethereum/geth/bootkey')
-            node.appendStartCommand('echo "enode://$(bootnode -nodekey /root/.ethereum/geth/bootkey -writeaddress)@{}:30301" > /tmp/eth-enode-url'.format(addr))
-            
-            # Default port is 30301, use -addr :<port> to specify a custom port
-            node.appendStartCommand('bootnode -nodekey /root/.ethereum/geth/bootkey -verbosity 9 -addr {}:30301 2> /tmp/bootnode-logs &'.format(addr))          
-            node.appendStartCommand('python3 -m http.server {} -d /tmp'.format(self._bootnode_http_port), True)
-
-        # get other nodes IP for the bootstrapper.
+            if isinstance(self, PoSGethServer) or isinstance(self, PoAServer):
+                # generate enode url. other nodes will access this to bootstrap the network.
+                node.appendStartCommand('[ ! -e "/root/.ethereum/geth/bootkey" ] && bootnode -genkey /root/.ethereum/geth/bootkey')
+                node.appendStartCommand('echo "enode://$(bootnode -nodekey /root/.ethereum/geth/bootkey -writeaddress)@{}:30301" > /tmp/eth-enode-url'.format(addr))
+                
+                # Default port is 30301, use -addr :<port> to specify a custom port
+                node.appendStartCommand('bootnode -nodekey /root/.ethereum/geth/bootkey -verbosity 9 -addr {}:30301 2> /tmp/bootnode-logs &'.format(addr))          
+                node.appendStartCommand('python3 -m http.server {} -d /tmp'.format(self._bootnode_http_port), True)
+    
+    # get other nodes IP for the bootstrapper.
         bootnodes = self._blockchain.getBootNodes()[:]
         if len(bootnodes) > 0:
-            node.setFile('/tmp/eth-nodes', '\n'.join(bootnodes))
+            node.setFile('/tmp/geth-eth-nodes', '\n'.join(bootnodes))
             
             node.setFile('/tmp/eth-bootstrapper', EthServerFileTemplates['bootstrapper'])
 
             # load enode urls from other nodes
             node.appendStartCommand('chmod +x /tmp/eth-bootstrapper')
             node.appendStartCommand('/tmp/eth-bootstrapper')
+        try:
+            beacon_bootnodes = list(self._blockchain.getBeaconBootNodes()[:])
+        except Exception:
+            pass
+        try:
+            geth_bootnodes = list(self._blockchain.getGethBootNodes()[:])
+        except Exception:
+            pass
 
+
+        if len(beacon_bootnodes) > 0 and isinstance(self, PoSBeaconServer):
+            node.setFile('/tmp/beacon-eth-nodes', '\n'.join(beacon_bootnodes))
+        if len(geth_bootnodes) > 0 and isinstance(self, PoSGethServer):
+            node.setFile('/tmp/geth-eth-nodes', '\n'.join(geth_bootnodes))
+
+            node.setFile('/tmp/eth-bootstrapper', EthServerFileTemplates['bootstrapper'])
+            node.appendStartCommand('chmod +x /tmp/eth-bootstrapper')
+            node.appendStartCommand('/tmp/eth-bootstrapper')
+            # node.appendStartCommand(self._geth_start_command, True)
         # launch Ethereum process.
-        node.appendStartCommand(self._geth_start_command, True) 
+        if isinstance(self, PoSGethServer) or isinstance(self, PoAServer):
+            node.appendStartCommand(self._geth_start_command, True) 
         
 
         # Rarely used and tentatively not supported. 
@@ -278,6 +301,26 @@ class EthereumServer(Server):
         @returns True if this node is a boot node. False otherwise.
         """
         return self._is_bootnode
+
+
+    def addViewercmd(self, isBeaconViewer: bool) -> EthereumServer:
+        """!
+        @brief set bootnode status of this node.
+        Note: if no nodes are configured as boot nodes, all nodes will be each
+        other's boot nodes.
+        @param isBootNode True to set this node as a bootnode, False otherwise.
+        
+        @returns self, for chaining API calls.
+        """
+        self._is_beaconviewer = isBeaconViewer                  
+
+        return self
+    def isBeaconViewer(self) -> bool:
+        """!
+        @brief get bootnode status of this node.
+        @returns True if this node is a boot node. False otherwise.
+        """
+        return self._is_beaconviewer
 
     def setBootNodeHttpPort(self, port: int) -> EthereumServer:
         """!
@@ -728,30 +771,175 @@ class PoSServer(EthereumServer):
 
 
 
-class BeaconSetupServer():
+class PoSGethServer(EthereumServer):
+    def __init__(self, id: int, blockchain:Blockchain):
+        """!
+        @brief Create new geth server.
 
+        @param id The serial number of this server.
+        """
+        super().__init__(id, blockchain)
+    def _generateGethStartCommand(self, addr:str):
+        self._geth_options['pos'] = GethCommandTemplates['pos']
+        super()._generateGethStartCommand(addr)
+    def install(self, node: Node, eth: EthereumService):
+        # if self.__is_beacon_setup_node:
+        #     beacon_setup_node = PoSBeaconSetupServer()
+        #     beacon_setup_node.install(self, node, self._blockchain)
+        #     return 
+        super().install(node,eth)
+        node.setFile('/tmp/jwt.hex', '0xae7177335e3d4222160e08cecac0ace2cecce3dc3910baada14e26b11d2009fc')
+class PoSBeaconServer(EthereumServer):
+    __beacon_peer_counts:int
+    def __init__(self, id: int, blockchain:Blockchain):
+
+        """!
+        @brief Create new beacon server.
+
+        @param id The serial number of this server.
+        """
+
+        super().__init__(id, blockchain)
+ 
+        self.__beacon_peer_counts = 30
+        self.__connect_geth_vnode = ""
+        self.__connected_geth_ip = ""
+        # self.__validator_mnemonic = "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete"
+
+    def install(self, node: Node, eth: EthereumService):
+        """!
+        @brief Install the beacon server on the node.
+        
+        @param node The node to install the beacon server on.
+        @param eth The Ethereum service to use.
+        """
+        # if self.__is_beacon_setup_node:
+        #     beacon_setup_node = PoSBeaconSetupServer()
+        #     beacon_setup_node.install(self, node, self._blockchain)
+        #     return 
+        
+        # if self.__is_beacon_validator_at_genesis:
+        #     self._role.append("validator_at_genesis")
+        # if self.__is_beacon_validator_at_running:
+        #     self._role.append("validator_at_running")
+        
+        super().install(node,eth)
+        self.__install_beacon(node, eth)
+    def __install_beacon(self, node:Node, eth:EthereumService):
+        ifaces = node.getInterfaces()
+        assert len(ifaces) > 0, 'EthereumServer::install: node as{}/{} has no interfaces'.format(node.getAsn(), node.getName())
+        addr = str(ifaces[0].getAddress())
+        # Get the IP address of beacon_setup_node.
+        beacon_setup_node = self._blockchain.getBeaconSetupNodeIp()
+
+        assert beacon_setup_node != "", 'EthereumServer::install: Ethereum Service has no beacon_setup_node.'
+
+        geth_node_ip = self.getConnectedGethIp()
+    
+        # connect_geth_node = self.__blockchain.getIpByVnodeName(self.__connect_geth_vnode)
+        bootnode_start_command = ""
+        bc_start_command = LIGHTHOUSE_BN_CMD.format(ip_address=addr, target_peers=self.__beacon_peer_counts, bootnodes_flag="" if self._is_bootnode else f'--boot-nodes "$(cat /tmp/bc_enrs.txt)"',remote_geth=geth_node_ip)
+        # bc_start_command = LIGHTHOUSE_BN_CMD.format(ip_address=addr, target_peers=self.__beacon_peer_counts, bootnodes_flag="" if self._is_bootnode else f'--boot-nodes "$(cat /tmp/bc_enrs.txt)"', viewer_cmd = f'--reconstruct-historic-states' if self.isBeaconViewer() else "",remote_geth=geth_node_ip)
+
+        ## div beacon node and geth node
+        if not self._is_bootnode:
+            node.setFile('/tmp/fetch_bn_enr', EthServerFileTemplates['fetch_bn_enr'])
+            node.appendStartCommand('chmod +x /tmp/fetch_bn_enr')
+            node.appendStartCommand('/tmp/fetch_bn_enr')
+
+        # if self._is_bootnode:
+        #     bootnode_start_command = LIGHTHOUSE_BOOTNODE_CMD.format(ip_address=addr)
+        # if self.__is_beacon_validator_at_running:
+        #     node.setFile('/tmp/seed.pass', 'seedseedseed')
+        #     wallet_create_command = LIGHTHOUSE_WALLET_CREATE_CMD.format(eth_id=self.getId())
+        #     validator_create_command = LIGHTHOUSE_VALIDATOR_CREATE_CMD.format(eth_id=self.getId()) 
+
+        #     if len(self._accounts) > 0:
+        #         print(self._accounts[0].keystore_filename)
+        #         node.setFile('/tmp/deposit.py', VALIDATOR_DEPOSIT_PY.format(keystore_filename=self._accounts[0].keystore_filename))
+            
+        #     if not self.__is_manual_deposit_for_validator:
+        #         validator_deposit_sh = "sleep 2 && python3 /tmp/deposit.py"
+
+            # node.appendStartCommand('chmod +x /tmp/deposit.sh')
+            # if not self.__is_manual_deposit_for_validator:
+            #     validator_deposit_sh = "/tmp/deposit.sh"
+        # if self.__is_beacon_validator_at_genesis or self.__is_beacon_validator_at_running:     
+        #     vc_start_command = LIGHTHOUSE_VC_CMD.format(ip_address=addr, acct_address=self._accounts[0].address)
+        # Write the IP address of beacon_setup_node to a file.
+        node.setFile('/tmp/beacon-setup-node', beacon_setup_node)
+        
+        # get current node validator index if it's validator at genesis. 
+        # validatorIds = self._blockchain.getValidatorIds()
+        # validator_idx = -1
+        # if self.isValidatorAtGenesis():
+        #     # only get validator id if current node is validator at genesis.
+        #     for i, v in enumerate(validatorIds):
+        #         if int(v) == self._id:
+        #             validator_idx = i
+        #             break 
+        #     assert validator_idx >= 0, "EthereumServer::__install_beacon: validator id should be set at genesis."
+        #     validator_idx = int(validator_idx)
+        #     # this validator idx will be used to create validator keys properly. 
+        #     # Each validator at genesis node has 4 keys which were set at Genesis
+
+        node.setFile('/tmp/beacon-bootstrapper', EthServerFileTemplates['beacon_bootstrapper'].format( 
+                                bc_start_command=bc_start_command,
+                    ))
+        node.setFile('/tmp/jwt.hex', '0xae7177335e3d4222160e08cecac0ace2cecce3dc3910baada14e26b11d2009fc')
+        
+        node.appendStartCommand('chmod +x /tmp/beacon-bootstrapper')
+        node.appendStartCommand('/tmp/beacon-bootstrapper')
+
+    def setBeaconPeerCounts(self, peer_counts:int):
+        self.__beacon_peer_counts = peer_counts
+        return self
+    def connectToGethNode(self, vnode:str):
+        self.__connect_geth_vnode = vnode
+        return self
+
+    def setConnectedGethIp(self, ip:str):
+        self.__connected_geth_ip = ip
+        return self
+    def getConnectedGethIp(self) -> str:
+        return self.__connected_geth_ip
+    def getConnectGethVNode(self) -> str:
+        return self.__connect_geth_vnode
+
+    def getValidatorMnemonic(self):
+        return self.__validator_mnemonic
+
+    def setValidatorMnemonic(self, mnemonic:str):
+        """!
+        @brief Set the validator mnemonic for the beacon setup node.
+        This mnemonic will be used to generate validator keys at genesis and running.
+        
+        @param mnemonic The mnemonic to set.
+        """
+        self.__validator_mnemonic = mnemonic
+        return self
+
+class PoSBeaconSetupServer(EthereumServer):
     """!
     @brief The WebServer class.
     """
 
-
-    
     __beacon_setup_http_port: int
 
-    def __init__(self, consensus:ConsensusMechanism = ConsensusMechanism.POA):
+    def __init__(self,  id: int, blockchain:Blockchain):
         """!
         @brief BeaconSetupServer constructor.
         """
-
+        super().__init__(id, blockchain)
         self.__beacon_setup_http_port = 8090
-        self.__consensus_mechanism = consensus
+        self.__validator_mnemonic = "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete"
 
-    def install(self, server:PoSServer, node: Node, blockchain: Blockchain):
+    def install(self, node: Node,eth: EthereumService ):
         """!
         @brief Install the service.
         """
         
-        validator_ids = blockchain.getValidatorIds()
+        validator_ids = self._blockchain.getValidatorIds()
         validator_counts = len(validator_ids)
 
         assert validator_counts > 0, "BeaconSetupServer::install: At least one node should be set as validator at genesis."
@@ -761,14 +949,27 @@ class BeaconSetupServer():
         #node.addBuildCommand('apt-get update && apt-get install -y --no-install-recommends software-properties-common python3 python3-pip')
         #node.addBuildCommand('pip install web3')
         # [remove] node.appendStartCommand('lcli generate-bootnode-enr --ip {} --udp-port 30305 --tcp-port 30305 --genesis-fork-version 0x42424242 --output-dir /local-testnet/bootnode'.format(bootnode_ip))
-        node.setFile("/tmp/config.yaml", BEACON_GENESIS.format(chain_id=blockchain.getChainId(),
-                                                                    target_committee_size=blockchain.getTargetCommitteeSize(),
-                                                                    target_aggregator_per_committee=blockchain.getTargetAggregatorPerCommittee()))
+        node.setFile("/tmp/config.yaml", BEACON_GENESIS.format(chain_id=self._blockchain.getChainId(),
+                                                                    target_committee_size=self._blockchain.getTargetCommitteeSize(),
+                                                                    target_aggregator_per_committee=self._blockchain.getTargetAggregatorPerCommittee()))
         # [remove] node.setFile("/tmp/validator-ids", "\n".join(validator_ids))
-        self.__genesis = blockchain.getGenesis()
+        self.__genesis = self._blockchain.getGenesis()
 
         node.setFile('/tmp/eth1-genesis.json', self.__genesis.getGenesis())
-        node.setFile("/tmp/mnemonic.yaml", BEACON_MNEMONIC_YAML.format(validator_count = validator_counts, validator_mnemonic=server.getValidatorMnemonic()))
+        mnemonic_lines = []
+        for idx, vid in enumerate(validator_ids):
+            wd_address = self._blockchain.getValidatorWithdrawAddress(vid)
+            assert wd_address, f"PoSBeaconSetupServer::install: missing withdraw address for validator id {vid}."
+            mnemonic_lines.append(
+                f'- mnemonic: "{self.getValidatorMnemonic()}"\n'
+                f"  start: {idx}\n"
+                "  count: 1\n"
+                "  balance: 32000000000\n"
+                f'  wd_address: "{wd_address}"\n'
+                '  wd_prefix: "0x01"\n'
+                "  status: 0\n"
+            )
+        node.setFile("/tmp/mnemonic.yaml", "\n".join(mnemonic_lines))
         node.appendStartCommand('mkdir /local-testnet/testnet')
         # [remove] node.appendStartCommand('bootnode_enr=`cat /local-testnet/bootnode/enr.dat`')
         # [remove] node.appendStartCommand('echo "- $bootnode_enr" > /local-testnet/testnet/boot_enr.yaml')
@@ -810,3 +1011,215 @@ class BeaconSetupServer():
         out += 'Beacon Setup server object.\n'
 
         return out
+    def getValidatorMnemonic(self):
+        return self.__validator_mnemonic
+
+
+class PoSVcServer(EthereumServer):
+
+    def __init__(self, id: int, blockchain:Blockchain):
+        """!
+        @brief Create new vc server.
+
+        @param id The serial number of this server.
+        """
+        super().__init__(id, blockchain)
+        self.__is_beacon_validator_at_genesis = False
+        self.__is_beacon_validator_at_running = False
+        self.__is_manual_deposit_for_validator = False
+        self.__validator_mnemonic = "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete"
+        self.__withdraw_mnemonic = "legal winner thank year wave sausage worth useful legal winner thank yellow"
+        self.__withdraw_account = EthAccount.createEmulatorAccountFromMnemonic(
+            self._id,
+            mnemonic=self.__withdraw_mnemonic,
+            balance=0,
+            index=0,
+            password="admin",
+        )
+        self.__withdraw_address_override = ""
+        self.__is_connect_beacon_node = True
+        self.__conect_beacon_vnode :str =""
+        self.__connected_beacon_ip :str = ""
+
+
+    def _createAccounts(self, eth:EthereumService) -> EthereumServer:
+        """!
+        @brief Create withdraw account.
+
+        """
+        super()._createAccounts(eth)
+        return self
+
+    def getWithdrawMnemonic(self) -> str:
+        """!
+        @brief Get the withdraw account mnemonic.
+
+        @return The withdraw account mnemonic.
+        """
+        return self.__withdraw_mnemonic
+
+    def getWithdrawAddress(self) -> str:
+        """!
+        @brief Get the withdraw account address.
+
+        @return The withdraw account address.
+        """
+        if self.__withdraw_address_override:
+            return self.__withdraw_address_override
+        return self.__withdraw_account.address
+
+    def getWithdrawAccount(self) -> AccountStructure:
+        return self.__withdraw_account
+
+    def setWithdrawAddress(self, address: str) -> PoSVcServer:
+        """!
+        @brief Set the withdraw account address.
+
+        @param address The withdraw account address.
+        """
+        if address == "":
+            return self
+        assert address, "PoSVcServer::setWithdrawAddress: address cannot be empty."
+        from web3 import Web3
+        self.__withdraw_address_override = Web3.toChecksumAddress(address)
+        return self
+
+    def setWithdrawMnemonic(self, mnemonic: str, index: int = 0, password: str = "admin") -> PoSVcServer:
+        """!
+        @brief Set the withdraw account mnemonic.
+
+        @param mnemonic The withdraw account mnemonic.
+        @param index The index of the withdraw account.
+        @param password The password to use.
+        """
+        if mnemonic == "":
+            return self
+        assert mnemonic, "PoSVcServer::setWithdrawMnemonic: mnemonic cannot be empty."
+        self.__withdraw_mnemonic = mnemonic
+        self.__withdraw_account = EthAccount.createEmulatorAccountFromMnemonic(
+            self._id,
+            mnemonic=self.__withdraw_mnemonic,
+            balance=0,
+            index=index,
+            password=password,
+        )
+        self.__withdraw_address_override = ""
+        return self
+
+    def install(self, node: Node, eth: EthereumService):
+        """!
+        @brief Install the vc server on the node.
+
+        """
+        # if self.__is_beacon_setup_node:
+        #     beacon_setup_node = PoSBeaconSetupServer()
+        #     beacon_setup_node.install(self, node, self._blockchain)
+        #     return 
+        
+        if self.__is_beacon_validator_at_genesis:
+            self._role.append("validator_at_genesis")
+        if self.__is_beacon_validator_at_running:
+            self._role.append("validator_at_running")
+        
+        super().install(node,eth)
+        self.__install_vc(node, eth)
+    def __install_vc(self, node:Node, eth:EthereumService):
+        ifaces = node.getInterfaces()
+        assert len(ifaces) > 0, 'EthereumServer::install: node as{}/{} has no interfaces'.format(node.getAsn(), node.getName())
+        addr = str(ifaces[0].getAddress())
+        # Get the IP address of beacon_setup_node.
+        beacon_setup_node = self._blockchain.getBeaconSetupNodeIp()
+
+        assert beacon_setup_node != "", 'EthereumServer::install: Ethereum Service has no beacon_setup_node.'
+
+        beacon_node_ip = self.getConnectedBeaconIp()
+        assert beacon_node_ip != "", 'EthereumServer::install: Ethereum Service has no beacon_node.'
+        # bootnode_start_command = ""
+        # bc_start_command = ""
+        # bc_start_command = LIGHTHOUSE_BN_CMD.format(ip_address=addr, target_peers=self.__beacon_peer_counts, bootnodes_flag="" if self._is_bootnode else f'--boot-nodes "$(cat /tmp/bc_enrs.txt)"')
+        vc_start_command = ""
+        wallet_create_command = ""
+        validator_create_command = ""
+        validator_deposit_sh = ""
+        # ## div beacon node and geth node
+        # if not self._is_bootnode:
+        #     node.setFile('/tmp/fetch_bn_enr', EthServerFileTemplates['fetch_bn_enr'])
+        #     node.appendStartCommand('chmod +x /tmp/fetch_bn_enr')
+        #     node.appendStartCommand('/tmp/fetch_bn_enr')
+
+        # if self._is_bootnode:
+        #     bootnode_start_command = LIGHTHOUSE_BOOTNODE_CMD.format(ip_address=addr)
+        if self.__is_beacon_validator_at_running:
+            node.setFile('/tmp/seed.pass', 'seedseedseed')
+            # wallet_create_command = LIGHTHOUSE_WALLET_CREATE_CMD.format(eth_id=self.getId())
+            # validator_create_command = LIGHTHOUSE_VC_VALIDATOR_CREATE_CMD.format(withdraw_address=self.getWithdrawAddress())
+
+            # if len(self._accounts) > 0:
+            #     print(self._accounts[0].keystore_filename)
+            #     node.setFile('/tmp/deposit.py', VALIDATOR_DEPOSIT_PY.format(keystore_filename=self._accounts[0].keystore_filename))
+            
+            # if not self.__is_manual_deposit_for_validator:
+            #     validator_deposit_sh = "sleep 2 && python3 /tmp/deposit.py"
+
+            # node.appendStartCommand('chmod +x /tmp/deposit.sh')
+            # if not self.__is_manual_deposit_for_validator:
+            #     validator_deposit_sh = "/tmp/deposit.sh"
+        if self.__is_beacon_validator_at_genesis:     
+            vc_start_command = LIGHTHOUSE_VC_CMD.format(ip_address=addr, acct_address=self._accounts[0].address, beacon_node=beacon_node_ip)
+        # Write the IP and port of beacon_setup_node to the file.
+        node.setFile('/tmp/beacon-setup-node', beacon_setup_node)
+        node.setFile('/tmp/withdraw-address', self.getWithdrawAddress())
+        
+        # get current node validator index if it's validator at genesis.
+        validatorIds = self._blockchain.getValidatorIds()
+        validator_idx = -1
+        if self.isValidatorAtGenesis():
+            # only get validator id if current node is validator at genesis.
+            for i, v in enumerate(validatorIds):
+                if int(v) == self._id:
+                    validator_idx = i
+                    break 
+            assert validator_idx >= 0, "EthereumServer::__install_beacon: validator id should be set at genesis."
+            validator_idx = int(validator_idx)
+            # this validator idx will be used to create validator keys properly. 
+            # Each validator at genesis node has 4 keys which were set at Genesis
+
+        node.setFile('/tmp/vc_bootstrapper', EthServerFileTemplates['vc_bootstrapper'].format( 
+                                is_validator_at_genesis="true" if self.__is_beacon_validator_at_genesis else "false",
+                                is_validator_at_running="true" if self.__is_beacon_validator_at_running else "false",
+                                validator_mnemonic=self.__validator_mnemonic,
+                                validator_key_start= validator_idx ,
+                                validator_key_end= (validator_idx + 1),
+                                vc_start_command=vc_start_command,
+                                wallet_create_command=wallet_create_command,
+                                validator_create_command=validator_create_command,
+                                validator_deposit_sh=validator_deposit_sh,
+                                ip_address=beacon_node_ip
+                    ))
+        node.setFile('/tmp/jwt.hex', '0xae7177335e3d4222160e08cecac0ace2cecce3dc3910baada14e26b11d2009fc')
+        
+        node.appendStartCommand('chmod +x /tmp/vc_bootstrapper')
+        node.appendStartCommand('/tmp/vc_bootstrapper') 
+
+
+    def connectToBeaconNode(self, vnode:str):
+        self.__conect_beacon_vnode = vnode
+        return self
+    def setConnectedBeaconIp(self, ip:str):
+        self.__connected_beacon_ip = ip
+        return self
+    def getConnectedBeaconIp(self) -> str:
+        return self.__connected_beacon_ip
+    def getConnectBeaconVNode(self) -> str:
+        return self.__conect_beacon_vnode
+    def enablePOSValidatorAtGenesis(self):
+        self.__is_beacon_validator_at_genesis = True
+        return self
+    def enablePOSValidatorAtRunning(self, is_manual:bool=False):
+        self.__is_beacon_validator_at_running = True
+        self.__is_manual_deposit_for_validator = is_manual
+        return self       
+    def isValidatorAtRunning(self):
+        return self.__is_beacon_validator_at_running
+    def isValidatorAtGenesis(self):
+        return self.__is_beacon_validator_at_genesis

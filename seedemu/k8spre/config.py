@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import getpass
 import hashlib
+import os
 from pathlib import Path
 from typing import Any
 
@@ -118,17 +119,33 @@ def makeKvmConfig(
     if setup_path is not None:
         kvm_data_dir = _defaultKvmDataDir(setup_path)
         kvm_defaults = {
-            "storageDir": str(setup_path),
+            "storageDir": _portablePath(setup_path, setup_path),
             "diskDir": str(Path(disk_dir).expanduser().resolve()) if disk_dir is not None else str(kvm_data_dir / "disks"),
-            "cloudInitDir": str(Path(cloud_init_dir).expanduser().resolve()) if cloud_init_dir is not None else str(setup_path / "cloud-init"),
+            "cloudInitDir": (
+                str(Path(cloud_init_dir).expanduser().resolve())
+                if cloud_init_dir is not None
+                else _portablePath(setup_path / "cloud-init", setup_path)
+            ),
             "baseImagePath": str(Path(base_image_path).expanduser().resolve()) if base_image_path is not None else str(kvm_data_dir / "base" / "jammy-server-cloudimg-amd64.img"),
         }
         output_defaults = {
-            "tmpDir": str(Path(tmp_dir).expanduser().resolve()) if tmp_dir is not None else str(setup_path / "tmp"),
-            "kubeconfig": str(Path(kubeconfig_path).expanduser().resolve()) if kubeconfig_path is not None else str(setup_path / f"{effective_cluster_name}.kubeconfig.yaml"),
-            "inventory": str(Path(inventory_path).expanduser().resolve()) if inventory_path is not None else str(setup_path / f"{effective_cluster_name}.inventory.yaml"),
-            "k3sConfig": str(Path(k3s_config_path).expanduser().resolve()) if k3s_config_path is not None else str(setup_path / "configK3s.yaml"),
-            "kvmState": str(setup_path / "kvmState.yaml"),
+            "tmpDir": str(Path(tmp_dir).expanduser().resolve()) if tmp_dir is not None else _portablePath(setup_path / "tmp", setup_path),
+            "kubeconfig": (
+                str(Path(kubeconfig_path).expanduser().resolve())
+                if kubeconfig_path is not None
+                else _portablePath(setup_path / f"{effective_cluster_name}.kubeconfig.yaml", setup_path)
+            ),
+            "inventory": (
+                str(Path(inventory_path).expanduser().resolve())
+                if inventory_path is not None
+                else _portablePath(setup_path / f"{effective_cluster_name}.inventory.yaml", setup_path)
+            ),
+            "k3sConfig": (
+                str(Path(k3s_config_path).expanduser().resolve())
+                if k3s_config_path is not None
+                else _portablePath(setup_path / "configK3s.yaml", setup_path)
+            ),
+            "kvmState": _portablePath(setup_path / "kvmState.yaml", setup_path),
         }
         kvm_cfg = _mapping(data, "kvm")
         outputs_cfg = _mapping(data, "outputs")
@@ -172,8 +189,8 @@ def makeRunningConfig(
     else:
         output_path = Path(output_dir).expanduser().resolve()
     return {
-        "setupConfig": str(setup_path / "configK3s.yaml"),
-        "outputDir": str(output_path),
+        "setupConfig": _portablePath(setup_path / "configK3s.yaml", running_path),
+        "outputDir": _portablePath(output_path, running_path),
         "imageRegistryPrefix": image_registry_prefix,
         "rolloutTimeoutSeconds": rollout_timeout_seconds,
     }
@@ -218,6 +235,11 @@ def makeK3sConfig(
             raise ValueError(f"configK3s.yaml node item must be a mapping: {node}")
         ssh_cfg = _mapping(node, "ssh")
         _fillMissing(ssh_cfg, {"user": default_user, "key": default_key})
+        # Passwords are only useful for a one-time manual SSH key bootstrap.
+        # Generated K3s configs should not replicate them because the build
+        # scripts require key-based SSH and sudo -n.
+        ssh_cfg.pop("password", None)
+        ssh_cfg.pop("passwd", None)
     data.pop("ssh", None)
     if "registry" in data:
         registry_cfg = _mapping(data, "registry")
@@ -251,6 +273,29 @@ def _defaultKvmDataDir(setup_path: Path) -> Path:
     base = setup_path.parent
     digest = hashlib.sha1(str(base).encode("utf-8")).hexdigest()[:8]
     return root / f"{base.name}-{digest}"
+
+
+def _portablePath(path: Path, base_dir: Path) -> str:
+    """Return a readable path for generated YAML.
+
+    Args:
+        path: Absolute path to write.
+        base_dir: Directory that will contain the generated YAML.
+
+    Paths inside the same nearby source tree are written relative to the YAML
+    file's directory. Unrelated paths, such as a repo output consumed from a
+    temporary directory, stay absolute so copied generated directories continue
+    to resolve correctly.
+    """
+    path = path.expanduser().resolve()
+    base_dir = base_dir.expanduser().resolve()
+    common = Path(os.path.commonpath([str(path), str(base_dir)]))
+    if common == Path(path.anchor):
+        return str(path)
+    relative = Path(os.path.relpath(path, start=base_dir))
+    if len(relative.parts) <= 8:
+        return relative.as_posix()
+    return str(path)
 
 
 def _normalizeLegacyResourceKeys(data: dict[str, Any]) -> None:

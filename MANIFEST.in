@@ -1,0 +1,2 @@
+recursive-include seedemu/k8spre/resources *
+include seedemu/k8spre/README.md

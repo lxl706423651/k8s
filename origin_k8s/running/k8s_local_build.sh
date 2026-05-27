@@ -14,8 +14,24 @@ cd "${OUTPUT_DIR}"
 buildx_build_load() {
     local image="$1"
     local context="$2"
-    echo "+ DOCKER_BUILDKIT=1 docker buildx build --load -t ${image} ${context}"
-    DOCKER_BUILDKIT=1 docker buildx build --load -t "${image}" "${context}"
+    local log_file
+    log_file="$(mktemp)"
+    echo "+ DOCKER_BUILDKIT=1 docker buildx build --load --provenance=false -t ${image} ${context}"
+    if DOCKER_BUILDKIT=1 docker buildx build --load --provenance=false -t "${image}" "${context}" 2>&1 | tee "${log_file}"; then
+        rm -f "${log_file}"
+        return 0
+    fi
+
+    if grep -Eq 'parent snapshot .* does not exist|failed to prepare extraction snapshot|failed to solve' "${log_file}"; then
+        echo "[k8s_build] buildx export/cache failure while building ${image}; pruning buildx cache and retrying once" >&2
+        docker buildx prune -af >/dev/null 2>&1 || true
+        rm -f "${log_file}"
+        DOCKER_BUILDKIT=1 docker buildx build --load --provenance=false -t "${image}" "${context}"
+        return $?
+    fi
+
+    rm -f "${log_file}"
+    return 1
 }
 
 if [ -d "base_images" ]; then

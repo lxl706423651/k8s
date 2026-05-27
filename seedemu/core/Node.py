@@ -18,7 +18,7 @@ from string import ascii_letters
 from random import choice
 from .BaseSystem import BaseSystem
 
-DEFAULT_SOFTWARE: List[str] = ['zsh', 'curl', 'nano', 'vim-nox', 'mtr-tiny', 'iproute2', 'iputils-ping', 'tcpdump', 'termshark', 'dnsutils', 'jq', 'ipcalc', 'netcat-openbsd']
+DEFAULT_SOFTWARE: List[str] = ['zsh', 'curl', 'nano', 'vim-nox', 'mtr-tiny', 'iproute2', 'iputils-ping', 'tcpdump', 'termshark', 'dnsutils', 'jq', 'ipcalc', 'netcat']
 
 class File(Printable):
     """!
@@ -239,7 +239,6 @@ class Node(Printable, Registrable, Configurable, Vertex, Customizable):
 
     __geo: Tuple[float,float,str] # (Latitude,Longitude,Address) -- optional parameter that contains the geographical location of the Node
     __note: str # optional parameter that contains a note about the Node
-    __virtualization_mode: str # K3s/KubeVirt adaptation only: Container or KubeVirt
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None):
         """!
@@ -252,7 +251,6 @@ class Node(Printable, Registrable, Configurable, Vertex, Customizable):
         """
         super().__init__()
 
-        self.__virtualization_mode = "Container"
         self.__interfaces = []
         self.__files = {}
         self.__imported_files = {}
@@ -1002,24 +1000,6 @@ class Node(Printable, Registrable, Configurable, Vertex, Customizable):
         """
         return self.__note
 
-    def setVirtualizationMode(self, mode: str) -> "Node":
-        """!
-        @brief K3s/KubeVirt adaptation only: choose container vs VM output.
-
-        This does not change senior mainline routing semantics. It only tells the
-        Kubernetes compiler whether this node should render as a Deployment or a
-        KubeVirt VirtualMachine.
-        """
-        assert mode in ["Container", "KubeVirt"], "Invalid virtualization mode. Must be Container or KubeVirt."
-        self.__virtualization_mode = mode
-        return self
-
-    def getVirtualizationMode(self) -> str:
-        """!
-        @brief Get the container/VM rendering mode used by the Kubernetes compiler.
-        """
-        return self.__virtualization_mode
-
     def copySettings(self, node: Node):
         """!
         @brief copy settings from another node.
@@ -1041,7 +1021,6 @@ class Node(Printable, Registrable, Configurable, Vertex, Customizable):
         for (h, n, p) in node.getPorts(): self.addPort(h, n, p)
         for v in node.getDockerVolumes(): self.addDockerVolume(v)
         for (c, f) in node.getStartCommands(): self.appendStartCommand(c, f)
-        self.setVirtualizationMode(node.getVirtualizationMode())
         # for (c, f) in node.getUserStartCommands(): self.appendUserStartCommand(c, f)
         for c in node.getBuildCommands(): self.addBuildCommand(c)
         for s in node.getSoftware(): self.addSoftware(s)
@@ -1134,7 +1113,7 @@ if [ -z "$gw" ]; then
     ip_portion=$(echo "$line" | cut -d':' -f2)
     ip_only=$(echo "$ip_portion" | cut -d'/' -f1)
     docker_host="${ip_only%.*}.1"
-    if [ -z "$docker_host" ]; then
+    if [ -z "$docker_host"]; then
         echo "Error: Could not determine the default route required to configure BIRD." >&2
         exit 1;
     else
@@ -1155,31 +1134,14 @@ class Router(Node):
 
     __loopback_address: str
     __is_border_router: bool
-    __is_bgp_rr: bool
-    __bgp_cluster_id: str
+
     __extensions: Dict[str, RouterExtension]
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None):
         self.__is_border_router = False
         self.__loopback_address = None
         self.__extensions = {}
-        self.__is_bgp_rr = False
-        self.__bgp_cluster_id = None
         super().__init__( name,role,asn,scope)
-    
-    def makeRouteReflector(self, is_rr: bool = True):
-        self.__is_bgp_rr = is_rr
-        return self
-    
-    def joinBgpCluster(self, cluster_id: str):
-        self.__bgp_cluster_id = cluster_id
-        return self
-    
-    def getBgpClusterId(self) -> str | None:
-        return self.__bgp_cluster_id
-    
-    def isRouteReflector(self) -> bool:
-        return self.__is_bgp_rr
 
     def hasExtension(self, name: str) -> bool:
         return name in self.__extensions

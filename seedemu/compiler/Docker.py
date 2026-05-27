@@ -18,7 +18,9 @@ SEEDEMU_INTERNET_MAP_IMAGE='handsonsecurity/seedemu-internetmap:2.0'
 
 # The Etherview is updated on 2025/11, we name the new version 2.0
 #SEEDEMU_ETHER_VIEW_IMAGE='handsonsecurity/seedemu-multiarch-etherview:buildx-latest'
-SEEDEMU_ETHER_VIEW_IMAGE='handsonsecurity/seedemu-multiarch-etherview:2.0'
+# SEEDEMU_ETHER_VIEW_IMAGE='handsonsecurity/seedemu-multiarch-etherview:2.0'
+SEEDEMU_ETH_EXPLORER_BACKEND_IMAGE='handsonsecurity/seedemu-ethexplorer-backend:1.0'
+SEEDEMU_ETH_EXPLORER_WEB_IMAGE='handsonsecurity/seedemu-ethexplorer-web:1.0'
 
 DockerCompilerFileTemplates: Dict[str, str] = {}
 
@@ -214,14 +216,160 @@ DockerCompilerFileTemplates['custom_compose_label_meta'] = """\
 {labelList}
 """
 
-DockerCompilerFileTemplates['seedemu_ether_view'] = """\
-    seedemu-ether-client:
-        image: {clientImage}
-        container_name: seedemu_ether_view
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
+DockerCompilerFileTemplates['seedemu_eth_explorer'] = """\
+    clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        container_name: clickhouse
+        restart: unless-stopped
+        environment:
+            - CLICKHOUSE_DB=beaconchain
+            - CLICKHOUSE_USER=beacon
+            - CLICKHOUSE_PASSWORD=pass
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        networks:
+          - beacon-network
+
+    postgres:
+        image: postgres:15.2-alpine
+        container_name: postgres
+        restart: unless-stopped
+        environment:
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: db
+          POSTGRES_USER: postgres
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+        networks:
+          - beacon-network
+
+    alloy:
+        image: postgres:15.2-alpine
+        container_name: alloy
+        restart: unless-stopped
+        environment:
+            POSTGRES_PASSWORD: pass
+            POSTGRES_DB: db
+            POSTGRES_USER: postgres
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+        networks:
+          - beacon-network
+
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        restart: unless-stopped
+        command: redis-server --appendonly yes
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        networks:
+          - beacon-network
+
+    littlebigtable:
+        image: gobitfly/little_bigtable:latest
+        container_name: littlebigtable
+        restart: unless-stopped
+        depends_on:
+            - postgres
+        networks:
+          - beacon-network
+
+    rawbigtable:
+        image: gobitfly/little_bigtable:latest
+        container_name: rawbigtable
+        restart: unless-stopped
+        depends_on:
+          - alloy
+        networks:
+          - beacon-network
+
+    seedemu-ethexplorer-backend:
+        image: {clientBackendImage}
+        container_name: seedemu_ethexplorer_backend
+        cap_add:
+            - ALL
+        pid: host
+        privileged: true
+        healthcheck:
+            test:
+                [
+                  "CMD-SHELL",
+                  "PGPASSWORD=pass psql -h postgres -U postgres -d db -tAc \\"SELECT 1 FROM information_schema.tables WHERE table_name='blocks';\\" | grep -q 1"
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 60
+            start_period: 10s
+        depends_on:
+            clickhouse:
+              condition: service_healthy
+            postgres:
+              condition: service_healthy
+            alloy:
+              condition: service_healthy
+            redis:
+              condition: service_healthy
+            littlebigtable:
+              condition: service_started
+            rawbigtable:
+              condition: service_started
+        environment:
+            - EL_HOST={el_host}
+            - CL_HOST={cl_host}
+        networks:
+            - beacon-network
+            - {beaconNetwork}
+            - {gEthNetwork}
+
+    seedemu-ethexplorer-web:
+        image: {clientWebImage}
+        container_name: seedemu_ethexplorer_web
+        cap_add:
+            - ALL
+        pid: host
+        privileged: true
+        depends_on:
+            clickhouse:
+              condition: service_healthy
+            postgres:
+              condition: service_healthy
+            alloy:
+              condition: service_healthy
+            redis:
+              condition: service_healthy
+            littlebigtable:
+              condition: service_started
+            rawbigtable:
+              condition: service_started
+            seedemu-ethexplorer-backend:
+              condition: service_healthy
+        environment:
+            - EL_HOST={el_host}
+            - CL_HOST={cl_host}
         ports:
             - {clientPort}:5000/tcp
+        networks:
+            - beacon-network
+            - {beaconNetwork}
+            - {gEthNetwork}
+"""
+
+DockerCompilerFileTemplates['seedemu_eth_explorer_net'] = """\
+    beacon-network:
+        driver: bridge
 """
 
 DockerCompilerFileTemplates['zshrc_pre'] = """\
@@ -846,9 +994,7 @@ class Docker(Compiler):
         """
 
         staged_path = md5(path.encode('utf-8')).hexdigest()
-        with open(staged_path, 'w', encoding='utf-8') as handle:
-            handle.write(content)
-            handle.write('\n')
+        print(content, file=open(staged_path, 'w'))
         return 'COPY {} {}\n'.format(staged_path, path)
 
     def _importFile(self, path: str, hostpath: str) -> str:
@@ -1276,9 +1422,7 @@ class Docker(Compiler):
             except:
                 pass
         assert len(vars)==len(self.__config), 'implementation error'
-        with open(f'{prefix}.env', 'w', encoding='utf-8') as handle:
-            handle.write('\n'.join(vars))
-            handle.write('\n')
+        print( '\n'.join(vars) ,file=open(f'{prefix}.env','w'))
 
     def _makeDummies(self) -> str:
         """!
@@ -1321,8 +1465,10 @@ class Docker(Compiler):
 
         self._groupSoftware(emulator)
 
-        for ((scope, type, name), obj) in registry.getAll().items():
+        el_host = cl_host = ''
+        beaconNetwork = gEthNetwork = ''
 
+        for ((scope, type, name), obj) in registry.getAll().items():
             if type == 'net':
                 self._log('creating network: {}/{}...'.format(scope, name))
                 self.__networks += self._compileNet(obj)
@@ -1340,6 +1486,19 @@ class Docker(Compiler):
                 self._log('compiling host node {} for as{}...'.format(name, scope))
                 self.__services += self._compileNode(obj)
 
+                if el_host and cl_host:
+                    continue
+
+                ip = str(obj.getInterfaces()[0].getAddress())
+                name = obj.getDisplayName() if obj.getDisplayName() is not None else obj.getName()
+                net = self._getRealNetName(obj.getInterfaces()[0].getNet())
+                if "-Beacon-" in name and cl_host == "":
+                    cl_host = ip
+                    gEthNetwork = net
+                elif "-Geth-" in name and el_host == "":
+                    el_host = ip
+                    beaconNetwork = net
+
             if type == 'rs':
                 self._log('compiling rs node for {}...'.format(name))
                 self.__services += self._compileNode(obj)
@@ -1355,24 +1514,26 @@ class Docker(Compiler):
             # Attach the Map container to the default network
             self.attachInternetMap(port_forwarding="{}:8080/tcp".format(self.__internet_map_port))
 
-
         # Add the Ether View contaienr to docker's default network
         if self.__ether_view_enabled:
-            self._log('enabling seedemu-ether-view...')
+            self._log('enabling seedemu-eth-explorer...')
 
-            self.__services += DockerCompilerFileTemplates['seedemu_ether_view'].format(
-                clientImage = SEEDEMU_ETHER_VIEW_IMAGE,
-                clientPort = self.__ether_view_port
+            self.__services += DockerCompilerFileTemplates['seedemu_eth_explorer'].format(
+                clientWebImage=SEEDEMU_ETH_EXPLORER_WEB_IMAGE,
+                clientBackendImage=SEEDEMU_ETH_EXPLORER_BACKEND_IMAGE,
+                cl_host=cl_host,
+                el_host=el_host,
+                beaconNetwork=beaconNetwork,
+                gEthNetwork=gEthNetwork,
+                clientPort=self.__ether_view_port
             )
             self.__services += '\n'
-
+            self.__networks += DockerCompilerFileTemplates['seedemu_eth_explorer_net']
 
         # Add custom entries (typically added through Docker::attachCustomContainer APIs)
         self.__services += self.__custom_services
 
-
         local_images = ''
-
         for (image, _) in self.__images.values():
             if image.getName() not in self._used_images or not image.isLocal(): continue
             local_images += DockerCompilerFileTemplates['local_image'].format(
@@ -1384,10 +1545,10 @@ class Docker(Compiler):
 
         self._log('creating docker-compose.yml...'.format(scope, name))
         print(DockerCompilerFileTemplates['compose'].format(
-            services = self.__services,
-            networks = self.__networks,
-            volumes = toplevelvolumes,
-            dummies = local_images + self._makeDummies()
+            services=self.__services,
+            networks=self.__networks,
+            volumes=toplevelvolumes,
+            dummies=local_images + self._makeDummies()
         ), file=open('docker-compose.yml', 'w'))
 
         self.generateEnvFile(Scope(ScopeTier.Global),'')

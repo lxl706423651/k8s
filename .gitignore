@@ -49,3 +49,15 @@ kind
 
 **/auto-imports.d.ts
 **/components.d.ts
+
+# Generated K8sPre runtime/test artifacts. These are recreated by setup/build
+# scripts and may contain large Docker image tarballs, Helm caches, kubeconfigs,
+# inventories, cloud-init ISOs, or local backup trees.
+origin_k8s/test/*/setup/tmp/
+origin_k8s/test/*/setup/image-cache/
+origin_k8s/test/*/setup/kvm/image-cache/
+origin_k8s/test/*/setup/cloud-init/
+origin_k8s/test/*/setup/*.kubeconfig.yaml
+origin_k8s/test/*/setup/*.inventory.yaml
+origin_k8s/test/*/setup/kvmState.yaml
+seedemu.backup_*/

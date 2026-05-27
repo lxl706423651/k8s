@@ -2,11 +2,14 @@ SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
 RUNNING_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-OUTPUT_DIR ?= ../emulate/output
+SETUP_ENV ?= $(abspath $(RUNNING_DIR)/../setup/seedemu-k3s.env.sh)
+-include $(SETUP_ENV)
+
+OUTPUT_DIR = ../emulate/output
 OUTPUT_DIR := $(abspath $(OUTPUT_DIR))
-IMAGE_REGISTRY_PREFIX ?= seedemu
-REGISTRY_PREFIX ?= 192.168.122.110:5000
-KUBECONFIG ?= /home/lxl/k8s/output/kubeconfigs/seedemu-k3s.yaml
+IMAGE_REGISTRY_PREFIX = seedemu
+REGISTRY_PREFIX = $(if $(SEED_REGISTRY_HOST),$(SEED_REGISTRY_HOST):$(if $(SEED_REGISTRY_PORT),$(SEED_REGISTRY_PORT),5000),192.168.122.110:5000)
+KUBECONFIG = $(if $(SEED_OUTPUT_KUBECONFIG),$(SEED_OUTPUT_KUBECONFIG),/home/lxl/k8s/output/kubeconfigs/seedemu-k3s.yaml)
 ROLLOUT_TIMEOUT_SECONDS ?= 1800
 SSH_USER ?= ubuntu
 SSH_KEY ?= /home/lxl/.ssh/id_ed25519
@@ -15,15 +18,15 @@ IMAGES_YAML ?= $(OUTPUT_DIR)/images.yaml
 MANIFEST ?= $(OUTPUT_DIR)/k8s.yaml
 KUSTOMIZATION ?= $(OUTPUT_DIR)/kustomization.yaml
 HELPER ?= $(RUNNING_DIR)/k8s_make_helper.py
-LOCAL_BUILD ?= $(RUNNING_DIR)/k8s_local_build.sh
 PREFLIGHT ?= $(RUNNING_DIR)/k8s_preflight.sh
 NAMESPACE ?= $(shell python3 "$(HELPER)" namespace --manifest "$(MANIFEST)" 2>/dev/null)
 
-.PHONY: preflight build local-build up render-kustomization wait clean clean-kustomization check-output
+.PHONY: preflight build up render-kustomization wait clean check-output
 
 check-output:
 	@test -f "$(MANIFEST)" || { echo "Missing $(MANIFEST). Run compile first."; exit 1; }
 	@test -f "$(IMAGES_YAML)" || { echo "Missing $(IMAGES_YAML). Run compile first."; exit 1; }
+	@python3 "$(HELPER)" validate-manifest --manifest "$(MANIFEST)"
 
 preflight: check-output
 	@OUTPUT_DIR="$(OUTPUT_DIR)" \
@@ -51,14 +54,11 @@ build: check-output
 	echo "[k8s_build] running build on $${ssh_target}"; \
 	ssh "$${ssh_args[@]}" "$${ssh_target}" "cd '$${remote_dir}/running' && sudo -n env OUTPUT_DIR='$${remote_dir}/output' REGISTRY_PREFIX='$(REGISTRY_PREFIX)' IMAGE_REGISTRY_PREFIX='$(IMAGE_REGISTRY_PREFIX)' bash ./k8s_local_build.sh"
 
-local-build: check-output
-	@OUTPUT_DIR="$(OUTPUT_DIR)" REGISTRY_PREFIX="$(REGISTRY_PREFIX)" IMAGE_REGISTRY_PREFIX="$(IMAGE_REGISTRY_PREFIX)" bash "$(LOCAL_BUILD)"
-
 render-kustomization: check-output
 	@python3 "$(HELPER)" kustomization --images-yaml "$(IMAGES_YAML)" --image-registry-prefix "$(IMAGE_REGISTRY_PREFIX)" --registry-prefix "$(REGISTRY_PREFIX)" --output "$(KUSTOMIZATION)"
 	@echo "[k8s_up] wrote $(KUSTOMIZATION)"
 
-up: preflight render-kustomization
+up: render-kustomization
 	@echo "=== native-k8s deploy ==="
 	@echo "output_dir=$(OUTPUT_DIR)"
 	@echo "manifest=$(MANIFEST)"
@@ -83,7 +83,3 @@ clean: check-output
 	else \
 	  echo "[clean] namespace $(NAMESPACE) does not exist"; \
 	fi
-	@rm -f "$(KUSTOMIZATION)"
-
-clean-kustomization:
-	@rm -f "$(KUSTOMIZATION)"

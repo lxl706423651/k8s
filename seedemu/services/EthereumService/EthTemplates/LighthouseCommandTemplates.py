@@ -1,11 +1,12 @@
 
-LIGHTHOUSE_BN_CMD = """lighthouse --debug-level info bn --datadir /tmp/bn/local-testnet/testnet --testnet-dir /tmp/bn/local-testnet/testnet --enable-private-discovery --staking --enr-address {ip_address}  --enr-udp-port 9000 --enr-tcp-port 9000 --port 9000 --http-address {ip_address} --http-port 8000 --http-allow-origin "*" --disable-packet-filter --target-peers {target_peers} --execution-endpoint http://localhost:8551 --execution-jwt /tmp/jwt.hex --subscribe-all-subnets {bootnodes_flag} &"""
+LIGHTHOUSE_BN_CMD = """lighthouse --debug-level info bn --datadir /tmp/bn/local-testnet/testnet --testnet-dir /tmp/bn/local-testnet/testnet --enable-private-discovery --staking --enr-address {ip_address}   --reconstruct-historic-states  --enr-udp-port 9000 --enr-tcp-port 9000 --port 9000 --http-address {ip_address} --http-port 8000 --http-allow-origin "*" --disable-packet-filter --target-peers {target_peers} --execution-endpoint http://{remote_geth}:8551 --execution-jwt /tmp/jwt.hex  {bootnodes_flag} &"""
 
-LIGHTHOUSE_VC_CMD = """lighthouse --debug-level info vc --datadir /tmp/vc/local-testnet/testnet --testnet-dir /tmp/vc/local-testnet/testnet --init-slashing-protection --beacon-nodes http://{ip_address}:8000 --suggested-fee-recipient {acct_address} --http --http-address 0.0.0.0 --http-allow-origin "*" --unencrypted-http-transport &"""
+LIGHTHOUSE_VC_CMD = """lighthouse --debug-level info vc --datadir /tmp/vc/local-testnet/testnet --testnet-dir /tmp/vc/local-testnet/testnet --init-slashing-protection --beacon-nodes http://{beacon_node}:8000 --suggested-fee-recipient {acct_address} --http --http-address 0.0.0.0 --http-allow-origin "*" --unencrypted-http-transport &"""
 
 LIGHTHOUSE_WALLET_CREATE_CMD = """lighthouse account_manager wallet create --testnet-dir /tmp/vc/local-testnet/testnet --datadir /tmp/vc/local-testnet/testnet --name "seed" --password-file /tmp/seed.pass"""
 
 LIGHTHOUSE_VALIDATOR_CREATE_CMD = """lighthouse --testnet-dir /tmp/vc/local-testnet/testnet --datadir /tmp/vc/local-testnet/testnet account validator create --wallet-name seed --wallet-password /tmp/seed.pass --count 1"""
+
 
 
 VALIDATOR_DEPOSIT_PY = """\
@@ -76,4 +77,3 @@ tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
 print(f"[deposit.py] Deposit tx sent! Tx hash: {{w3.to_hex(tx_hash)}}")
 """
-

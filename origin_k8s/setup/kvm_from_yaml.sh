@@ -30,8 +30,8 @@ require_cmd() {
 }
 
 cleanup_tmp() {
-    [ -n "${EXISTING_VMS_TSV}" ] && rm -f "${EXISTING_VMS_TSV}"
-    [ -n "${PLANNED_NODES_TSV}" ] && rm -f "${PLANNED_NODES_TSV}"
+    [ -n "${EXISTING_VMS_TSV}" ] && rm -f "${EXISTING_VMS_TSV}" || true
+    [ -n "${PLANNED_NODES_TSV}" ] && rm -f "${PLANNED_NODES_TSV}" || true
 }
 
 domain_exists() {

@@ -4,7 +4,7 @@ from seedemu.core import (ScopedRegistry, Node, Interface, Network, Emulator,
 from seedemu.core.enums import NetworkType
 from typing import List, Dict
 from ipaddress import IPv4Network
-import random
+
 RoutingFileTemplates: Dict[str, str] = {}
 
 RoutingFileTemplates["rs_bird"] = """\
@@ -18,42 +18,17 @@ RoutingFileTemplates["rnode_bird_direct_interface"] = """
     interface "{interfaceName}";
 """
 
-RoutingFileTemplates["kernel1"] = """
-protocol kernel {{
-    merge paths on;
-    persist;
-    scan time {interval};
-    ipv4 {{
-        import none;
-        # 核心修改在这里：加一个过滤器
-        export filter {{
-            # 允许直连路由写入内核（保证互联互通）
-            if source = RTS_DEVICE then accept;
-            # 允许 OSPF 路由写入内核（保证 iBGP Loopback 可达）
-            if source = RTS_OSPF then accept;
-            # 拒绝其他所有路由（包括 BGP 路由）写入内核！
-            reject;
-        }};
-    }};
-}}
-"""
-
-RoutingFileTemplates["kernel2"] = """
-protocol kernel {{
-    merge paths on;
-    persist;
-    scan time {interval};
-    ipv4 {{
-        import none;
-        export all;
-    }};
-}}
-"""
-
 RoutingFileTemplates["rnode_bird"] = """\
 router id {routerId};
 ipv4 table t_direct;
 protocol device {{
+}}
+protocol kernel {{
+    ipv4 {{
+        import all;
+        export all;
+    }};
+    learn;
 }}
 """
 
@@ -114,9 +89,7 @@ class Routing(Layer):
             node.setBaseSystem(BaseSystem.SEEDEMU_ROUTER)
 
     def _configure_rs(self, rs_node: Node):
-        rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
-        # Senior default: do not auto-start bird here. K3s runtime starts bird in a
-        # separate phased step after Deploy so operators can watch the evidence.
+        rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
         rs_node.appendStartCommand('bird -d', True)
         self._log("Bootstrapping bird.conf for RS {}...".format(rs_node.getName()))
 
@@ -144,9 +117,7 @@ class Routing(Layer):
         rnode.setFile("/etc/bird/bird.conf",
             RoutingFileTemplates["rnode_bird"].format(
               routerId = rnode.getLoopbackAddress()))
-        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
-        # Senior default: do not auto-start bird here. K3s runtime starts bird in a
-        # separate phased step after Deploy so operators can watch the evidence.
+        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
         rnode.appendStartCommand('bird -d', True)
         if has_localnet:
             rnode.addProtocol('direct', 'local_nets',
@@ -214,14 +185,6 @@ class Routing(Layer):
         for ((scope, type, name), obj) in reg.getAll().items():
             if type == 'rs' or type == 'rnode':
                 assert issubclass(obj.__class__, Router), 'routing: render: adding new RS/Router after routing layer configured is not currently supported.'
-
-            #############update
-            if type == 'rs' or type == 'rnode':
-                rnode: Router = obj
-                content1 = '\ninclude "/etc/bird/conf/*.conf";\n'
-                rnode.appendFile('/etc/bird/bird.conf',content1)
-                t=60000+random.randint(0, 12000)
-                rnode.setFile("/etc/bird/conf/kernel.conf",RoutingFileTemplates["kernel2"].format(interval=t))
 
             if type == 'rnode':
                 rnode: Router = obj

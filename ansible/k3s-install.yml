@@ -78,11 +78,27 @@
         state: present
         update_cache: yes
 
+    - name: Configure Docker daemon for local insecure registry
+      copy:
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+        content: |
+          {
+            "insecure-registries": ["{{ seed_registry_host }}:{{ seed_registry_port }}"]
+          }
+      register: docker_daemon_config
+
     - name: Ensure Docker service is running
       service:
         name: docker
         state: started
         enabled: yes
+
+    - name: Restart Docker if daemon config changed
+      service:
+        name: docker
+        state: restarted
+      when: docker_daemon_config.changed
 
     - name: Install K3s server
       shell: |

@@ -1,0 +1,30 @@
+clusterName: seedemu-k3s
+master:
+  vcpus: 12
+  memoryMb: 10240
+  diskGb: 80
+workers:
+  count: 2
+  vcpus: 6
+  memoryMb: 10240
+  diskGb: 80
+ssh:
+  user: ubuntu
+  key: /home/lxl/.ssh/id_ed25519
+registry:
+  port: 5000
+kvm:
+  storageDir: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup
+  diskDir: /data/lxl/k8spre/k8spre-kvm-ovn-example-65a16b96/disks
+  cloudInitDir: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/cloud-init
+  baseImagePath: /data/lxl/k8spre/k8spre-kvm-ovn-example-65a16b96/base/jammy-server-cloudimg-amd64.img
+outputs:
+  tmpDir: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/tmp
+  kubeconfig: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/seedemu-k3s.kubeconfig.yaml
+  inventory: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/seedemu-k3s.inventory.yaml
+  k3sConfig: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/configK3s.yaml
+  kvmState: /home/lxl/k8s/origin_k8s/test/k8spre-kvm-ovn-example/setup/kvmState.yaml
+fabric:
+  type: ovn
+k3s:
+  version: v1.29.15+k3s1
