@@ -286,3 +286,17 @@
 - Validation: 单节点同 Subnet 测试中，`net-2-net-101-102` 的同网 peer 捕获到对 `10.2.1.200` 的 ARP broadcast，`net-150-net0` 和 `net-160-net0` 的非同网 observer 未捕获到。
 - Validation: 跨节点同 Subnet 测试中，`net-154-net0` 的 idc peer 捕获到 amd 源 Pod 对 `10.154.0.200` 的 ARP broadcast，同节点非同网和跨节点非同网 observer 均未捕获到。
 - Notes: 结论是当前 OVN/OVS Kube-OVN backend 在代表性 ARP broadcast 测试中实现了 per-network L2 隔离；这与 KVM/macvlan 共享二层的泄露结果不同。
+
+## 2026-05-27 15:12 - Clean Large Git Artifacts And Push
+
+- User intent: 修复 `git push origin k8s` 因 GitHub 100MB 限制失败的问题，并把当前 `k8s` 分支推送到远端。
+- Scope: `.gitignore`、当前未推送 commit 的 index/history、`origin_k8s/test/*/setup` 下的 generated runtime artifacts。
+- Changes: 从未推送 commit 中移除 `setup/tmp/`、`setup/image-cache/`、`setup/kvm/image-cache/`、生成的 kubeconfig/inventory、以及误入仓库的 `seedemu.backup_20260527_145057/`；补充 `.gitignore` 防止这些文件再次入库。
+- Commands: `git status --short --branch` 确认本地分支只 ahead `origin/k8s` 一个 commit。
+- Commands: `git rev-list --objects HEAD ^origin/k8s | git cat-file --batch-check ...` 定位超过 50MB 的新增 blob，确认 GitHub 拒绝的是 Kube-OVN chart、Helm binary 和 Docker image tarballs。
+- Commands: `git branch backup/k8s-before-large-file-cleanup-20260527_150819` 为 rewrite 前状态创建本地备份分支。
+- Commands: `git rm -r --cached --ignore-unmatch ...` 从 index 移除 generated runtime artifacts 和仓库内备份目录，保留本地工作区文件。
+- Commands: `git commit --amend --no-edit` 重写唯一未推送 commit，使大 blob 不再属于待推送历史。
+- Validation: 重新运行新增 blob 检查，未发现超过 50MB 的待推送 blob。
+- Validation: `git push origin k8s` 成功，远端从 `ed3a5bd8` 更新到 `b2143718`。
+- Notes: 本地 rewrite 前备份分支为 `backup/k8s-before-large-file-cleanup-20260527_150819`；目录备份已移到仓库外 `/home/lxl/seedemu.backup_20260527_145057`。
