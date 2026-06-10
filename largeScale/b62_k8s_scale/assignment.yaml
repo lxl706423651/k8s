@@ -1,0 +1,94 @@
+# B62 experiment assignment. Users edit this file to choose topology size,
+# worker count, VM resources, and cluster addressing. Stage tuning parameters
+# are fixed directly in the corresponding stage scripts.
+experiment:
+  name: b62-scale-4954
+  topologySize: 4954
+  workerCount: 5
+  namespace: seedemu-b62-4954
+  sourceRoot: ../..
+  topologyDir: ~/seed-emulator/topology
+
+resources:
+  totalVcpus: 300
+  totalMemoryGiB: 600
+  diskGb: 80
+  master:
+    vcpus: 48
+    memoryGiB: 96
+    diskGb: 80
+
+kvm:
+  clusterNamePrefix: seedemu-b62
+  networkPrefix: seedemu-b62-net
+  bridgePrefix: virbrb62
+  networkCidr: 192.168.126.0/24
+  networkGateway: 192.168.126.1
+  dhcpStart: 192.168.126.2
+  dhcpEnd: 192.168.126.254
+  ipPrefix: 192.168.126
+  master:
+    namePrefix: seedemu-b62-master
+    ipStart: 130
+    macPrefix: "52:54:00:62:20"
+    macStart: 130
+  workers:
+    namePrefix: seedemu-b62-worker
+    ipStart: 131
+    macPrefix: "52:54:00:62:20"
+    macStart: 131
+  ssh:
+    user: ubuntu
+    key: ~/.ssh/id_ed25519
+  baseImagePath: base_image/jammy-server-cloudimg-amd64.img
+  legacyBaseImagePath: base_image/jammy-server-cloudimg-amd64.img
+
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.42.0.0/16
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: host-gw
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+
+registry:
+  port: 5000
+
+seedemu:
+  offline: false
+  hostImageCacheDir: base_image/image-cache
+  imageCacheDirs:
+  - base_image/image-cache
+  - /home/lxl/k8s/origin_k8s/setup/image-cache
+
+ovn:
+  helmCacheDir: base_image/helm
+  iface: ens2
+  northdThreads: 4
+  controllerWorkerNum: 12
+  controllerRequestCpu: 1000m
+  controllerLimitCpu: "4"
+  controllerRequestMemory: 512Mi
+  controllerLimitMemory: 2Gi
+  centralRequestCpu: 1000m
+  centralLimitCpu: "6"
+  centralRequestMemory: 1Gi
+  centralLimitMemory: 8Gi
+  ovsRequestCpu: 1000m
+  ovsLimitCpu: "6"
+  ovsRequestMemory: 2Gi
+  ovsLimitMemory: 8Gi
+  cniRequestCpu: 500m
+  cniLimitCpu: "2"
+  cniRequestMemory: 512Mi
+  cniLimitMemory: 2Gi
+  cniOvsVsctlConcurrency: 5
+
+networking:
+  backend: kube-ovn
+  cniType: macvlan
+  cniMasterInterface: ens2
+  localLinkCniType: macvlan
+  attachedCniType: macvlan

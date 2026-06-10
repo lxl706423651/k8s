@@ -80,6 +80,126 @@ k.writeKvmInstallScripts("./out", connection="ovn")
 
 生成的 `kvm.yaml` 会包含 `fabric.type=ovn`，并在 KVM 创建后传递到 `configK3s.yaml`。这样 `buildK3sCluster.sh` 会在 K3s/Multus 就绪后自动安装 Kube-OVN non-primary CNI；running 阶段也会自动把 compile 输出转换为 Kube-OVN NAD/Subnet/VPC。
 
+## 多物理机 KVM 路径
+
+`writeMultiHostKvmInstallScripts()` 面向“多台真实物理机作为 KVM hypervisor，每台物理机创建若干 VM，所有 VM 再组成一个 K3s + OVN/OVS 集群”的场景。它和单宿主机 KVM 路径的区别是：KVM 创建不再只发生在执行脚本的本机，而是由 `setup/multiHostKvm/` 先为每台物理机生成 host-local `kvm.yaml`，再远程调用每台机器上的 `kvm/createKvmVms.sh`。
+
+推荐网络模型是每台物理机一个 routed subnet，不要求不同物理机上的 VM 处于同一个二层网络。例如：
+
+```text
+amd: virbr-seed1 10.80.1.0/24, VM 10.80.1.10-12
+idc: virbr-seed2 10.80.2.0/24, VM 10.80.2.10-12
+```
+
+脚本会在物理机之间添加静态路由，让 VM node IP 三层互通。Kube-OVN/OVS 的 Geneve tunnel 后续跑在这些 VM node IP 之间，因此 SeedEMU secondary networks 不依赖物理机共享二层。
+
+注意：当前 `prepareKvmHypervisors.sh` 添加的是 `remote-vm-subnet via peer-physical-ip` 形式的主机路由。如果两台物理机的物理 IP 不在同一个可作为 next-hop 的 underlay 中，而是只能经上游网关三层互通，那么还需要在上游网关增加到各 VM subnet 的路由，或者后续把 hypervisor 间 underlay 改成 GRE/WireGuard/IPIP 这类显式隧道。否则 Linux 可能拒绝安装该 next-hop，或者报文到达上游网关后不知道如何转发到远端 VM subnet。
+
+最小 API 用法：
+
+```python
+from seedemu.k8spre import K8sPre
+
+k = K8sPre()
+k.writeMultiHostKvmInstallScripts(
+    "./out",
+    config="multi-host-kvm.yaml",
+    connection="ovn",
+)
+k.writeK3sBuildScripts("./out")
+k.writeRunningScripts("./out", output_dir="/home/lxl/k8s/origin_k8s/emulate/output")
+```
+
+输入 `multi-host-kvm.yaml` 示例：
+
+```yaml
+clusterName: seedemu-k3s
+
+hypervisors:
+  - name: amd
+    ip: 10.202.236.88
+    connection: local
+    ssh:
+      user: lxl
+      key: /home/lxl/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.1.0/24
+      gateway: 10.80.1.1
+      networkName: seedemu-amd
+      bridgeName: virbr-seed1
+    vmCount: 3
+
+  - name: idc
+    ip: 10.202.191.39
+    ssh:
+      user: lxl
+      key: /home/lxl/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.2.0/24
+      gateway: 10.80.2.1
+      networkName: seedemu-idc
+      bridgeName: virbr-seed2
+    vmCount: 3
+
+vmSsh:
+  user: ubuntu
+  key: /home/lxl/.ssh/id_ed25519
+
+master:
+  placement: amd
+  vcpus: 16
+  memoryMb: 32768
+  diskGb: 120
+
+workers:
+  vcpus: 8
+  memoryMb: 16384
+  diskGb: 80
+
+fabric:
+  type: ovn
+```
+
+执行顺序：
+
+```bash
+cd out/setup
+bash installMultiHostKvmVms.sh
+bash buildK3sCluster.sh
+bash ovn/validateKubeOvnFabric.sh ./configK3s.yaml
+
+cd ../running
+make preflight
+make build
+make up
+```
+
+`installMultiHostKvmVms.sh` 内部会调用：
+
+```bash
+bash ./multiHostKvm/prepareKvmHypervisors.sh ./kvm.yaml
+bash ./multiHostKvm/createMultiHostKvmVms.sh ./kvm.yaml
+bash ./kvm/tuneVmLimits.sh ./configK3s.yaml
+```
+
+关键产物：
+
+| 文件 | 作用 |
+| --- | --- |
+| `setup/kvm.yaml` | 全局多物理机 KVM 输入，记录 hypervisors、routed subnet、master/worker 资源和 fabric 后端。 |
+| `setup/tmp/multiHostKvm/<host>/kvm.yaml` | 每台物理机的 host-local KVM 输入，由脚本生成，不需要用户手写。 |
+| `setup/configK3s.yaml` | 所有 VM 的全局 K3s 节点配置，后续由 `buildK3sCluster.sh` 消费。 |
+| `setup/multiHostKvmState.yaml` | 多物理机 KVM 清理状态，记录每个 VM 属于哪台 hypervisor。 |
+
+清理入口：
+
+```bash
+cd out/setup
+bash destroyMultiHostKvmVms.sh
+```
+
+该脚本会读取 `multiHostKvmState.yaml`，到各物理机上调用 host-local `kvm/destroyKvmVms.sh`，然后删除静态路由和 libvirt routed network。
+
 真实物理机路径的脚本顺序：
 
 ```bash

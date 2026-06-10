@@ -444,7 +444,11 @@ main() {
         waitForSsh "${name}" "${ip}"
     done < "${PLANNED_NODES_TSV}"
 
-    writeK3sConfig
+    if [ "${kvmSkipK3sConfig}" = "true" ]; then
+        echo "Skipping host-local configK3s.yaml generation because kvm.skipK3sConfig=true."
+    else
+        writeK3sConfig
+    fi
     writeKvmState
     echo "KVM VMs are ready."
     echo "Next step: ${SCRIPT_DIR}/tuneVmLimits.sh ${outputK3sConfig}"

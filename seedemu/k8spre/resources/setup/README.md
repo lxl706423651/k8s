@@ -144,6 +144,72 @@ bash ./ovn/validateKubeOvnFabric.sh ./configK3s.yaml
 
 区别是 running 阶段会识别 `fabric.type=ovn`，不再使用 VM 内 `ens2` 上的 macvlan，而是生成 Kube-OVN NAD/Subnet/VPC。
 
+多台真实物理机也可以先作为 KVM hypervisor 使用，再由这些 VM 组成 K3s + OVN/OVS 集群。调用 `writeMultiHostKvmInstallScripts(..., connection="ovn")` 时，用户输入的是全局 `kvm.yaml`，其中 `hypervisors[]` 描述物理机、SSH 方式和每台物理机的 routed subnet，`master` 与 `workers` 分别描述 VM 资源。
+
+示例结构：
+
+```yaml
+clusterName: seedemu-k3s
+hypervisors:
+  - name: amd
+    ip: 10.202.236.88
+    connection: local
+    ssh:
+      user: lxl
+      key: /home/lxl/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.1.0/24
+      gateway: 10.80.1.1
+      networkName: seedemu-amd
+      bridgeName: virbr-seed1
+    vmCount: 3
+  - name: idc
+    ip: 10.202.191.39
+    ssh:
+      user: lxl
+      key: /home/lxl/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.2.0/24
+      gateway: 10.80.2.1
+      networkName: seedemu-idc
+      bridgeName: virbr-seed2
+    vmCount: 3
+vmSsh:
+  user: ubuntu
+  key: /home/lxl/.ssh/id_ed25519
+master:
+  placement: amd
+  vcpus: 16
+  memoryMb: 32768
+  diskGb: 120
+workers:
+  vcpus: 8
+  memoryMb: 16384
+  diskGb: 80
+fabric:
+  type: ovn
+```
+
+多物理机 KVM 执行顺序：
+
+```bash
+bash ./installMultiHostKvmVms.sh
+bash ./buildK3sCluster.sh
+bash ./ovn/validateKubeOvnFabric.sh ./configK3s.yaml
+```
+
+`installMultiHostKvmVms.sh` 会调用：
+
+```bash
+bash ./multiHostKvm/prepareKvmHypervisors.sh ./kvm.yaml
+bash ./multiHostKvm/createMultiHostKvmVms.sh ./kvm.yaml
+bash ./kvm/tuneVmLimits.sh ./configK3s.yaml
+```
+
+它会为每台物理机创建一个 libvirt routed network，例如 `10.80.1.0/24` 和 `10.80.2.0/24`，再在物理机之间添加静态路由，使所有 VM 的 K3s node IP 三层互通。Kube-OVN/OVS 后续的 Geneve tunnel 运行在这些 VM IP 之间，因此不要求不同物理机共享同一个二层网络。
+
+当前静态路由形式是 `remote-vm-subnet via peer-physical-ip`。如果 peer physical IP 不能作为当前机器的合法 next-hop，例如两台物理机只通过上游网关跨三层互通，那么需要在上游网关配置到各 VM subnet 的路由，或者后续改用 GRE/WireGuard/IPIP 这类显式隧道承载 VM underlay。否则 VM subnet 之间不一定可达。
+
 `vxlan/validateLinuxVxlanFabric.sh` 会先验证 `br-seedemu` 上的临时 bridge IP 双向 ping，再验证 `macseed0` macvlan-on-bridge 双向 ping。验证失败时会自动调用 `vxlan/cleanLinuxVxlanFabric.sh` 回滚 fabric，避免残留错误接口。集群整体清理使用：
 
 ```bash
@@ -215,6 +281,10 @@ kubectl -n "${SEED_NAMESPACE}" exec -it "${POD}" -- sh
 | `kvm/tuneVmLimits.sh` | 通过 SSH 对 VM 打开文件句柄、netns、邻居表、cni0 hash 等限制。 |
 | `applyK3sCluster.sh` | 安装 K3s、配置 registry、导入 bootstrap 镜像、生成 kubeconfig 和 inventory。 |
 | `kvm/destroyKvmVms.sh` | 根据 `kvmState.yaml` 清理 VM、磁盘、cloud-init 和 DHCP reservation；根目录 `destroyKvmVms.sh` 是便捷包装入口。 |
+| `multiHostKvm/prepareKvmHypervisors.sh` | 多物理机 KVM 前置准备：验证每台 hypervisor 的 SSH/工具链，创建 routed libvirt network，打开 ip_forward 并添加跨 subnet 静态路由。 |
+| `multiHostKvm/createMultiHostKvmVms.sh` | 为每台 hypervisor 生成 host-local `kvm.yaml`，同步 `kvm/` 脚本并远程创建 VM，最后生成全局 `configK3s.yaml` 和 `multiHostKvmState.yaml`。 |
+| `multiHostKvm/destroyMultiHostKvmVms.sh` | 根据 `multiHostKvmState.yaml` 到每台 hypervisor 清理 VM、路由和 routed libvirt network。 |
+| `multiHostKvm/manageMultiHostKvmConfig.py` | 多物理机 KVM 阶段 YAML 解析器，负责分配 VM 名称/IP/MAC、生成 host-local KVM 配置、全局 K3s 配置和清理状态。 |
 | `kvm/manageKvmConfig.py` | KVM 阶段 YAML 解析器，负责生成 VM 计划、`configK3s.yaml` 和 `kvmState.yaml`。 |
 | `manageK3sConfig.py` | K3s 阶段 YAML 解析器，负责生成临时 Ansible inventory 和持久 cluster inventory；`write-running-config` 仅保留为旧流程兼容命令。 |
 | `ansible/k3s-install.yml` | K3s 安装使用的静态 Ansible playbook 模板，必须保留。 |

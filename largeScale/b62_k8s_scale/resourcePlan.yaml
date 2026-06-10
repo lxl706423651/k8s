@@ -1,0 +1,29 @@
+total:
+  vcpus: 300
+  memoryMb: 614400
+  diskGb: 80
+master:
+  vcpus: 48
+  memoryMb: 98304
+  diskGb: 80
+workers:
+- index: 1
+  vcpus: 51
+  memoryMb: 103220
+  diskGb: 80
+- index: 2
+  vcpus: 51
+  memoryMb: 103219
+  diskGb: 80
+- index: 3
+  vcpus: 50
+  memoryMb: 103219
+  diskGb: 80
+- index: 4
+  vcpus: 50
+  memoryMb: 103219
+  diskGb: 80
+- index: 5
+  vcpus: 50
+  memoryMb: 103219
+  diskGb: 80

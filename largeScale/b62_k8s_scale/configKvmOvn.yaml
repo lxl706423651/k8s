@@ -1,0 +1,118 @@
+kind: kvmOvn
+clusterName: seedemu-b62-w5
+nodes:
+- name: seedemu-b62-master-w5
+  role: master
+  ip: 192.168.126.130
+  mac: 52:54:00:62:20:82
+  vcpus: 48
+  memory_mb: 98304
+  disk_gb: 80
+  memoryMb: 98304
+  diskGb: 80
+- name: seedemu-b62-worker1-w5
+  role: worker
+  ip: 192.168.126.131
+  mac: 52:54:00:62:20:83
+  vcpus: 51
+  memory_mb: 103220
+  disk_gb: 80
+  memoryMb: 103220
+  diskGb: 80
+- name: seedemu-b62-worker2-w5
+  role: worker
+  ip: 192.168.126.132
+  mac: 52:54:00:62:20:84
+  vcpus: 51
+  memory_mb: 103219
+  disk_gb: 80
+  memoryMb: 103219
+  diskGb: 80
+- name: seedemu-b62-worker3-w5
+  role: worker
+  ip: 192.168.126.133
+  mac: 52:54:00:62:20:85
+  vcpus: 50
+  memory_mb: 103219
+  disk_gb: 80
+  memoryMb: 103219
+  diskGb: 80
+- name: seedemu-b62-worker4-w5
+  role: worker
+  ip: 192.168.126.134
+  mac: 52:54:00:62:20:86
+  vcpus: 50
+  memory_mb: 103219
+  disk_gb: 80
+  memoryMb: 103219
+  diskGb: 80
+- name: seedemu-b62-worker5-w5
+  role: worker
+  ip: 192.168.126.135
+  mac: 52:54:00:62:20:87
+  vcpus: 50
+  memory_mb: 103219
+  disk_gb: 80
+  memoryMb: 103219
+  diskGb: 80
+kvm:
+  network: seedemu-b62-net-w5
+  networkBridge: virbrb62w5
+  networkCidr: 192.168.126.0/24
+  networkGateway: 192.168.126.1
+  dhcpStart: 192.168.126.2
+  dhcpEnd: 192.168.126.254
+  baseImagePath: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
+  legacyBaseImagePath: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
+  diskDir: /data/lxl/k8sTools/b62/w5/disks
+  cloudInitDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/build_cluster_20260610_235953/cloud-init
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+fabric:
+  type: ovn
+cni:
+  localLinkCniType: macvlan
+  defaultMasterInterface: ens2
+registry:
+  port: 5000
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.42.0.0/16
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: host-gw
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+outputs:
+  kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfig.yaml
+  tmpDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/build_cluster_20260610_235953/setup-tmp
+seedemu:
+  offline: false
+  hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs:
+  - /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  - /home/lxl/k8s/origin_k8s/setup/image-cache
+ovn:
+  helmCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/helm
+  iface: ens2
+  northdThreads: 4
+  controllerWorkerNum: 12
+  controllerRequestCpu: 1000m
+  controllerLimitCpu: '4'
+  controllerRequestMemory: 512Mi
+  controllerLimitMemory: 2Gi
+  centralRequestCpu: 1000m
+  centralLimitCpu: '6'
+  centralRequestMemory: 1Gi
+  centralLimitMemory: 8Gi
+  ovsRequestCpu: 1000m
+  ovsLimitCpu: '6'
+  ovsRequestMemory: 2Gi
+  ovsLimitMemory: 8Gi
+  cniRequestCpu: 500m
+  cniLimitCpu: '2'
+  cniRequestMemory: 512Mi
+  cniLimitMemory: 2Gi
+  cniOvsVsctlConcurrency: 5

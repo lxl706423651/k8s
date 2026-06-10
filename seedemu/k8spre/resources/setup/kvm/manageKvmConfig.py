@@ -64,6 +64,7 @@ def normalize_config(data: dict[str, Any]) -> None:
             "ubuntuSeries": "ubuntu_series",
             "bootTimeoutSeconds": "boot_timeout_seconds",
             "allowExisting": "allow_existing",
+            "skipK3sConfig": "skip_k3s_config",
         }
         for new_key, old_key in aliases.items():
             if new_key in kvm and old_key not in kvm:
@@ -430,6 +431,7 @@ def kvm_env(args: argparse.Namespace) -> None:
         "kvmBaseImageSearchDirs": expand_path_list(get_nested(data, "kvm.base_image_search_dirs")),
         "kvmBootTimeoutSeconds": get_nested(data, "kvm.boot_timeout_seconds", 300),
         "kvmAllowExisting": str(get_nested(data, "kvm.allow_existing", False)).lower(),
+        "kvmSkipK3sConfig": str(get_nested(data, "kvm.skip_k3s_config", False)).lower(),
         "sshUser": get_nested(data, "ssh.user", "ubuntu"),
         "sshKey": expand_path(str(get_nested(data, "ssh.key", "~/.ssh/id_ed25519"))),
         "masterName": master["name"] if master else "",

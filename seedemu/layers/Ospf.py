@@ -11,14 +11,20 @@ OspfFileTemplates['ospf_body'] = """
         import all;
         export all;
     }};
+    tick 1;
+
     area 0 {{
 {interfaces}
     }};
 """
 
+# OspfFileTemplates['ospf_interface'] = """\
+#         interface "{interfaceName}" {{ hello 10; dead 40; type pointopoint; retransmit 20;}};
+# """
 OspfFileTemplates['ospf_interface'] = """\
         interface "{interfaceName}" {{ hello 1; dead count 2; }};
 """
+
 
 OspfFileTemplates['ospf_stub_interface'] = """\
         interface "{interfaceName}" {{ stub; }};

@@ -11,7 +11,7 @@ from .Configurable import Configurable
 from .Customizable import Customizable
 from .Node import promote_to_real_world_router
 from ipaddress import IPv4Network
-from typing import Dict, List
+from typing import Dict, List, Tuple, Set
 import requests
 
 RIS_PREFIXLIST_URL = 'https://stat.ripe.net/data/announced-prefixes/data.json'
@@ -29,6 +29,7 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
     __hosts: Dict[str, Node]
     __nets: Dict[str, Network]
     __name_servers: List[str]
+    __clusters: Dict[str, Tuple[Set[str], Set[str]]] # cluster_id -> (set of rr names, set of client names)
 
     def __init__(self, asn: int, subnetTemplate: str = "10.{}.0.0/16"):
         """!
@@ -44,8 +45,104 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
         self.__asn = asn
         self.__subnets = None if asn > 255 else list(IPv4Network(subnetTemplate.format(asn)).subnets(new_prefix = 24))
         self.__name_servers = []
+        self.__clusters = {}
+
+    def createCluster(self, address: str) -> 'AutonomousSystem':
+        """!
+        @brief Register an iBGP Route Reflector cluster ID for this AS.
+
+        The cluster is created as an empty RR/client membership set. Calling
+        this method with an existing cluster ID is idempotent.
+
+        @param address cluster ID rendered into BIRD's rr cluster id field.
+
+        @returns self, for chaining API calls.
+        """
+        if address not in self.__clusters:
+            # Store Route Reflector names and client names separately.
+            self.__clusters[address] = (set(), set())
+            
+        return self
+
+    def _validate_cluster_integrity(self, data: Dict[str, Tuple[Set[str], Set[str]]]):
+        """!
+        @brief Validate aggregated Route Reflector cluster membership.
+
+        A single cluster without any RR is treated as the legacy full-mesh iBGP
+        topology. Multi-cluster topologies, or any topology containing an RR,
+        are treated as RR topologies and must satisfy the RR/client contract.
+
+        @param data mapping from cluster ID to a tuple of RR names and client
+        names.
+        """
+
+        # A single non-RR cluster represents the legacy full-mesh mode.
+        if len(data) == 1:
+            cid, (rrs, clients) = list(data.items())[0]
+            
+            # No RR means every router will be handled by the full-mesh renderer.
+            if len(rrs) == 0:
+                return 
+        
+        # RR mode requires every active cluster to have both roles.
+        for cid, (rr_set, client_set) in data.items():
+            
+            # Each RR cluster needs an RR for client reflection and RR mesh.
+            assert len(rr_set) > 0, (
+                f"[Topology Error] AS{self.__asn} Cluster '{cid}' is invalid: "
+                f"Missing Route Reflector! In a multi-cluster or RR topology, every cluster must have an RR."
+            )
+            
+            # A cluster with only RRs is invalid because no clients can use it.
+            assert len(client_set) > 0, (
+                f"[Topology Error] AS{self.__asn} Cluster '{cid}' is invalid: "
+                f"Missing Clients! The Route Reflector {list(rr_set)} has no clients to serve."
+            )
+
+    def _aggregateBgpClusters(self):
+        """!
+        @brief Build Route Reflector cluster membership from AS and router state.
+
+        Explicitly registered clusters provide the allowed cluster IDs. Routers
+        that joined a cluster are assigned to that cluster, while routers
+        without an explicit cluster are assigned to the default cluster.
+
+        @returns mapping from cluster ID to a tuple of RR names and client names.
+        """
+        # Start from explicitly registered cluster IDs, then add router roles.
+        merged_data = self.__clusters.copy()
+
+        # Cluster IDs must be registered before routers can join them.
+        def ensure_key(cid):
+            assert cid in merged_data, f"Cluster ID {cid} doesn't exists in Cluster!"
+
+        # Routers without explicit cluster membership use the legacy cluster.
+        default_cluster_id = "10.0.0.0"
 
 
+        # Classify each router by its RR flag and cluster membership.
+        for router in self.__routers.values():
+            r_cid = router.getBgpClusterId()
+            is_rr = router.isRouteReflector()
+            r_name = router.getName()
+
+            if r_cid is not None:
+                ensure_key(r_cid)
+                target_cid = r_cid
+            else:
+                if default_cluster_id not in merged_data:
+                    # Create the implicit full-mesh cluster on first use.
+                    merged_data[default_cluster_id] = (set(), set())    
+                target_cid = default_cluster_id
+
+            if is_rr:
+                merged_data[target_cid][0].add(r_name)
+            else:
+                merged_data[target_cid][1].add(r_name)
+        print(merged_data)
+        self._validate_cluster_integrity(merged_data)
+        self.__clusters = merged_data
+        return self.__clusters
 
     def setNameServers(self, servers: List[str]) -> AutonomousSystem:
         """!

@@ -4,7 +4,7 @@ from seedemu.core import (ScopedRegistry, Node, Interface, Network, Emulator,
 from seedemu.core.enums import NetworkType
 from typing import List, Dict
 from ipaddress import IPv4Network
-
+import random
 RoutingFileTemplates: Dict[str, str] = {}
 
 RoutingFileTemplates["rs_bird"] = """\
@@ -18,17 +18,43 @@ RoutingFileTemplates["rnode_bird_direct_interface"] = """
     interface "{interfaceName}";
 """
 
+RoutingFileTemplates["kernel1"] = """
+protocol kernel {{
+    merge paths on;
+    persist;
+    scan time {interval};
+    ipv4 {{
+        import none;
+        # Core modification here: add a filter
+        export filter {{
+            # Allow direct routes to be installed into the kernel (ensure basic connectivity)
+            if source = RTS_DEVICE then accept;
+            # Allow OSPF routes to be installed into the kernel (ensure iBGP Loopback reachability)
+            if source = RTS_OSPF then accept;
+            # Reject all other routes (including BGP routes) from being installed into the kernel!
+            reject;
+        }};
+    }};
+}}
+"""
+
+RoutingFileTemplates["kernel2"] = """
+protocol kernel {{
+    merge paths on;
+    persist;
+    scan time {interval};
+    ipv4 {{
+        import none;
+        export all;
+    }};
+}}
+"""
+
+
 RoutingFileTemplates["rnode_bird"] = """\
 router id {routerId};
 ipv4 table t_direct;
 protocol device {{
-}}
-protocol kernel {{
-    ipv4 {{
-        import all;
-        export all;
-    }};
-    learn;
 }}
 """
 
@@ -89,8 +115,8 @@ class Routing(Layer):
             node.setBaseSystem(BaseSystem.SEEDEMU_ROUTER)
 
     def _configure_rs(self, rs_node: Node):
-        rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
-        rs_node.appendStartCommand('bird -d', True)
+        rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
+        #rs_node.appendStartCommand('bird', True)
         self._log("Bootstrapping bird.conf for RS {}...".format(rs_node.getName()))
 
         rs_ifaces = rs_node.getInterfaces()
@@ -117,8 +143,8 @@ class Routing(Layer):
         rnode.setFile("/etc/bird/bird.conf",
             RoutingFileTemplates["rnode_bird"].format(
               routerId = rnode.getLoopbackAddress()))
-        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
-        rnode.appendStartCommand('bird -d', True)
+        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
+        #rnode.appendStartCommand('bird', True)
         if has_localnet:
             rnode.addProtocol('direct', 'local_nets',
                               RoutingFileTemplates['rnode_bird_direct'].format(interfaces = ifaces))
@@ -185,6 +211,13 @@ class Routing(Layer):
         for ((scope, type, name), obj) in reg.getAll().items():
             if type == 'rs' or type == 'rnode':
                 assert issubclass(obj.__class__, Router), 'routing: render: adding new RS/Router after routing layer configured is not currently supported.'
+
+            if type == 'rs' or type == 'rnode':
+                rnode: Router = obj
+                content1 = '\ninclude "/etc/bird/conf/*.conf";\n'
+                rnode.appendFile('/etc/bird/bird.conf',content1)
+                t=60000+random.randint(0, 12000)
+                rnode.setFile("/etc/bird/conf/kernel.conf",RoutingFileTemplates["kernel1"].format(interval=t))
 
             if type == 'rnode':
                 rnode: Router = obj

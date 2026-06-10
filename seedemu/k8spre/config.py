@@ -164,6 +164,59 @@ def makeKvmConfig(
     return data
 
 
+def makeMultiHostKvmConfig(
+    *,
+    config: str | Path | None = None,
+    setup_dir: str | Path | None = None,
+    cluster_name: str = "seedemu-k3s",
+    registry_port: int = 5000,
+) -> dict[str, Any]:
+    """Create multi-hypervisor KVM config consumed by setup scripts.
+
+    Args:
+        config: User YAML describing hypervisors, routed subnets, VM resources,
+            and optional K3s/fabric settings.
+        setup_dir: Generated setup directory; used to derive output paths.
+        cluster_name: Default cluster name when config omits clusterName.
+        registry_port: Default registry port on the generated master VM.
+
+    The multi-host flow requires an explicit config file because physical
+    hypervisor IPs, SSH keys and routed subnets cannot be guessed safely.
+    """
+    if config is None:
+        raise ValueError("writeMultiHostKvmInstallScripts(config=...) requires a multi-host kvm.yaml")
+
+    setup_path = Path(setup_dir).expanduser().resolve() if setup_dir is not None else None
+    data = copy.deepcopy(loadYaml(config))
+    effective_cluster_name = str(data.get("clusterName") or data.get("cluster_name") or cluster_name)
+    data["clusterName"] = effective_cluster_name
+    data.pop("cluster_name", None)
+
+    if not isinstance(data.get("hypervisors"), list) or not data["hypervisors"]:
+        raise ValueError("multi-host kvm.yaml requires a non-empty hypervisors list")
+
+    _normalizeLegacyResourceKeys(_mapping(data, "master"))
+    _normalizeLegacyResourceKeys(_mapping(data, "workers"))
+
+    registry_cfg = _mapping(data, "registry")
+    _fillMissing(registry_cfg, {"port": registry_port})
+
+    if setup_path is not None:
+        outputs_cfg = _mapping(data, "outputs")
+        _normalizeLegacyOutputKeys(outputs_cfg)
+        _fillMissing(
+            outputs_cfg,
+            {
+                "tmpDir": _portablePath(setup_path / "tmp", setup_path),
+                "k3sConfig": _portablePath(setup_path / "configK3s.yaml", setup_path),
+                "multiHostKvmState": _portablePath(setup_path / "multiHostKvmState.yaml", setup_path),
+                "kubeconfig": _portablePath(setup_path / f"{effective_cluster_name}.kubeconfig.yaml", setup_path),
+                "inventory": _portablePath(setup_path / f"{effective_cluster_name}.inventory.yaml", setup_path),
+            },
+        )
+    return data
+
+
 def makeRunningConfig(
     *,
     setup_dir: str | Path,
@@ -323,7 +376,12 @@ def _normalizeLegacyKvmKeys(data: dict[str, Any]) -> None:
 
 
 def _normalizeLegacyOutputKeys(data: dict[str, Any]) -> None:
-    aliases = {"tmp_dir": "tmpDir", "kvm_state": "kvmState"}
+    aliases = {
+        "tmp_dir": "tmpDir",
+        "kvm_state": "kvmState",
+        "k3s_config": "k3sConfig",
+        "multi_host_kvm_state": "multiHostKvmState",
+    }
     for old, new in aliases.items():
         if old in data and new not in data:
             data[new] = data.pop(old)
@@ -333,5 +391,6 @@ def _normalizeLegacyOutputKeys(data: dict[str, Any]) -> None:
 load_yaml = loadYaml
 write_yaml = writeYaml
 make_kvm_config = makeKvmConfig
+make_multi_host_kvm_config = makeMultiHostKvmConfig
 make_k3s_config = makeK3sConfig
 make_running_config = makeRunningConfig

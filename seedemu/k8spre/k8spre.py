@@ -7,15 +7,22 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from .config import loadYaml, makeK3sConfig, makeKvmConfig, makeRunningConfig, writeYaml
+from .config import loadYaml, makeK3sConfig, makeKvmConfig, makeMultiHostKvmConfig, makeRunningConfig, writeYaml
 from .utils import chmodScripts, copyResourceItems, copyTree, writeExecutableScript
 
 
 KVM_INSTALL_ENTRYPOINT = "installKvmVms.sh"
+MULTI_HOST_KVM_INSTALL_ENTRYPOINT = "installMultiHostKvmVms.sh"
 K3S_BUILD_ENTRYPOINT = "buildK3sCluster.sh"
 KVM_SETUP_RESOURCE_ITEMS = [
     "README.md",
     "kvm",
+    "manageK3sConfig.py",
+]
+MULTI_HOST_KVM_SETUP_RESOURCE_ITEMS = [
+    "README.md",
+    "kvm",
+    "multiHostKvm",
     "manageK3sConfig.py",
 ]
 K3S_SETUP_RESOURCE_ITEMS = [
@@ -147,6 +154,74 @@ class K8sPre:
         )
         return subprocess.run(
             [str(setup_dir / KVM_INSTALL_ENTRYPOINT)],
+            cwd=str(setup_dir),
+            check=True,
+        )
+
+    def writeMultiHostKvmInstallScripts(
+        self,
+        path: str | Path,
+        *,
+        config: str | Path,
+        connection: str | None = "ovn",
+        overwrite: bool = False,
+    ) -> Path:
+        """Write setup scripts for KVM VMs spread across hypervisors.
+
+        Args:
+            path: Output root. Scripts are written to path/setup.
+            config: Multi-host kvm.yaml with hypervisors[], routedSubnet,
+                master resources and worker resources.
+            connection: SeedEMU secondary-network backend for the K3s stage.
+                The intended default is "ovn" so the VM cluster uses
+                Kube-OVN/OVS after buildK3sCluster.sh.
+            overwrite: Replace an existing setup directory if true.
+        """
+        base_dir = Path(path).expanduser()
+        setup_dir = base_dir / "setup"
+        if setup_dir.exists() and overwrite:
+            shutil.rmtree(setup_dir)
+        if setup_dir.exists() and not overwrite and (setup_dir / "kvm.yaml").exists():
+            raise FileExistsError(f"{setup_dir / 'kvm.yaml'} already exists; use overwrite=True to replace it")
+        setup_dir = copyResourceItems("setup", MULTI_HOST_KVM_SETUP_RESOURCE_ITEMS, setup_dir, overwrite=overwrite)
+        kvm_config = makeMultiHostKvmConfig(config=config, setup_dir=setup_dir)
+        _applyKvmConnectionDefault(kvm_config, connection)
+        writeYaml(setup_dir / "kvm.yaml", kvm_config)
+        _copySelectedFabricResources(setup_dir, kvm_config, overwrite=overwrite)
+        writeExecutableScript(setup_dir / MULTI_HOST_KVM_INSTALL_ENTRYPOINT, _installMultiHostKvmVmsEntrypoint())
+        writeExecutableScript(setup_dir / "destroyMultiHostKvmVms.sh", _destroyMultiHostKvmVmsEntrypoint())
+        _writeSetupReadmeContext(setup_dir)
+        _removeGeneratedGitignore(setup_dir)
+        chmodScripts(setup_dir)
+        return setup_dir
+
+    def installMultiHostKvmVms(
+        self,
+        *,
+        path: str | Path | None = None,
+        config: str | Path,
+        overwrite: bool = True,
+        connection: str | None = "ovn",
+    ) -> subprocess.CompletedProcess:
+        """Generate multi-host KVM scripts and run the VM creation entrypoint.
+
+        Args:
+            path: Output root. A temporary root is used when omitted.
+            config: Multi-host kvm.yaml source.
+            overwrite: Replace generated scripts before execution.
+            connection: K3s secondary-network backend selector.
+        """
+        base_dir = Path(path).expanduser() if path is not None else Path(
+            tempfile.mkdtemp(prefix="seedemu-k8spre-")
+        )
+        setup_dir = self.writeMultiHostKvmInstallScripts(
+            base_dir,
+            config=config,
+            connection=connection,
+            overwrite=overwrite,
+        )
+        return subprocess.run(
+            [str(setup_dir / MULTI_HOST_KVM_INSTALL_ENTRYPOINT)],
             cwd=str(setup_dir),
             check=True,
         )
@@ -374,6 +449,32 @@ def _installKvmVmsEntrypoint() -> str:
     )
 
 
+def _installMultiHostKvmVmsEntrypoint() -> str:
+    return textwrap.dedent(
+        """\
+        #!/usr/bin/env bash
+        # Prepare routed KVM hypervisors, create host-local VMs, generate the
+        # global configK3s.yaml, and tune VM OS limits. This script does not
+        # install K3s; run buildK3sCluster.sh afterwards.
+        set -euo pipefail
+
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        cd "$SCRIPT_DIR"
+
+        echo "[K8sPre] Preparing multi-host KVM hypervisors..."
+        bash ./multiHostKvm/prepareKvmHypervisors.sh ./kvm.yaml
+
+        echo "[K8sPre] Creating KVM virtual machines across hypervisors..."
+        bash ./multiHostKvm/createMultiHostKvmVms.sh ./kvm.yaml
+
+        echo "[K8sPre] Unlocking VM limits..."
+        bash ./kvm/tuneVmLimits.sh ./configK3s.yaml
+
+        echo "[K8sPre] Multi-host KVM installation finished."
+        """
+    )
+
+
 def _buildK3sClusterEntrypoint() -> str:
     return textwrap.dedent(
         """\
@@ -412,6 +513,21 @@ def _destroyKvmVmsEntrypoint() -> str:
         cd "$SCRIPT_DIR"
 
         bash ./kvm/destroyKvmVms.sh "${1:-./kvmState.yaml}"
+        """
+    )
+
+
+def _destroyMultiHostKvmVmsEntrypoint() -> str:
+    return textwrap.dedent(
+        """\
+        #!/usr/bin/env bash
+        # Destroy multi-host KVM VMs recorded in multiHostKvmState.yaml.
+        set -euo pipefail
+
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        cd "$SCRIPT_DIR"
+
+        bash ./multiHostKvm/destroyMultiHostKvmVms.sh "${1:-./multiHostKvmState.yaml}"
         """
     )
 
@@ -649,6 +765,8 @@ def _loadSetupYamlIfPresent(path: Path) -> dict[str, Any]:
 # Backward-compatible aliases for the first prototype API.
 K8sPre.kvminstall_script = K8sPre.writeKvmInstallScripts
 K8sPre.kvminstall = K8sPre.installKvmVms
+K8sPre.multi_host_kvminstall_script = K8sPre.writeMultiHostKvmInstallScripts
+K8sPre.multi_host_kvminstall = K8sPre.installMultiHostKvmVms
 K8sPre.k8sbuild_script = K8sPre.writeK3sBuildScripts
 K8sPre.k8sbuild = K8sPre.buildK3sCluster
 K8sPre.running_scripts = K8sPre.writeRunningScripts

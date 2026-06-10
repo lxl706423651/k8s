@@ -5,4 +5,4 @@ from .Docker import Docker
 from .DistributedDocker import DistributedDocker
 from .Graphviz import Graphviz
 from .GcpDistributedDocker import GcpDistributedDocker
-from .NativeKubernetes import NativeKubernetesCompiler
+from .kubernetes import KubernetesCompiler, NativeKubernetesCompiler, SchedulingStrategy

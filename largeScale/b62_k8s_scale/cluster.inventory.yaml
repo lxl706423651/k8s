@@ -1,0 +1,90 @@
+clusterName: seedemu-b62-w5
+runtime: k3s
+k3s:
+  clusterCidr: 10.42.0.0/16
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: host-gw
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+registry:
+  host: 192.168.126.130
+  port: 5000
+nodes:
+- name: seedemu-b62-master-w5
+  role: master
+  managementIp: 192.168.126.130
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 48
+    memoryMb: 98304
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-master-w5
+- name: seedemu-b62-worker1-w5
+  role: worker
+  managementIp: 192.168.126.131
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 51
+    memoryMb: 103220
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker1-w5
+- name: seedemu-b62-worker2-w5
+  role: worker
+  managementIp: 192.168.126.132
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 51
+    memoryMb: 103219
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker2-w5
+- name: seedemu-b62-worker3-w5
+  role: worker
+  managementIp: 192.168.126.133
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 50
+    memoryMb: 103219
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker3-w5
+- name: seedemu-b62-worker4-w5
+  role: worker
+  managementIp: 192.168.126.134
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 50
+    memoryMb: 103219
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker4-w5
+- name: seedemu-b62-worker5-w5
+  role: worker
+  managementIp: 192.168.126.135
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 50
+    memoryMb: 103219
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker5-w5

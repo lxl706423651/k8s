@@ -2,11 +2,14 @@ from __future__ import annotations
 from seedemu.core.enums import NetworkType, NodeRole
 from .Base import Base
 from seedemu.core import ScopedRegistry, Node, Graphable, Emulator, Layer
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Tuple
 
 IbgpFileTemplates: Dict[str, str] = {}
 
 IbgpFileTemplates['ibgp_peer'] = '''
+    # debug {{states,events}};
+    # hold time 36000;
+    # keepalive time 60;
     ipv4 {{
         table t_bgp;
         import all;
@@ -17,11 +20,46 @@ IbgpFileTemplates['ibgp_peer'] = '''
     neighbor {peerAddress} as {asn};
 '''
 
+# Standard iBGP peer template used for clients, RR mesh peers, and full mesh.
+IbgpFileTemplates['ibgp_client'] = '''
+    # debug {{states,events}};
+    # hold time 36000;
+    # keepalive time 60;
+    ipv4 {{
+        table t_bgp;
+        import all;
+        export all;
+        igp table t_ospf;
+        next hop self;
+    }};
+    local {localAddress} as {asn};
+    neighbor {peerAddress} as {asn};
+'''
+
+# Route Reflector server-side template used for RR-to-client sessions.
+IbgpFileTemplates['ibgp_rr_server'] = '''
+    # debug {{states,events}};
+    # hold time 36000;
+    # keepalive time 60;
+    passive yes;
+    ipv4 {{
+        table t_bgp;
+        import all;
+        export all;
+        igp table t_ospf;
+    }};
+    local {localAddress} as {asn};
+    neighbor {peerAddress} as {asn};
+    rr client;
+    rr cluster id {clusterId};
+'''
+
 class Ibgp(Layer, Graphable):
     """!
     @brief The Ibgp (iBGP) layer.
 
-    This layer automatically setup full mesh peering between routers within AS.
+    This layer automatically sets up full-mesh iBGP or Route Reflector based
+    iBGP sessions between routers within each AS.
     """
     __masked: Set[int]
 
@@ -97,31 +135,120 @@ class Ibgp(Layer, Graphable):
 
             self._log('setting up IBGP peering for as{}...'.format(asn))
             routers: List[Node] = ScopedRegistry(str(asn), reg).getByType('rnode')
+            routers_map: Dict[str, Node] = {r.getName(): r for r in routers}
 
-            for local in routers:
-                self._log('setting up IBGP peering on as{}/{}...'.format(asn, local.getName()))
+            as_obj = base.getAutonomousSystem(asn)
+            clusters = as_obj._aggregateBgpClusters()
+            has_rr = True
+            if len(clusters) == 1:
+                cid, (rrs, clients) = list(clusters.items())[0]
+                if len(rrs) == 0:
+                    has_rr = False
+            if has_rr:
+                self._render_rr_mode(asn, clusters, routers_map)
+            else:
+                self._render_full_mesh_mode(asn, routers)
+    
+    def _render_rr_mode(self, asn: int, clusters: Dict[str, Tuple[List[str], List[str]]], routers_map: Dict[str, Node]):
+        """!
+        @brief Render Route Reflector based iBGP sessions for one AS.
 
-                remotes = []
-                self.__dfs(local, remotes)
+        @param asn AS number being rendered.
+        @param clusters mapping from cluster ID to RR names and client names.
+        @param routers_map mapping from router name to router node.
+        """
+        self._log(f'setting up IBGP (Route Reflector) for as{asn}...')
 
-                n = 1
-                for remote in remotes:
-                    if local == remote: continue
+        # Collect every RR so they can be connected through an RR full mesh.
+        all_rr_names: Set[str] = set()
 
-                    laddr = local.getLoopbackAddress()
-                    raddr = remote.getLoopbackAddress()
-                    local.addTable('t_bgp')
-                    local.addTablePipe('t_bgp')
-                    local.addTablePipe('t_direct', 't_bgp')
-                    local.addProtocol('bgp', 'ibgp{}'.format(n), IbgpFileTemplates['ibgp_peer'].format(
-                        localAddress = laddr,
-                        peerAddress = raddr,
-                        asn = asn
+        # Configure each cluster as a hub-and-spoke RR topology.
+        for cluster_id, (rr_names, client_names) in clusters.items():
+            all_rr_names.update(rr_names)
+
+            for rr_name in rr_names:
+                if rr_name not in routers_map: continue
+                rr_node = routers_map[rr_name]
+                rr_node.addTable('t_bgp')
+                rr_node.addTablePipe('t_bgp')
+                rr_node.addTablePipe('t_direct', 't_bgp')
+                laddr = rr_node.getLoopbackAddress()
+
+                for client_name in client_names:
+                    if client_name not in routers_map: continue
+                    client_node = routers_map[client_name]
+                    
+                    client_node.addTable('t_bgp')
+                    client_node.addTablePipe('t_bgp')
+                    client_node.addTablePipe('t_direct', 't_bgp')
+                    raddr = client_node.getLoopbackAddress()
+
+                    # The RR side enables route reflection for this client.
+                    rr_node.addProtocol('bgp', f'Ibgp_to_cli_{client_name}', IbgpFileTemplates['ibgp_rr_server'].format(
+                        localAddress=laddr, peerAddress=raddr, asn=asn, clusterId=cluster_id
                     ))
 
-                    n += 1
+                    # The client side uses a normal iBGP peer session to the RR.
+                    client_node.addProtocol('bgp', f'Ibgp_to_rr_{rr_name}', IbgpFileTemplates['ibgp_client'].format(
+                        localAddress=raddr, peerAddress=laddr, asn=asn
+                    ))
+                    
+                    self._log(f'adding RR peering: {rr_name}(RR) <-> {client_name}(Client) cluster {cluster_id}')
 
-                    self._log('adding peering: {} <-> {} (ibgp, as{})'.format(laddr, raddr, asn))
+        # Connect all RRs with a normal full mesh so reflected routes propagate.
+        sorted_rrs = sorted([routers_map[name] for name in all_rr_names if name in routers_map], key=lambda x: x.getName())
+
+        for i in range(len(sorted_rrs)):
+            for j in range(i + 1, len(sorted_rrs)):
+                node_a = sorted_rrs[i]
+                node_b = sorted_rrs[j]
+                
+                node_a.addTable('t_bgp')
+                node_a.addTablePipe('t_bgp')
+                node_a.addTablePipe('t_direct', 't_bgp')
+
+                node_b.addTable('t_bgp')
+                node_b.addTablePipe('t_bgp')
+                node_b.addTablePipe('t_direct', 't_bgp')
+
+                # RR-to-RR sessions are normal bidirectional iBGP peer sessions.
+                node_a.addProtocol('bgp', f'Ibgp_mesh_{node_b.getName()}', IbgpFileTemplates['ibgp_peer'].format(
+                    localAddress=node_a.getLoopbackAddress(), peerAddress=node_b.getLoopbackAddress(), asn=asn
+                ))
+                node_b.addProtocol('bgp', f'Ibgp_mesh_{node_a.getName()}', IbgpFileTemplates['ibgp_peer'].format(
+                    localAddress=node_b.getLoopbackAddress(), peerAddress=node_a.getLoopbackAddress(), asn=asn
+                ))
+                self._log(f'adding RR Mesh: {node_a.getName()} <-> {node_b.getName()}')
+
+    def _render_full_mesh_mode(self, asn: int, routers_list: List[Node]):
+        """!
+        @brief Render the legacy full-mesh iBGP sessions for one AS.
+
+        @param asn AS number being rendered.
+        @param routers_list routers participating in the legacy iBGP mesh.
+        """
+        self._log(f'setting up IBGP (Full Mesh) for as{asn}...')
+        
+        for local in routers_list:
+            remotes = []
+            self.__dfs(local, remotes)
+
+            n = 1
+            for remote in remotes:
+                if local == remote: continue
+                
+                laddr = local.getLoopbackAddress()
+                raddr = remote.getLoopbackAddress()
+                local.addTable('t_bgp')
+                local.addTablePipe('t_bgp')
+                local.addTablePipe('t_direct', 't_bgp')
+                local.addProtocol('bgp', 'Ibgp{}'.format(n), IbgpFileTemplates['ibgp_peer'].format(
+                    localAddress = laddr,
+                    peerAddress = raddr,
+                    asn = asn
+                ))
+                n += 1
+                self._log('adding peering: {} <-> {} (ibgp, as{})'.format(laddr, raddr, asn))
 
     def _doCreateGraphs(self, emulator: Emulator):
         base: Base = emulator.getRegistry().get('seedemu', 'layer', 'Base')
@@ -157,4 +284,3 @@ class Ibgp(Layer, Graphable):
             out += '{}\n'.format(asn)
 
         return out
-

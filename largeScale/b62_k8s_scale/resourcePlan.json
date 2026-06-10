@@ -1,0 +1,44 @@
+{
+  "master": {
+    "diskGb": 80,
+    "memoryMb": 98304,
+    "vcpus": 48
+  },
+  "total": {
+    "diskGb": 80,
+    "memoryMb": 614400,
+    "vcpus": 300
+  },
+  "workers": [
+    {
+      "diskGb": 80,
+      "index": 1,
+      "memoryMb": 103220,
+      "vcpus": 51
+    },
+    {
+      "diskGb": 80,
+      "index": 2,
+      "memoryMb": 103219,
+      "vcpus": 51
+    },
+    {
+      "diskGb": 80,
+      "index": 3,
+      "memoryMb": 103219,
+      "vcpus": 50
+    },
+    {
+      "diskGb": 80,
+      "index": 4,
+      "memoryMb": 103219,
+      "vcpus": 50
+    },
+    {
+      "diskGb": 80,
+      "index": 5,
+      "memoryMb": 103219,
+      "vcpus": 50
+    }
+  ]
+}
