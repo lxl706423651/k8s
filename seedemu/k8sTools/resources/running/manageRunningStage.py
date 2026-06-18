@@ -70,6 +70,7 @@ def context(config: Path) -> dict[str, str]:
         "masterConnection",
         "cniMasterInterface",
         "networkBackend",
+        "attachedCniType",
         "rolloutTimeoutSeconds",
     ]
     return {key: helperOutput(["config-value", "--config", str(config), "--key", key]) for key in keys}
@@ -141,6 +142,171 @@ def streamTarToRemote(source: Path, ssh_command: list[str], remote_extract_comma
         raise subprocess.CalledProcessError(return_code, ["tar", "-C", str(source), "-czf", "-", "."])
 
 
+def firstFromImage(dockerfile: Path) -> str | None:
+    """Return the first Dockerfile FROM image, handling optional flags.
+
+    Args:
+        dockerfile: Dockerfile to inspect.
+    """
+    for raw_line in dockerfile.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if not parts or parts[0].upper() != "FROM":
+            continue
+        index = 1
+        while index < len(parts) and parts[index].startswith("--"):
+            index += 1
+        if index < len(parts):
+            return parts[index]
+    return None
+
+
+def isCompilerHashBaseTag(image: str) -> bool:
+    """Return true for generated compiler hash base tags.
+
+    Args:
+        image: Docker image reference from a FROM line.
+    """
+    tag = image.removesuffix(":latest")
+    return len(tag) == 32 and all(char in "0123456789abcdef" for char in tag)
+
+
+def externalBuildBaseImages(output_dir: Path) -> list[str]:
+    """Collect non-generated Docker FROM images needed by remote buildx.
+
+    Args:
+        output_dir: Compiler output directory containing Docker build contexts.
+    """
+    images: list[str] = []
+    seen: set[str] = set()
+    for dockerfile in sorted(output_dir.rglob("Dockerfile")):
+        image = firstFromImage(dockerfile)
+        if not image:
+            continue
+        if image == "scratch" or image.startswith("$") or "${" in image:
+            continue
+        if isCompilerHashBaseTag(image):
+            continue
+        if image not in seen:
+            seen.add(image)
+            images.append(image)
+    return images
+
+
+def dockerImageExists(image: str) -> bool:
+    """Return true when the local Docker daemon has one image reference.
+
+    Args:
+        image: Docker image reference.
+    """
+    return subprocess.run(
+        ["docker", "image", "inspect", image],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode == 0
+
+
+def dockerIoMirrorRef(image: str) -> str | None:
+    """Return a Docker Hub mirror reference for unqualified Docker Hub images.
+
+    Args:
+        image: Docker image reference.
+    """
+    if "/" in image:
+        first = image.split("/", 1)[0]
+        if "." in first or ":" in first or first == "localhost":
+            return None
+        return f"docker.m.daocloud.io/{image}"
+    return f"docker.m.daocloud.io/library/{image}"
+
+
+def ensureLocalDockerImage(image: str) -> None:
+    """Ensure the local Docker daemon has one image, pulling if required.
+
+    Args:
+        image: Docker image reference.
+    """
+    if dockerImageExists(image):
+        print(f"[k8s_build] local Docker already has {image}")
+        return
+
+    print(f"[k8s_build] pulling build base image on local host: {image}")
+    result = subprocess.run(["docker", "pull", image], check=False)
+    if result.returncode == 0:
+        return
+
+    mirror_image = dockerIoMirrorRef(image)
+    if mirror_image is None:
+        raise subprocess.CalledProcessError(result.returncode, ["docker", "pull", image])
+
+    print(f"[k8s_build] pulling build base image from mirror: {mirror_image}")
+    runCommand(["docker", "pull", mirror_image])
+    runCommand(["docker", "tag", mirror_image, image])
+
+
+def remoteDockerImageExists(image: str, ssh_command: list[str]) -> bool:
+    """Return true when the remote Docker daemon has one image reference.
+
+    Args:
+        image: Docker image reference.
+        ssh_command: Base SSH argv including target host.
+    """
+    return subprocess.run(
+        [*ssh_command, f"sudo -n docker image inspect {shlex.quote(image)} >/dev/null 2>&1"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode == 0
+
+
+def streamDockerImageToRemote(image: str, ssh_command: list[str]) -> None:
+    """Load one local Docker image into the remote Docker daemon over SSH.
+
+    Args:
+        image: Docker image reference.
+        ssh_command: Base SSH argv including target host.
+    """
+    if remoteDockerImageExists(image, ssh_command):
+        print(f"[k8s_build] registry host Docker already has {image}")
+        return
+
+    ensureLocalDockerImage(image)
+    print("+ " + " ".join(["docker", "save", image]) + " | " + " ".join(ssh_command + ["sudo -n docker load"]))
+    producer = subprocess.Popen(["docker", "save", image], stdout=subprocess.PIPE)
+    try:
+        assert producer.stdout is not None
+        subprocess.run([*ssh_command, "sudo -n docker load"], stdin=producer.stdout, check=True)
+    finally:
+        if producer.stdout is not None:
+            producer.stdout.close()
+    return_code = producer.wait()
+    if return_code != 0:
+        raise subprocess.CalledProcessError(return_code, ["docker", "save", image])
+
+
+def ensureBuildBaseImages(output_dir: Path, ssh_command: list[str] | None) -> None:
+    """Ensure Dockerfile FROM images are available where buildx will run.
+
+    Args:
+        output_dir: Compiler output directory containing Docker build contexts.
+        ssh_command: Base SSH argv for a remote registry host, or None when the
+            registry/build host is local.
+    """
+    images = externalBuildBaseImages(output_dir)
+    if not images:
+        return
+    print("[k8s_build] ensuring Docker build base images: " + ", ".join(images))
+    if ssh_command is None:
+        for image in images:
+            ensureLocalDockerImage(image)
+        return
+    for image in images:
+        streamDockerImageToRemote(image, ssh_command)
+
+
 def buildImages(config: Path) -> None:
     """Stage compiler output on the registry node and build/push images.
 
@@ -172,6 +338,7 @@ def buildImages(config: Path) -> None:
         (remote_root / "running").mkdir(parents=True)
         copyTreeContents(output_dir, remote_root / "output")
         copyTreeContents(SCRIPT_DIR, remote_root / "running")
+        ensureBuildBaseImages(output_dir, None)
         print("[k8s_build] running local build")
         runCommand(["sudo", "-n", *build_command], cwd=remote_root / "running")
         return
@@ -192,6 +359,7 @@ def buildImages(config: Path) -> None:
         ssh_target,
     ]
     print(f"[k8s_build] uploading compile output to {ssh_target}:{remote_dir}/output")
+    ensureBuildBaseImages(output_dir, ssh_command)
     runCommand(
         [
             *ssh_command,

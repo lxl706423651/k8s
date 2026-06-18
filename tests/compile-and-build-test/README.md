@@ -6,8 +6,9 @@ The `compile-and-build-test.py` script runs all examples listed in the `test_lis
 cls.test_list = {
             "basic/A00_simple_as":          (["simple_as.py"], ["output"]),
             "basic/A01_transit_as":         (["transit_as.py"], ["output"]),
-            "basic/A02_transit_as_mpls":    (["transit_as_mpls.py"], ["output"]), 
-            "basic/A03_real_world":         (["real_world.py"], ["output"]),
+            "basic/A02a_transit_as_mpls":   (["transit_as_mpls.py"], ["output"]), 
+            "basic/A03a_out_to_real_world": (["out_to_real_world.py"], ["output"]),
+            "basic/A03b_from_real_world":   (["from_real_world.py"], ["output"]),
             "basic/A04_visualization":      (["visualization.py"], ["output", "base_component.bin"]), 
             "basic/A05_components":         (["components.py"], ["output", "base_component.bin"]),
             "basic/A06_merge_emulation":    (["merge_emulation.py"], ["output"]),

@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import unittest as ut
+import os
 from tests import SeedEmuTestCase
 
 class MiniInternetTestCase(SeedEmuTestCase):
@@ -30,6 +31,11 @@ class MiniInternetTestCase(SeedEmuTestCase):
         self.assertTrue(self.ping_test(self.source_host, "10.154.0.129"))
 
     def test_real_world_as(self):
+        if os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("SEED_EMU_RUN_REAL_WORLD_TESTS") != "true":
+            self.printLog("\n-------- real world as test --------")
+            self.printLog("skipping real world AS HTTP test in CI; set SEED_EMU_RUN_REAL_WORLD_TESTS=true to enable")
+            self.skipTest("real external network reachability is not a stable PR gate")
+
         self.printLog("\n-------- real world as test --------")
         self.printLog("real world as 11872")
         self.printLog("check real world ip : 128.230.18.63")

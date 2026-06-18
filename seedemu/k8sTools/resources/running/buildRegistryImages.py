@@ -71,6 +71,7 @@ if [ -z "${IMAGE_REGISTRY_PREFIX}" ]; then
 fi
 
 IMAGES_YAML="${OUTPUT_DIR}/images.yaml"
+[ -s "${IMAGES_YAML}" ] || IMAGES_YAML="${OUTPUT_DIR}/images.txt"
 OUTPUT_DIR="$(cd "${OUTPUT_DIR}" && pwd)"
 cd "${OUTPUT_DIR}"
 
@@ -151,7 +152,7 @@ ensureCompilerBaseImages() {
             continue
         else
             echo "Missing compiler base image context: ${context}/Dockerfile" >&2
-            echo "Re-run compile with the current NativeKubernetesCompiler so base_images/ is generated." >&2
+            echo "Re-run compile with the current KubernetesCompiler so base_images/ is generated." >&2
             missing=1
         fi
     done < <(sort -u "${tmpfile}")

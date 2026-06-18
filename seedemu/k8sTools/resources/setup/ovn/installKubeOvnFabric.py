@@ -35,11 +35,6 @@ fi
 
 eval "$(python3 "${HELPER}" --config "${CONFIG_PATH}" shell-vars)"
 eval "$(python3 "${HELPER}" --config "${CONFIG_PATH}" ovn-shell-vars)"
-seedemuOffline="${seedemuOffline:-false}"
-export HELM_CONFIG_HOME="${HELM_CONFIG_HOME:-${ovnHelmCacheDir}/helm-home/config}"
-export HELM_CACHE_HOME="${HELM_CACHE_HOME:-${ovnHelmCacheDir}/helm-home/cache}"
-export HELM_DATA_HOME="${HELM_DATA_HOME:-${ovnHelmCacheDir}/helm-home/data}"
-mkdir -p "${HELM_CONFIG_HOME}" "${HELM_CACHE_HOME}" "${HELM_DATA_HOME}"
 
 if [ "${fabricType}" != "ovn" ] && [ "${fabricType}" != "kube-ovn" ]; then
     echo "No Kube-OVN fabric configured; skipping OVN install."
@@ -65,26 +60,6 @@ runWithTimeout() {
     else
         "$@"
     fi
-}
-
-isTrue() {
-    # Args:
-    #   $1: boolean-like shell/YAML value.
-    case "${1,,}" in
-        true|1|yes|on)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
-validTarball() {
-    # Args:
-    #   $1: tar or tar.gz file path.
-    local path="$1"
-    [ -s "${path}" ] && tar -tf "${path}" >/dev/null 2>&1
 }
 
 sshOptions() {
@@ -125,27 +100,12 @@ preloadKubeOvnImage() {
     local tar_path="${ovnHelmCacheDir}/kube-ovn_${ovnChartVersion}.tar"
     mkdir -p "$(dirname "${tar_path}")"
     echo "[ovn] preloading ${image} into K3s containerd nodes"
-    if validTarball "${tar_path}"; then
-        echo "  reuse Kube-OVN image cache ${tar_path}"
-    else
-        if isTrue "${seedemuOffline}"; then
-            echo "Offline mode is enabled and Kube-OVN image cache is missing: ${tar_path}" >&2
-            exit 1
-        fi
-        local tar_tmp="${tar_path}.tmp"
-        rm -f "${tar_tmp}"
-        if ! runWithTimeout 180s sudo -n docker pull "${image}"; then
-            sudo -n docker pull "${mirror_image}"
-            sudo -n docker tag "${mirror_image}" "${image}"
-        fi
-        sudo -n docker save "${image}" -o "${tar_tmp}"
-        sudo -n chmod 0644 "${tar_tmp}"
-        validTarball "${tar_tmp}" || {
-            echo "Saved Kube-OVN image tar is not readable: ${tar_tmp}" >&2
-            exit 1
-        }
-        mv -f "${tar_tmp}" "${tar_path}"
+    if ! runWithTimeout 180s sudo -n docker pull "${image}"; then
+        sudo -n docker pull "${mirror_image}"
+        sudo -n docker tag "${mirror_image}" "${image}"
     fi
+    sudo -n docker save "${image}" -o "${tar_path}"
+    sudo -n chmod 0644 "${tar_path}"
 
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
         eval "$(python3 "${HELPER}" --config "${CONFIG_PATH}" node-ssh-vars --name "${name}")"
@@ -170,10 +130,8 @@ prepareKubeOvnCniBinDir() {
     # K3s often keeps CNI plugins as symlinks under /var/lib/rancher/k3s/data/cni.
     # Kube-OVN's install-cni init container copies these exact binaries into
     # that same mounted path and fails if a target is a dangling symlink inside
-    # the container mount. Some chart versions still touch /opt/cni/bin even
-    # when CNI_BIN_DIR is configured, so sanitize that compatibility path too.
-    # Remove only known Kube-OVN overwrite targets.
-    echo "[ovn] preparing CNI binary directories on all nodes: ${ovnCniBinDir}, /opt/cni/bin"
+    # the container mount. Remove only the known overwrite targets.
+    echo "[ovn] preparing K3s CNI binary directory on all nodes: ${ovnCniBinDir}"
     while IFS=$'\t' read -r name role ip mac vcpus memory_mb disk_gb; do
         eval "$(python3 "${HELPER}" --config "${CONFIG_PATH}" node-ssh-vars --name "${name}")"
         echo "  prepare ${name}"
@@ -186,11 +144,6 @@ sudo -n rm -f \
     '${ovnCniBinDir}/kube-ovn' \
     '${ovnCniBinDir}/macvlan' \
     '${ovnCniBinDir}/ipvlan'
-sudo -n mkdir -p /opt/cni/bin
-sudo -n rm -f \
-    /opt/cni/bin/loopback \
-    /opt/cni/bin/portmap \
-    /opt/cni/bin/kube-ovn
 EOF
 )"
     done < <(python3 "${HELPER}" --config "${CONFIG_PATH}" nodes-tsv)
@@ -209,6 +162,11 @@ ensureHelm() {
         "${candidate}" version --short >/dev/null 2>&1
     }
 
+    if command -v helm >/dev/null 2>&1 && helmUsable "$(command -v helm)"; then
+        command -v helm
+        return
+    fi
+
     local helm_dir="${ovnHelmCacheDir}/bin"
     local helm_bin="${helm_dir}/helm"
     if helmUsable "${helm_bin}"; then
@@ -216,32 +174,9 @@ ensureHelm() {
         return
     fi
 
-    local archive="${ovnHelmCacheDir}/download/helm-v3.15.4-linux-amd64.tar.gz"
-    if validTarball "${archive}"; then
-        mkdir -p "${helm_dir}"
-        rm -rf "${ovnHelmCacheDir}/download/linux-amd64"
-        tar -xzf "${archive}" -C "${ovnHelmCacheDir}/download"
-        cp "${ovnHelmCacheDir}/download/linux-amd64/helm" "${helm_bin}"
-        chmod +x "${helm_bin}"
-        if helmUsable "${helm_bin}"; then
-            echo "${helm_bin}"
-            return
-        fi
-        rm -f "${helm_bin}"
-    fi
-
-    if command -v helm >/dev/null 2>&1 && helmUsable "$(command -v helm)"; then
-        command -v helm
-        return
-    fi
-
-    if isTrue "${seedemuOffline}"; then
-        echo "Offline mode is enabled and no usable Helm binary/archive is cached under ${ovnHelmCacheDir}" >&2
-        exit 1
-    fi
-
     mkdir -p "${helm_dir}" "${ovnHelmCacheDir}/download"
     rm -f "${helm_bin}"
+    local archive="${ovnHelmCacheDir}/download/helm-v3.15.4-linux-amd64.tar.gz"
     local archive_tmp="${archive}.tmp"
     echo "[ovn] downloading private helm binary to ${helm_bin}" >&2
     rm -f "${archive_tmp}"
@@ -261,199 +196,34 @@ ensureHelm() {
     echo "${helm_bin}"
 }
 
-ensureKubeOvnChart() {
-    # Args:
-    #   $1: helm binary path.
-    # Prints a local chart .tgz path, downloading it into ovn.helmCacheDir only
-    # when no valid cached chart exists.
-    local helm_bin="$1"
-    local charts_dir="${ovnHelmCacheDir}/charts"
-    local chart_path="${charts_dir}/kube-ovn-${ovnChartVersion}.tgz"
-    mkdir -p "${charts_dir}"
-    if validTarball "${chart_path}"; then
-        echo "${chart_path}"
-        return
-    fi
-    local existing_chart
-    existing_chart="$(find "${charts_dir}" -maxdepth 1 -type f -name "kube-ovn*${ovnChartVersion}*.tgz" -print -quit 2>/dev/null || true)"
-    if [ -n "${existing_chart}" ] && validTarball "${existing_chart}"; then
-        if [ "${existing_chart}" != "${chart_path}" ]; then
-            cp -f "${existing_chart}" "${chart_path}"
-        fi
-        echo "${chart_path}"
-        return
-    fi
-    if isTrue "${seedemuOffline}"; then
-        echo "Offline mode is enabled and Kube-OVN chart cache is missing: ${chart_path}" >&2
-        exit 1
-    fi
-    "${helm_bin}" repo add "${ovnHelmRepoName}" "${ovnHelmRepoUrl}" >/dev/null 2>&1 || true
-    "${helm_bin}" repo update >/dev/null
-    rm -f "${chart_path}.tmp"
-    "${helm_bin}" pull "${ovnHelmRepoName}/kube-ovn" \
-        --version "${ovnChartVersion}" \
-        --destination "${charts_dir}"
-    existing_chart="$(find "${charts_dir}" -maxdepth 1 -type f -name "kube-ovn*${ovnChartVersion}*.tgz" -print -quit 2>/dev/null || true)"
-    if [ -z "${existing_chart}" ] || ! validTarball "${existing_chart}"; then
-        echo "Failed to cache Kube-OVN chart version ${ovnChartVersion} under ${charts_dir}" >&2
-        exit 1
-    fi
-    if [ "${existing_chart}" != "${chart_path}" ]; then
-        cp -f "${existing_chart}" "${chart_path}"
-    fi
-    echo "${chart_path}"
-}
-
 installKubeOvn() {
     # Install Kube-OVN in non-primary mode. Kube-OVN's CNI binary is placed into
     # the K3s CNI bin dir so Multus can invoke type=kube-ovn delegates.
     local helm_bin="$1"
-    local chart_ref="$2"
+
+    "${helm_bin}" repo add "${ovnHelmRepoName}" "${ovnHelmRepoUrl}" >/dev/null 2>&1 || true
+    "${helm_bin}" repo update >/dev/null
 
     kubectl --kubeconfig "${outputKubeconfig}" label node "${k3sMasterName}" kube-ovn/role=master --overwrite
 
     echo "[ovn] installing Kube-OVN ${ovnChartVersion} in non-primary CNI mode"
-    "${helm_bin}" upgrade --install "${ovnReleaseName}" "${chart_ref}" \
+    "${helm_bin}" upgrade --install "${ovnReleaseName}" "${ovnHelmRepoName}/kube-ovn" \
         --kubeconfig "${outputKubeconfig}" \
         --namespace "${ovnNamespace}" \
+        --version "${ovnChartVersion}" \
         --set cni_conf.NON_PRIMARY_CNI=true \
         --set cni_conf.CNI_CONF_DIR="${ovnCniConfDir}" \
         --set cni_conf.MOUNT_CNI_CONF_DIR="${ovnMountCniConfDir}" \
         --set cni_conf.CNI_BIN_DIR="${ovnCniBinDir}" \
         --set networking.TUNNEL_TYPE="${ovnTunnelType}" \
         --set networking.IFACE="${ovnIface}" \
-        --set networking.OVN_NORTHD_N_THREADS="${ovnNorthdThreads}" \
-        --set performance.WORKER_NUM="${ovnControllerWorkerNum}" \
         --set ipv4.POD_CIDR="${ovnPodCidr}" \
         --set ipv4.POD_GATEWAY="${ovnPodGateway}" \
         --set ipv4.SVC_CIDR="${ovnServiceCidr}" \
         --set ipv4.JOIN_CIDR="${ovnJoinCidr}" \
         --set MASTER_NODES="${ovnMasterNodes}" \
-        --set kube-ovn-controller.requests.cpu="${ovnControllerRequestCpu}" \
-        --set kube-ovn-controller.limits.cpu="${ovnControllerLimitCpu}" \
-        --set kube-ovn-controller.requests.memory="${ovnControllerRequestMemory}" \
-        --set kube-ovn-controller.limits.memory="${ovnControllerLimitMemory}" \
-        --set ovn-central.requests.cpu="${ovnCentralRequestCpu}" \
-        --set ovn-central.limits.cpu="${ovnCentralLimitCpu}" \
-        --set ovn-central.requests.memory="${ovnCentralRequestMemory}" \
-        --set ovn-central.limits.memory="${ovnCentralLimitMemory}" \
-        --set ovs-ovn.requests.cpu="${ovnOvsRequestCpu}" \
-        --set ovs-ovn.limits.cpu="${ovnOvsLimitCpu}" \
-        --set ovs-ovn.requests.memory="${ovnOvsRequestMemory}" \
-        --set ovs-ovn.limits.memory="${ovnOvsLimitMemory}" \
-        --set kube-ovn-cni.requests.cpu="${ovnCniRequestCpu}" \
-        --set kube-ovn-cni.limits.cpu="${ovnCniLimitCpu}" \
-        --set kube-ovn-cni.requests.memory="${ovnCniRequestMemory}" \
-        --set kube-ovn-cni.limits.memory="${ovnCniLimitMemory}" \
-        --set performance.OVS_VSCTL_CONCURRENCY="${ovnCniOvsVsctlConcurrency}" \
         --wait \
         --timeout 10m
-}
-
-patchKubeOvnCniStartupForScale() {
-    # Kube-OVN's bundled start-cniserver.sh uses ovs-appctl -T 1 while waiting
-    # for OVS. At large SeedEMU scales ovs-vswitchd can legitimately take a
-    # long time to answer appctl probes while it is still draining flow updates.
-    # Treat socket/pid presence as the startup gate and let kube-ovn-daemon
-    # serialize OVS updates with a tunable ovs-vsctl concurrency.
-    echo "[ovn] patching kube-ovn-cni startup guard for large OVS state"
-    kubectl --kubeconfig "${outputKubeconfig}" -n "${ovnNamespace}" patch daemonset kube-ovn-cni \
-        --type=strategic \
-        --patch "$(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: cni-server
-          command:
-            - /bin/bash
-            - -ec
-          args:
-            - |
-              set -euo pipefail
-              CNI_SOCK=/run/openvswitch/kube-ovn-daemon.sock
-              OVS_SOCK=/run/openvswitch/db.sock
-              quit() {
-                rm -f "\${CNI_SOCK}"
-                exit 0
-              }
-              trap quit EXIT
-              rm -f "\${CNI_SOCK}"
-              while true; do
-                if [ -S "\${OVS_SOCK}" ] \\
-                    && [ -s /run/openvswitch/ovsdb-server.pid ] \\
-                    && [ -s /run/openvswitch/ovs-vswitchd.pid ]; then
-                  echo "ovs sockets and pid files are present"
-                  ready=true
-                  for component in ovsdb-server ovs-vswitchd; do
-                    pid_file="/run/openvswitch/\${component}.pid"
-                    if ! read -r pid _ < "\${pid_file}" 2>/dev/null || [ -z "\${pid}" ]; then
-                      ready=false
-                      break
-                    fi
-                    if [ ! -S "/run/openvswitch/\${component}.\${pid}.ctl" ]; then
-                      ready=false
-                      break
-                    fi
-                  done
-                  if [ "\${ready}" = "true" ]; then
-                    break
-                  fi
-                else
-                  echo "waiting for ovs ready"
-                fi
-                sleep 5
-              done
-              iptables -V
-              set +e
-              iptables -P FORWARD ACCEPT
-              iptables-nft -P FORWARD ACCEPT
-              set -e
-              exec ./kube-ovn-daemon \\
-                --ovs-socket="\${OVS_SOCK}" \\
-                --bind-socket="\${CNI_SOCK}" \\
-                --enable-mirror=false \\
-                --mirror-iface=mirror0 \\
-                --node-switch=join \\
-                --encap-checksum=true \\
-                --service-cluster-ip-range=${ovnServiceCidr} \\
-                --iface=${ovnIface} \\
-                --dpdk-tunnel-iface=br-phy \\
-                --network-type=${ovnTunnelType} \\
-                --default-interface-name= \\
-                --logtostderr=false \\
-                --alsologtostderr=true \\
-                --log_file=/var/log/kube-ovn/kube-ovn-cni.log \\
-                --log_file_max_size=200 \\
-                --enable-metrics=true \\
-                --kubelet-dir=/var/lib/kubelet \\
-                --enable-tproxy=false \\
-                --ovs-vsctl-concurrency=${ovnCniOvsVsctlConcurrency} \\
-                --secure-serving=false \\
-                --enable-ovn-ipsec=false \\
-                --set-vxlan-tx-off=false \\
-                --non-primary-cni-mode=true
-          livenessProbe:
-            failureThreshold: 18
-            httpGet:
-              path: /livez
-              port: 10665
-              scheme: HTTP
-            initialDelaySeconds: 300
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
-          readinessProbe:
-            failureThreshold: 18
-            httpGet:
-              path: /readyz
-              port: 10665
-              scheme: HTTP
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 10
-EOF
-)"
 }
 
 waitKubeOvnReady() {
@@ -508,13 +278,12 @@ spec:
         - /bin/sh
         - -xec
         - |
-          target=\$(readlink /host-cni/cni || true)
+          target=\$(readlink /host-cni/bridge || true)
           if [ -z "\${target}" ]; then
-            target=${ovnCniBinDir%/cni}/current/bin/cni
+            target=/var/lib/rancher/k3s/data/current/bin/cni
           fi
-          rm -f /host-cni/loopback /host-cni/portmap
-          ln -s "\${target}" /host-cni/loopback
-          ln -s "\${target}" /host-cni/portmap
+          ln -sf "\${target}" /host-cni/loopback
+          ln -sf "\${target}" /host-cni/portmap
           cp -f /kube-ovn/kube-ovn /host-cni/kube-ovn
           chmod 0755 /host-cni/kube-ovn
           ls -l /host-cni | egrep 'loopback|portmap|bridge|flannel|host-local|kube-ovn' || true
@@ -569,13 +338,10 @@ main() {
     fi
 
     local helm_bin
-    local chart_ref
     helm_bin="$(ensureHelm)"
-    chart_ref="$(ensureKubeOvnChart "${helm_bin}")"
     preloadKubeOvnImage
     prepareKubeOvnCniBinDir
-    installKubeOvn "${helm_bin}" "${chart_ref}"
-    patchKubeOvnCniStartupForScale
+    installKubeOvn "${helm_bin}"
     waitKubeOvnReady
     repairK3sCniBinDirAfterKubeOvnInstall
     echo "Kube-OVN non-primary CNI is ready."

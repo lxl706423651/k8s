@@ -449,11 +449,6 @@ def kvm_env(args: argparse.Namespace) -> None:
                 )
             )
         ),
-        "seedemuHostImageCacheDir": expand_path(
-            str(get_nested(data, "seedemu.hostImageCacheDir", SETUP_DIR / "image-cache"))
-        ),
-        "seedemuImageCacheDirs": expand_path_list(get_nested(data, "seedemu.imageCacheDirs", "")),
-        "seedemuOffline": str(get_nested(data, "seedemu.offline", False)).lower(),
     }
     for key, value in values.items():
         print(f"{key}={shlex.quote(str(value))}")

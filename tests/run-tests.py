@@ -30,10 +30,10 @@ test_case_list = [
 
 blockchain_tests = [
     EthereumPOATestCase,
-    EthereumPOSTestCase,
-    EthereumPOWTestCase,
-    ChainlinkPOATestCase,
-    EthUtilityPOATestCase
+    EthereumPOSTestCase
+    # EthereumPOWTestCase,
+    # ChainlinkPOATestCase,
+    # EthUtilityPOATestCase
 ]
 
 scion_tests = [

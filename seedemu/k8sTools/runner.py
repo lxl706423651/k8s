@@ -50,22 +50,32 @@ def temporaryWorkDir(prefix: str, keep_temp: bool = False) -> Iterator[Path]:
 
 
 def inferImageRegistryPrefix(output_dir: Path) -> str:
-    """Infer the compiler image prefix from images.yaml.
+    """Infer the compiler image prefix from generated image metadata.
 
     Args:
-        output_dir: Compile output directory containing images.yaml.
+        output_dir: Compile output directory containing images.yaml or images.txt.
     """
     images_path = output_dir / "images.yaml"
-    if not images_path.exists():
+    if images_path.exists():
+        data = loadYaml(images_path)
+        images = data.get("images") if isinstance(data.get("images"), list) else []
+        for item in images:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            if "/" in name:
+                return name.rsplit("/", 1)[0]
         return "seedemu"
-    data = loadYaml(images_path)
-    images = data.get("images") if isinstance(data.get("images"), list) else []
-    for item in images:
-        if not isinstance(item, dict):
-            continue
-        name = str(item.get("name") or "").strip()
-        if "/" in name:
-            return name.rsplit("/", 1)[0]
+
+    images_txt = output_dir / "images.txt"
+    if images_txt.exists():
+        for line in images_txt.read_text(encoding="utf-8").splitlines():
+            name = line.strip()
+            if not name or name.startswith("#"):
+                continue
+            if "/" in name:
+                return name.rsplit("/", 1)[0]
+            return "seedemu"
     return "seedemu"
 
 

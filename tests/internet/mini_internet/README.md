@@ -33,4 +33,9 @@ In this test script, it comprises 8 test cases: (1) `test_internet_connection`, 
 
 Testcase (1) `test_internet_connection` ping to all other containers and test it is not failed.
 Testcase (2) `test_customized_ip_address` ping to cutomized ip and test if a ip customization works.
-Testcase (3) `test_real_world_as` ping to a real world ip that belongs to the enable real world AS (11872). 
+Testcase (3) `test_real_world_as` ping to a real world ip that belongs to the enable real world AS (11872).
+
+In GitHub Actions, `test_real_world_as` is skipped by default because it
+depends on external network reachability and a live remote HTTP response. To
+include it in a manual CI run, enable the `run-real-world-tests` workflow
+dispatch option or set `SEED_EMU_RUN_REAL_WORLD_TESTS=true`.

@@ -148,7 +148,7 @@ class FaucetServer(Server):
         node.addSoftware('python3 python3-pip')
         self._installScriptFiles(node)
 
-        node.addBuildCommand('pip3 install flask web3==5.31.1')
+        node.addBuildCommand('pip3 install --break-system-packages flask web3==5.31.1 || pip3 install flask web3==5.31.1')
 
         # Start the faucet server 
         node.appendStartCommand('python3 {}/app.py &'.format(self.DIR_PREFIX))

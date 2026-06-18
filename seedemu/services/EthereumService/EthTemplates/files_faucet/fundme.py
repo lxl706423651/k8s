@@ -2,6 +2,9 @@
 
 import time, sys, json
 import requests
+import inspect
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec
 from eth_account import Account
 import logging
 

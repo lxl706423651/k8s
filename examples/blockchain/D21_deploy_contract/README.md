@@ -1,46 +1,103 @@
 # EthUtilityServer
 
-The Utility server has two roles. The first role is to help deploy smart contract,
-and the second role is to provide contract addresses to others. In Ethereum, once a
-contract has been deployed, it will be assigned an address. Users need to
-know this address to interact with the contract. The Utility server 
-hosts a web server for others to register contract addresses. 
+The Utility server has two roles. The first role is to help deploy
+smart contracts, and the second role is to provide contract addresses
+to other services. In Ethereum, once a contract has been deployed, it
+is assigned an address. Users and applications need this address to
+interact with the contract.
 
-- [Create a Utility server](#create-utility-server)
-- [Deploy a contract](#deploy-contract)
-- [Interact with the Uility server](#interact-with-server)
+This example demonstrates how to use the Utility server with either a
+PoA blockchain based on [D00_ethereum_poa](../D00_ethereum_poa/) or a
+PoS blockchain based on [D01_ethereum_pos](../D01_ethereum_pos/). It
+also shows how a contract deployment is prepared during emulator build
+time and carried out after the emulator starts.
 
-<a id="create-utility-server"></a>
+
+## Table of Content
+
+- [How to Run](#how-to-run)
+- [Create Utility Server](#create-utility-server)
+- [Smart Contract Files](#smart-contract-files)
+- [Deploy a Contract](#deploy-a-contract)
+- [How Deployment Works](#how-deployment-works)
+- [Interact with the Utility Server Using curl](#interact-with-the-utility-server-using-curl)
+- [Observe Deployment Results](#observe-deployment-results)
+- [Interact with the Utility Server Using Python](#interact-with-the-utility-server-using-python)
+
+
+## How to Run
+
+Run the following commands from this example directory:
+
+```bash
+python deploy_contract.py [poa|pos] [amd|arm]
+cd output
+docker compose up
+```
+
+Arguments:
+
+- `poa`: Use the PoA blockchain from `D00_ethereum_poa`. This is the
+  default.
+- `pos`: Use the PoS blockchain from `D01_ethereum_pos`.
+- `amd`: Generate Docker configuration for AMD64. This is the default.
+- `arm`: Generate Docker configuration for ARM64 hosts.
+
+Examples:
+
+```bash
+python deploy_contract.py poa amd
+```
+
+```bash
+python deploy_contract.py pos arm
+```
+
+The script loads the selected blockchain component, gets the existing
+Utility server from that blockchain, registers the contract files with
+the Utility server, and generates the Docker output.
+
+
 ## Create Utility Server
 
-We first need to add a Utility server to a blockchain.
-This example uses a pre-built block component (`D00_ethereum_poa`), 
-which already has a Utility server.
-In the [D00_ethereum_poa](../D00_ethereum_poa/) example, these lines are
-used to create a utility server
+We first need to add a Utility server to a blockchain. The Utility
+server runs a web server for contract address registration and lookup.
+It can also deploy contracts after the emulator starts.
 
+In the PoA blockchain from [D00_ethereum_poa](../D00_ethereum_poa/),
+the Utility server is created as follows:
 
 ```python
-util_server:EthUtilityServer = blockchain.createEthUtilityServer(
-           vnode='utility',
-           port=5000,
-           linked_eth_node='eth6',
-           linked_faucet_node='faucet')
+util_server: EthUtilityServer = blockchain.createEthUtilityServer(
+        vnode='utility',
+        port=5000,
+        linked_eth_node='eth6',
+        linked_faucet_node='faucet')
+```
+
+In the PoS blockchain from [D01_ethereum_pos](../D01_ethereum_pos/),
+the Utility server is linked to a Geth execution-layer node:
+
+```python
+util_server: EthUtilityServer = blockchain.createEthUtilityServer(
+        vnode='utility',
+        port=5000,
+        linked_eth_node='gethnode2',
+        linked_faucet_node='faucet')
 ```
 
 We can specify the following parameters:
-- `vnode`: the virtual node name of the Utility server.
-- `port`: a port number, used by the server to set up a web server.
-- `linked_eth_node`: the faucet server needs to link to an eth node, so it can
-  sends out transactions to the blockchain. We just need to provide the name
-  of an existing eth node, but we need to make sure that the eth node
-  has enabled the http connection (otherwise, it cannot accept external requests).
-- `linked_faucet_node`: the Utility server will create an Ethereum account, which
-  is used to deploy contracts. The Utility server will use the faucet server
-  to find the account. 
 
-Because this server is already created in the base component,
-we just need to get an instance of this object:
+- `vnode`: the virtual node name of the Utility server.
+- `port`: the port number used by the Utility server web API.
+- `linked_eth_node`: the Ethereum node used by the Utility server to
+  send contract deployment transactions. This node must have HTTP RPC
+  enabled.
+- `linked_faucet_node`: the Faucet server used to fund the account that
+  deploys contracts.
+
+Because the selected base blockchain already has a Utility server, this
+example gets the existing Utility server object:
 
 ```python
 eth        = emu.getLayer('EthereumService')
@@ -50,75 +107,220 @@ utility    = blockchain.getUtilityServerByName(name)
 ```
 
 
-<a id="deploy-contract"></a>
-## Deploy a contract
+## Smart Contract Files
 
-To deploy a contract using the Utility server, 
-we need to set `abi` and `bin` file. A path can be both relative and absolute.
+The contract files used by this example are located in the `Contracts`
+directory:
+
+```text
+Contracts/contract.sol
+Contracts/contract.abi
+Contracts/contract.bin
+```
+
+The files have different purposes:
+
+- `contract.sol`: the Solidity source code. This is the human-readable
+  contract program.
+- `contract.abi`: the contract interface description. Applications use
+  it to know which functions exist and how to encode calls.
+- `contract.bin`: the compiled EVM bytecode. This is the code deployed
+  to the blockchain.
+
+The example contract is a small `Crowdfunding` contract:
+
+```solidity
+contract Crowdfunding {
+    uint256 amount;
+
+    receive() external payable {
+        amount += msg.value;
+    }
+
+    function claimFunds(address payable _to, uint _amount) public payable {
+        _to.transfer(_amount);
+    }
+}
+```
+
+The `receive()` function is triggered when ETH is sent directly to the
+contract address. The `claimFunds()` function transfers funds from the
+contract balance to a specified address. This contract is only a simple
+teaching example; it does not implement access control.
+
+
+## Deploy a Contract
+
+To deploy a contract using the Utility server, we need to provide the
+ABI file and the bytecode file. The paths can be either relative or
+absolute.
 
 ```python
-utility.deployContractByFilePath(contract_name='test',
-                        abi_path="./Contracts/contract.abi",
-                        bin_path="./Contracts/contract.bin")
+utility.deployContractByFilePath(
+        contract_name='test',
+        abi_path='./Contracts/contract.abi',
+        bin_path='./Contracts/contract.bin')
 ```
 
-It should be noted that the contract deployment will happen after the emulator
-starts, so this API will set up the contract deployment on the Utility server. 
+This API does not immediately deploy the contract. During emulator build
+time, it registers the contract files with the Utility server. The
+actual deployment happens after the emulator starts.
+
+The contract is registered under the name `test`. After deployment, the
+Utility server stores a mapping from this name to the deployed contract
+address.
 
 
-<a id="interact-with-server"></a>
-## Interact with the Utility server using `curl`
+## How Deployment Works
 
-After the emulator starts, we can interact with the Utility server
-using the `curl` command. To do that, 
-we first need to get the server's IP address (the 
-port number used in the example is `5000`). 
+A contract deployment is an Ethereum transaction. The Utility server
+must therefore have an account with enough ETH to pay gas.
 
-```sh
-$ docker ps | grep -i utility
-e22e918b4c90   output_hnode_150_host_0  ...  as162h-UtilityServer-10.150.0.71
+When the Utility container starts, it runs the following setup script:
+
+```bash
+python3 ./fund_account.py
+python3 ./deploy_contract.py
 ```
 
-In this example, the url of the server is `http://10.150.0.71:5000/`. 
+The setup process works as follows:
+
+1. The Utility server connects to the linked Ethereum node through HTTP
+   RPC.
+2. It creates a new Ethereum account and saves the address and private
+   key in `/utility_server/account.json`.
+3. It sends a `/fundme` request to the linked Faucet server.
+4. It waits until the new account has a positive balance.
+5. It reads the registered ABI and BIN files.
+6. It constructs a contract deployment transaction.
+7. It signs the transaction using the generated account's private key.
+8. It sends the raw transaction through the linked Ethereum node.
+9. After the transaction is confirmed, it saves the deployed contract
+   address in `/utility_server/deployed_contracts/contract_address.txt`.
+
+The Utility server is therefore not the smart contract itself. It is a
+helper service that funds a deployer account, sends the deployment
+transaction, and records the resulting contract address.
 
 
-### Register a contract
+## Interact with the Utility Server Using curl
 
-To register a contract with the Utility server, we use a POST request
-to send the contract information (JSON format) 
-to the server's `/register_contract` API. 
-See the following example: 
+After the emulator starts, we can interact with the Utility server using
+`curl`. First find the Utility container and its IP address:
 
-```sh
+```bash
+docker ps | grep -i utility
+docker inspect <utility-container-name>
+```
+
+Check whether the Utility server is running:
+
+```bash
+curl http://<utility-ip>:5000/
+```
+
+The expected response is:
+
+```text
+OK
+```
+
+### Register a Contract
+
+To register a contract address manually, send a POST request to the
+`/register_contract` API:
+
+```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"contract_name": "test999", "contract_address": "0xc0ffee254729296a45a3885639AC7E10F9d54979"}' \
-  http://10.150.0.71:5000/register_contract
+  -d '{"contract_name":"test999","contract_address":"0xc0ffee254729296a45a3885639AC7E10F9d54979"}' \
+  http://<utility-ip>:5000/register_contract
 ```
 
-### Get a list of registered contracts
+This only registers a name-address mapping in the Utility server. It
+does not deploy a new contract to the blockchain.
 
-We can use the following API to get a list of all the registered contracts. 
+### Get a List of Registered Contracts
 
-```sh
-curl http://10.150.0.71:5000/all
-curl http://10.150.0.71:5000/contracts_info
+Use either of the following APIs to get all registered contract
+addresses:
+
+```bash
+curl http://<utility-ip>:5000/all
+curl http://<utility-ip>:5000/contracts_info
+```
+
+### Get a Contract Address by Name
+
+To get the address of a particular contract, provide the `name`
+argument:
+
+```bash
+curl http://<utility-ip>:5000/contracts_info?name=test
 ```
 
 
-### Get a contract address by its name
+## Observe Deployment Results
 
-If we just want to get the address of a particular contract, we can provide
-the `name` argument. 
+The best way to understand contract deployment is to observe both the
+Utility server logs and the blockchain state.
 
-```sh
-curl http://10.150.0.71:5000/contracts_info?name=test
+First check the Utility server logs:
+
+```bash
+docker logs <utility-container-name>
 ```
 
+The logs should show that the Utility server connected to the Ethereum
+node, requested funds from the Faucet server, funded the deployer
+account, and deployed the contract.
 
-## Interact with the Utility server using Python
+Then inspect the generated files inside the Utility container:
 
-We can write Python programs to interact with the Utility server.
-A helper class 
-called [UtilityServerHelper.py](../../../library/blockchain/UtilityServerHelper.py) 
-is created to make writing such programs easier. 
+```bash
+docker exec -it <utility-container-name> bash
+cat /utility_server/account.json
+cat /utility_server/contracts/contract_file_paths.txt
+cat /utility_server/deployed_contracts/contract_address.txt
+```
+
+The `account.json` file contains the deployer account created by the
+Utility server. The `contract_address.txt` file contains the deployed
+contract address, for example:
+
+```json
+{
+    "test": "0x..."
+}
+```
+
+To verify that the address is really a contract on the blockchain, use
+Geth HTTP RPC to query the code stored at the address:
+
+```bash
+curl -s -X POST \
+  -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"eth_getCode","params":["<contract-address>","latest"],"id":1}' \
+  http://<geth-ip>:8545
+```
+
+If the result is `"0x"`, there is no contract code at that address. If
+the result is a long hexadecimal string, the contract bytecode has been
+stored on chain.
+
+This example compiles the Docker output with `etherViewEnabled=True`.
+When the selected blockchain and explorer services are running, the
+generated output can also provide a web interface for observing blocks,
+transactions, and contract deployment activity.
+
+
+## Interact with the Utility Server Using Python
+
+We can write Python programs to interact with the Utility server. A
+helper class called
+[UtilityServerHelper.py](../../../library/blockchain/UtilityServerHelper.py)
+is created to make writing such programs easier.
+
+For example, a program can query the address of the deployed `test`
+contract from the Utility server and then use that address together
+with the contract ABI to interact with the smart contract.

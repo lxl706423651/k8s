@@ -1,6 +1,9 @@
 #!/bin/env python3
 
 import time
+import inspect
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec
 from web3 import Web3, HTTPProvider
 import os
 import logging

@@ -1,201 +1,341 @@
-# How to run Ethereum PoS private network - The Merge
+# Ethereum Blockchain (PoS)
 
-In this example, we show how the SEED Emulator to emulate
-The Merge that is an upgrade to proof-of-stake.
-In the real world, consensus transition occurs from proof-of-work
-to proof-of-stake. However, in the emulation, we starts the
-blockchain with proof-of-authority and then transits to proof-of-stake.
-With proof-of-authority, we can allocate a balance to specific accounts
-and we do not need to wait for miner to accumulate enough Ethereum to
-stake for proof-of-stake consensus.
+This example demonstrates how to create an Ethereum proof-of-stake
+private blockchain in the SEED Emulator. The blockchain is started as
+a PoS chain from the genesis state. It uses Geth for the execution
+layer and Lighthouse for the consensus layer.
+
+The example creates separate Geth nodes, Beacon nodes, and Validator
+Client nodes. It also creates a Beacon Setup node, which prepares the
+configuration files and genesis data needed by the Beacon nodes and
+Validator Clients.
 
 ![](pics/POS-1.png)
 
-## Table of contents
 
-### [1. Emulate The Merge](#1-emulate-the-merge-1)
+## Table of Content
 
-#### [1.1 Internet Emulator Base](#11-internet-emulator-base-1)
+- [Create the Internet Base](#create-the-internet-base)
+- [Create a PoS Blockchain](#create-a-pos-blockchain)
+- [Create Pre-funded Accounts](#create-pre-funded-accounts)
+- [Create the Beacon Setup Node](#create-the-beacon-setup-node)
+- [Create Geth Nodes](#create-geth-nodes)
+- [Create Beacon Nodes](#create-beacon-nodes)
+- [Set Bootnodes](#set-bootnodes)
+- [Create Validator Client Nodes](#create-validator-client-nodes)
+- [Create Faucet and Utility Servers](#create-faucet-and-utility-servers)
+- [Binding to Physical Nodes](#binding-to-physical-nodes)
+- [Generate the Docker Output](#generate-the-docker-output)
+- [How to Run](#how-to-run)
+- [Access Points](#access-points)
+- [Relationship with Other Examples](#relationship-with-other-examples)
 
-#### [1.2 Creating Ethereum POS Node](#12-creating-ethereum-pos-node-1)
 
-#### [1.3 Creating Beacon Setup Node ](#13-creating-beacon-setup-node-1)
+## Create the Internet Base
 
-#### [1.4 Set a node as a bootnode](#14-set-a-node-as-a-bootnode-1)
+In this example, we emulate the Internet using 10 stub ASes:
 
-#### [1.5 Add Validator](#15-add-validator-1)
+```text
+150, 151, 152, 153, 154, 160, 161, 162, 163, 164
+```
 
-### [2. Introduction to PoS](#2-introduction-to-pos-1)
-
-# 1. Emulate `The Merge`
-
-## 1.1 Internet Emulator Base
-
-In this example, we emulate the internet with 10 stub ASes.
-
-ASes : [150, 151, 152, 153, 154, 160, 161, 162, 163, 164]
-
-Each stub AS has 3 hosts, and the emulator has 30 hosts in total
-
-For example, the ips of 3 hosts in each AS 150 and AS 151 will be assigned as below
-
-- 10.150.0.71
-- 10.150.0.72
-- 10.150.0.73
-- 10.151.0.71
-- 10.151.0.72
-- 10.151.0.73
+Each stub AS has 3 hosts. The emulator therefore has 30 physical hosts
+in total.
 
 ```python
-# Create the Internat Emulator Base with 10 Stub AS (150-154, 160-164) using the Makers utility tool.
-# hosts_per_stub_as=3 : create 3 hosts per one stub AS.
-#  It will create hosts(physical node) named `host_{}`.format(counter), counter starts from 0.
 hosts_per_stub_as = 3
-emu = Makers.makeEmulatorBaseWith10StubASAndHosts(hosts_total_per_as)
+emu = Makers.makeEmulatorBaseWith10StubASAndHosts(
+        hosts_per_stub_as = hosts_per_stub_as)
 ```
 
-## 1.2 Creating Ethereum POS Node
+## Create a PoS Blockchain
 
-We create the POS blockchain sub-layer in the Ethereum layer and
-creates the POS ethereum nodes using the Blockchain::createNode() method.
+To create a blockchain, we first create the `EthereumService`, and then
+create a blockchain inside this service. The service supports multiple
+chains.
 
 ```python
-# Create the Ethereum layer
 eth = EthereumService()
-
-# Create the Blockchain layer which is a sub-layer of Ethereum layer.
-# chainName="pos": set the blockchain name as "pos"
-# consensus="ConsensusMechnaism.POS" : set the consensus of the blockchain as "ConsensusMechanism.POS".
-# supported consensus option: ConsensusMechanism.POA, ConsensusMechanism.POW, ConsensusMechanism.POS
-blockchain = eth.createBlockchain(chainName="pos", consensus=ConsensusMechanism.POS)
-
-# set `terminal_total_difficulty`, which is the value to designate when the Merge is happen.
-# The default value is 20.
-# In this example, a block is sealed for every 15 seconds. If we set `terminal_total_difficulty` to 20,
-# the Ethereum blockchain will keep POA for approximately 150 sec (20/2\*15)
-# and then conduct the Merge to change the consensus mechanism to POS.
-blockchain.setTerminalTotalDifficulty(20)
-
-asns = [150, 151, 152, 153, 154, 160, 161, 162, 163, 164]
-
-i = 1
-for asn in asns:
-    for id in range(hosts_per_stub_as):
-        # Create a blockchain virtual node named "eth{}".format(i)
-        e:EthereumServer = blockchain.createNode("eth{}".format(i))
-
-        # Create Docker Container Label named 'Ethereum-POS-i'
-        e.appendClassName('Ethereum-POS-{}'.format(i))
-
-        # Enable Geth to communicate with geth node via http
-        e.enableGethHttp()
+blockchain = eth.createBlockchain(
+        chainName="pos",
+        consensus=ConsensusMechanism.POS)
 ```
 
-## 1.3 Creating Beacon Setup Node
+For a PoS blockchain, the SEED Emulator uses a split Ethereum
+architecture:
 
-In order to run Ethereum PoS, you need to run not only the mainnet (execution layer) but also the beacon chain (consensus layer). In this example, we use Geth software to run execution layer and Lighthouse to run consensus layer.
-To run a beacon node, config information is needed.  
-Like we set genesis.yaml when running Geth, genesis configurations is needed when running Lighthouse. A Beacon Setup Node take care of configuration files which is needed to run Beacon Node. The following code shows how we set beacon setup node.
-The Beacon Setup Node is essential to run POS.
+- Geth nodes run the execution layer.
+- Beacon nodes run the consensus layer.
+- Validator Client nodes hold validator keys and perform block proposal
+  and attestation duties.
+- The Beacon Setup node generates and distributes the testnet
+  configuration and genesis data.
+
+
+## Create Pre-funded Accounts
+
+The example creates 10 pre-funded user accounts. These accounts are
+derived from a mnemonic using the Ethereum wallet derivation path used
+by wallets such as MetaMask.
 
 ```python
-# Set host in asn 150 with id 0 (ip : 10.150.0.71) as BeaconSetupNode.
-if asn == 150 and id == 0:
-        e.setBeaconSetupNode()
+accounts_total = 10
+pre_funded_amount = 1000000
+mnemonic = "gentle always fun glass foster produce north tail security list example gain"
+
+blockchain.addLocalAccountsFromMnemonic(
+        mnemonic=mnemonic,
+        total=accounts_total,
+        balance=pre_funded_amount)
 ```
 
-The role of a Beacon Setup Node
+All accounts created during the build time are added, together with
+their balances, to the genesis block. Therefore, their balances are
+recognized as soon as the blockchain starts.
 
-- generate config files for beaconchain
-- create validator keys
-- deposit for validators that is enabled at the point of Genesis.
-- distributes all those data to the other nodes.
+Users can import the mnemonic into MetaMask and use the generated
+accounts on this private chain.
 
-A Beacon Setup Node does not run any ethereum node. It's only role is to generate
-and distribute data for beacon nodes. To deposit for validators, it makes an api request to the Geth node and send transactions. By default, it will connect to one of node that runs the bootnode.
 
-# 1.4 Set a node as a bootnode
+## Create the Beacon Setup Node
 
-We can set a node as a bootnode that bootstraps all blockchain nodes.
-If a node is set as a bootnode, it will run a http server that sends
-its blockchain node url so that the other nodes can connect to it.
-When it is a POS blockchain, the node serves as a BootNode in both layers: execution layer and consensus layer.
-If bootnode does not set to any node, we should specify
-peer nodes urls manually.
+A PoS blockchain needs genesis data for both the execution layer and
+the consensus layer. The Beacon Setup node prepares the Beacon chain
+configuration, validator key information, deposit data, and genesis
+state used by the rest of the PoS nodes.
 
 ```python
-# Set host in asn 150 with id 1 (ip : 10.150.0.72) as BootNode.
-# This node will serve as a BootNode in both execution layer (geth) and consensus layer (lighthouse).
-if asn == 150 and id == 1:
-        e.setBootNode(True)
+beaconsetupServer: PoSBeaconSetupServer = \
+        blockchain.createBeaconSetupNode("BeaconSetupNode")
+emu.getVirtualNode("BeaconSetupNode").setDisplayName(
+        "Ethereum-POS-BeaconSetup")
 ```
 
-# 1.5 Add Validator
+The Beacon Setup node does not run as a normal Geth node or Beacon
+node. Its main purpose is to generate and serve the bootstrapping data
+needed by the other PoS nodes.
 
-There are 2 ways to add validator in this emulator
 
-- Enable validator at genesis
-- Enable validator at running
+## Create Geth Nodes
 
-We can specifies which validators will be activated from the genesis state as well.
-This way is to enable validator at genesis.
-But once the beaconchain is initiated, there is no way to add validators in genesis configurations.
-To be a validator, we need to stake 32 Ethereum and wait until the validator is activated.
-The activation requires a specific amount of time to get the validator's stake information
-from the execution layer, verify the data, and wait until the validator to be activated.
-We emulate this by enable validator at running.
+Geth nodes run the Ethereum execution layer. They maintain the
+execution state, process transactions, expose JSON-RPC APIs, and
+communicate with Beacon nodes through the authenticated Engine API.
 
 ```python
-# Set hosts in asn 152 and 162 with id 0 and 1 as validator node.
-# Validator is added by deposit 32 Ethereum and is activated in realtime after the Merge.
-# isManual=True : deposit 32 Ethereum by manual.
-#                 Other than deposit part, create validator key and running a validator node is done by codes.
-if asn in [152, 162]:
-    if id == 0:
-        e.enablePOSValidatorAtRunning()
-    if id == 1:
-        e.enablePOSValidatorAtRunning(is_manual=True)
-
-# Set hosts in asn 152, 153, 154, and 160 as validator node.
-# These validators are activated by default from genesis status.
-# Before the Merge, when the consensus in this blockchain is still POA,
-# these hosts will be the signer nodes.
-if asn in [151,153,154,160]:
-    e.enablePOSValidatorAtGenesis()
+for i in range(geth_node_number):
+    gethServer: PoSGethServer = blockchain.createGethNode(
+            f"gethnode{i}")
+    gethServer.enableGethHttp()
+    gethServer.appendClassName(f"Ethereum-POS-Geth-{i+1}")
+    gethServer.addHostName(f"gethnode{i}" + DOMAIN)
 ```
 
-If we use the method: `enablePOSValidatorAtRunning()` with parameter `is_manual=False`,
-A new validator will be added automatically once the emulator runs.
-However, if `is_manual` is set to `True`, we need to run deposit.sh script by manual.
-All other tasks will be executed but deposit action. It will create a validator key and
-run validator node with lighthouse. But it will not be activated until we stake 32 Ethereum
-by executing the `deposit.sh` script under `/tmp` folder. The following example shows how to
-run the `deposit.sh`.
+The `enableGethHttp()` API enables the HTTP JSON-RPC interface. This is
+useful for applications, tools, MetaMask, Faucet, Utility Server, and
+the Eth Explorer.
 
-```
-$ docker ps | grep -i 10.152.0.72
-b127d8503f24   output_hnode_152_host_1       "/start.sh"      15 minutes ago   Up 15 minutes                                               as152h-Ethereum-POS-8-10.152.0.72
 
- <!-- docksh is a custom bash function : docksh() { docker exec -it $1 /bin/bash; } -->
-$ docksh b127
+## Create Beacon Nodes
 
-===============================================================
+Beacon nodes run the Ethereum consensus layer. They maintain Beacon
+chain state, slots, epochs, validators, attestations, and finality
+information. Each Beacon node is connected to one Geth node.
 
-root@b127d8503f24 / # ls
-bin  boot  dev  etc  home  ifinfo.txt  interface_setup  lib  lib32  lib64  libx32  media  mnt  opt  proc  root  run  sbin  seedemu_sniffer  seedemu_worker  srv  start.sh  sys  tmp  usr  var
-
-root@b127d8503f24 / # cd tmp
-root@b127d8503f24 /tmp # ls
-beacon-bootstrapper  beacon-setup-node  deposit.sh  eth-bootstrapper  eth-genesis.json  eth-nodes  eth-node-urls  eth-password  jwt.hex  keystore  local-testnet  seed.pass  testnet.tar.gz  tmp6i66iy80
-
-root@b127d8503f24 /tmp # ./deposit.sh
-"0xa162184cbc0515d7d4a65eb4341429ac765a95c06bac3496040c1840b7c6065a"
+```python
+for i in range(beacon_node_number):
+    beaconServer: PoSBeaconServer = blockchain.createBeaconNode(
+            f"beaconnode{i}")
+    beaconServer.appendClassName(f"Ethereum-POS-Beacon-{i+1}")
+    beaconServer.connectToGethNode(
+            f"gethnode{(i+1)%len(geth_nodes)}")
 ```
 
-# 2. Introduction to PoS
+The Beacon node talks to its connected Geth node through the Engine API.
+This is how the consensus layer asks the execution layer to build,
+validate, and import execution payloads.
 
-A consensus mechanism is a system that blockchains use to validate the authenticity of transactions and maintain the security of the underlying blockchain. As one of the features of the blockchain, anyone can participate in maintaining block, which is called mining in proof-of-work and is called validating in proof-of-stake. However, the open membership can cause a security issue such as Sybil attacks. To prevent this attack and make the blockchain system more reliable, a participant should show some effort.
 
-In proof-of-work consensus protocol, a participant needs to show computational efforts, which consumes a lot of energy. To mine a block, a miner should calculate the hash that satisfies a particular condition and do it faster than any other miners. And this consensus requires a computer with high performance and the waste of power was severe. The competitors in the world runs countless machines and consumes a lot of electricity to mine one block. Only one miner per one block can get rewards and the efforts from the other miners can only produce a waste of the power. This tremendous dissipation can cause the problem in eco system. That is why Ethereum has changed its consensus protocol to proof-of-stake from proof-of-work recently.
+## Set Bootnodes
 
-In proof-of-stake consensus protocol, a participant should stake a promised amount of money to be involved in maintaining blockchains. By staking some amount of money, a staker holds qualification to generate a block. The power dissipation problem is solved as only one staker (called validator instead of miner in proof-of-stake) will validate (called mine in proof-of-stake) a block and link it to the blockchain at each time. There is no unnecessary power consumption anymore.
+The example sets one Geth node and one Beacon node as bootnodes.
+Bootnodes help other nodes discover peers when the private chain starts.
+
+```python
+geth_nodes[0].setBootNode(True)
+beacon_nodes[0].setBootNode(True)
+```
+
+The Geth bootnode is used by execution-layer nodes. The Beacon bootnode
+is used by consensus-layer nodes.
+
+
+## Create Validator Client Nodes
+
+Validator Client nodes hold validator keys and connect to Beacon nodes.
+They do not maintain the whole Beacon chain state themselves. Instead,
+they rely on Beacon nodes to provide duties and unsigned blocks or
+attestations, then sign the required messages with validator keys.
+
+```python
+for i in range(vc_node_number):
+    VcServer: PoSVcServer = blockchain.createVcNode(f"vcnode{i}")
+    VcServer.appendClassName(f"Ethereum-POS-Validator-{i+1}")
+    VcServer.connectToBeaconNode(
+            f"beaconnode{(i+1)%len(beacon_nodes)}")
+    VcServer.enablePOSValidatorAtGenesis()
+```
+
+This example enables all Validator Client nodes at genesis. This means
+their validators are part of the initial Beacon state, so they can
+participate in block proposal and attestation after the PoS network
+starts.
+
+Adding validators after the chain has started is demonstrated in the
+[D23_validator](../D23_validator/) example.
+
+
+## Create Faucet and Utility Servers
+
+The example also creates a Faucet server and a Utility server. These
+servers are useful for later examples and for interacting with the
+private chain.
+
+```python
+faucet: FaucetServer = blockchain.createFaucetServer(
+        vnode="faucet",
+        port=80,
+        linked_eth_node="gethnode1",
+        balance=10000,
+        max_fund_amount=10)
+faucet.setDisplayName("Faucet")
+```
+
+The Faucet server can fund user accounts during runtime.
+
+```python
+util_server: EthUtilityServer = blockchain.createEthUtilityServer(
+        vnode="utility",
+        port=5000,
+        linked_eth_node="gethnode2",
+        linked_faucet_node="faucet")
+util_server.setDisplayName("UtilityServer")
+```
+
+The Utility server can deploy smart contracts and provide contract
+addresses to other applications.
+
+
+## Binding to Physical Nodes
+
+All virtual nodes need to be bound to physical nodes. This example
+binds all Ethereum-related virtual nodes to hosts in the base Internet
+topology.
+
+```python
+for _, servers in blockchain.getAllServerNames().items():
+    for server in servers:
+        emu.addBinding(Binding(
+                server,
+                filter=Filter(nodeName="host_*"),
+                action=Action.FIRST))
+```
+
+
+## Generate the Docker Output
+
+The example enables both the Internet Map and the Eth Explorer when
+compiling the Docker output.
+
+```python
+docker = Docker(
+        internetMapEnabled=True,
+        etherViewEnabled=ether_view_enabled,
+        platform=platform)
+emu.compile(docker, output, override=True)
+```
+
+The Internet Map shows the emulated Internet topology. The Eth Explorer
+shows the Ethereum PoS chain state, including slots, epochs, blocks,
+validators, and execution-layer transactions.
+
+`ether_view_enabled` is controlled by command-line options. It is enabled by
+default for manual runs, and can be disabled for CI:
+
+```bash
+python3 ethereum_pos.py --no-ether-view
+```
+
+
+## How to Run
+
+Run the standardized test workflow from the repository root:
+
+```bash
+tools/run-example-test.sh D01 compile
+tools/run-example-test.sh D01 all
+```
+
+The test manifest splits validation across lifecycle stages:
+
+- `runtime.readiness` checks that the expected Geth, Beacon, Validator,
+  Beacon Setup, Faucet, and Utility containers are running.
+- `probes` checks key runtime facts: Geth/Lighthouse processes are
+  active, the Beacon Setup node produced `genesis.ssz`, Geth exposes a
+  local funded account, and the PoS chain advances execution blocks.
+- `test_programs` runs the stateful transaction test: it sends a signed
+  ETH transfer and verifies the receipt plus both account balance
+  changes.
+
+For manual use, run the following commands from this example directory:
+
+```bash
+python3 ethereum_pos.py [amd|arm]
+cd output
+docker compose up
+```
+
+Arguments:
+
+- `amd`: Generate Docker configuration for AMD64. This is the default.
+- `arm`: Generate Docker configuration for ARM64 hosts.
+- `--platform amd|arm`: Standard test-framework platform argument.
+- `--output DIR`: Standard test-framework output directory argument.
+- `--ether-view`: Enable Eth Explorer output. This is the default for manual
+  runs.
+- `--no-ether-view`: Disable Eth Explorer output. The test manifest uses this
+  option for CI.
+
+Startup may take some time. The Geth nodes, Beacon nodes, Validator
+Clients, Beacon Setup node, Faucet, Utility Server, Internet Map, and
+Eth Explorer all need to initialize.
+
+
+## Access Points
+
+After the emulator starts, the following services are commonly used:
+
+| Service | Default URL | Function |
+| --- | --- | --- |
+| Internet Map | `http://127.0.0.1:8080/map.html` | Shows the emulated Internet topology |
+| Eth Explorer | `http://127.0.0.1:5000` | Shows the Ethereum PoS private chain |
+| Geth HTTP RPC | `http://<geth-ip>:8545` | Allows tools and wallets to interact with the execution layer |
+| Beacon API | `http://<beacon-ip>:8000` | Allows tools to inspect consensus-layer state |
+
+The exact Geth and Beacon node IP addresses can be found from
+`docker compose ps`, the Internet Map, or the generated Docker
+Compose file.
+
+
+## Relationship with Other Examples
+
+This example is the base PoS example. Other examples build on top of
+it:
+
+- [D10_eth_explorer](../D10_eth_explorer/) focuses on the Eth Explorer.
+- [D20_faucet](../D20_faucet/) demonstrates account funding through the
+  Faucet server.
+- [D21_deploy_contract](../D21_deploy_contract/) demonstrates smart
+  contract deployment through the Utility server.
+- [D23_validator](../D23_validator/) demonstrates adding a validator
+  after the chain has started.

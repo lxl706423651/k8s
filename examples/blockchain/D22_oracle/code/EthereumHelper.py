@@ -1,182 +1,169 @@
-from web3 import Web3, HTTPProvider
-from web3.middleware import geth_poa_middleware
-import logging
-import time 
+from web3 import Web3
+try:
+    from web3.middleware import geth_poa_middleware
+except ImportError:
+    try:
+        from web3.middleware import ExtraDataToPOAMiddleware as geth_poa_middleware
+    except ImportError:
+        geth_poa_middleware = None
+import time
 from sys import stderr
 
 
 class EthereumHelper:
 
-    _web: Web3
+    _web3: Web3
     _chain_id: int
-    _max_fee:  float
+    _max_fee: float
     _max_priority_fee: float
 
-    def __init__(self, chain_id:int=1337):
-        """!
-        @brief constructor.
-        """
-
+    def __init__(self, chain_id: int = 1337):
         self._chain_id = chain_id
-        self._max_fee  = 3.0
-        self._max_priority_fee = 2.0 
+        self._max_fee = 3.0
+        self._max_priority_fee = 2.0
 
-        return
-    
     def __log(self, message: str):
-        """!
-        @brief log to stderr.
+        print("== EthereumHelper: " + message, file=stderr)
 
-        @param message message.
-        """
-        print('== EthereumHelper: ' + message, file=stderr)
+    @staticmethod
+    def _is_connected(web3: Web3) -> bool:
+        method = getattr(web3, "is_connected", None) or getattr(web3, "isConnected")
+        return bool(method())
 
+    @staticmethod
+    def _to_wei(amount, unit: str) -> int:
+        method = getattr(Web3, "to_wei", None) or getattr(Web3, "toWei")
+        return int(method(amount, unit))
+
+    @staticmethod
+    def _raw_transaction(signed_tx):
+        return getattr(signed_tx, "raw_transaction", None) or getattr(signed_tx, "rawTransaction")
+
+    @staticmethod
+    def _private_key_hex(account) -> str:
+        key = getattr(account, "key", None) or getattr(account, "privateKey")
+        key_hex = key.hex()
+        if not key_hex.startswith("0x"):
+            key_hex = "0x" + key_hex
+        return key_hex
+
+    def _block_number(self) -> int:
+        value = getattr(self._web3.eth, "block_number", None)
+        if value is not None:
+            return int(value)
+        return int(self._web3.eth.blockNumber)
+
+    def _get_transaction_count(self, address: str) -> int:
+        method = getattr(self._web3.eth, "get_transaction_count", None) or getattr(
+            self._web3.eth, "getTransactionCount"
+        )
+        return int(method(address))
+
+    def _send_raw_transaction(self, raw_transaction):
+        method = getattr(self._web3.eth, "send_raw_transaction", None) or getattr(
+            self._web3.eth, "sendRawTransaction"
+        )
+        return method(raw_transaction)
+
+    @staticmethod
+    def _build_transaction(function, transaction_info):
+        method = getattr(function, "build_transaction", None) or getattr(function, "buildTransaction")
+        return method(transaction_info)
 
     def create_account(self):
-        """!
-        @brief Create an account
-        @return account address and private ke
-        """
-
         account = self._web3.eth.account.create()
         address = account.address
-        key     = account.privateKey.hex()
+        key = self._private_key_hex(account)
         return address, key
 
-
-
-    def connect_to_blockchain(self, url:str, isPOA=False, wait=True):
-        """!
-        @brief Connect to a blockchain node
-        @param url The URL of the node (e.g., http://10.150.0.71:8545)
-        @param isPOA Is the POA used for the consensus protocol (Proof-Of-Authority)?
-        @returns Return self, for the purpose of API chaining.
-        """
-
+    def connect_to_blockchain(self, url: str, isPOA=False, wait=True):
         self._url = url
-        
-        while True:
-           self._web3 = Web3(Web3.HTTPProvider(url))
-           if isPOA:
-              self._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-           if self._web3.isConnected():
-              self.__log("Successfully connected to {}".format(url))
-              break
-           else: 
-              if wait:
-                 self.__log("Failed to connect to {}, retrying ...".format(url))
-                 time.sleep(10)
+        while True:
+            self._web3 = Web3(Web3.HTTPProvider(url))
+            if isPOA and geth_poa_middleware is not None:
+                self._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+            if self._is_connected(self._web3):
+                self.__log("Successfully connected to {}".format(url))
+                break
+            if wait:
+                self.__log("Failed to connect to {}, retrying ...".format(url))
+                time.sleep(10)
+            else:
+                break
 
         return self._web3
 
-
     def wait_for_blocknumber(self, block_number=5):
-        """!
-        @brief Wait for the blockchain to reach the specified block number
-        """
-
-        block_now = self._web3.eth.blockNumber
+        block_now = self._block_number()
         while block_now < block_number:
-            self.__log("Waiting for the block number to reach {} (current: {})".\
-                        format(block_number, block_now))
+            self.__log(
+                "Waiting for the block number to reach {} (current: {})".format(block_number, block_now)
+            )
             time.sleep(10)
-            block_now = self._web3.eth.blockNumber
+            block_now = self._block_number()
 
-
-    def deploy_contract(self, contract_file, sender_address, sender_key, 
-                        amount=0, gas=3000000, wait=True):
-        """!
-        @brief Deploy a smart contract
-
-        @returns Return the transaction hash and the contract address.
-        """
+    def deploy_contract(self, contract_file, sender_address, sender_key, amount=0, gas=3000000, wait=True):
         with open(contract_file) as contract:
-            data = contract.read()
-            data = data.strip()
+            data = contract.read().strip()
+        if data and not data.startswith("0x"):
+            data = "0x" + data
 
-        tx_hash = self.send_raw_transaction(None, sender_address, sender_key,
-                                           amount=amount, data=data, gas=gas) 
-        rx_receipt = None
-        if wait:
-            tx_receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        return tx_hash, tx_receipt
-
-    def transfer_fund(self, receiver_address, sender_address, sender_key, 
-                        amount=0, gas=3000000, wait=True):
-        """!
-        @brief Transfer fund to a receiver
-        @param amount The unit is Ether
-        @returns Return the transaction hash and receipt
-        """
-
-        tx_hash = self.send_raw_transaction(receiver_address, 
-                                            sender_address, sender_key,
-                                            amount=amount, gas=gas) 
-        rx_receipt = None
-        if wait:
-            tx_receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        return tx_hash, tx_receipt
-
-
-
-    def send_raw_transaction(self, recipient, sender_address, sender_key,
-                             data:str='', amount=0,  gas=300000): 
-        """!
-        @param amount The unit is Ether
-        """
-
-        transaction = {
-            'nonce':    self._web3.eth.getTransactionCount(sender_address),
-            'from':     sender_address,
-            'to':       recipient,
-            'value':    Web3.toWei(amount, 'ether'),
-            'chainId':  self._chain_id,
-            'gas':      gas,
-            'maxFeePerGas':         Web3.toWei(self._max_fee, 'gwei'),
-            'maxPriorityFeePerGas': Web3.toWei(self._max_priority_fee, 'gwei'), 
-            'data':     data
-        }
-
-        signed_tx = self._web3.eth.account.sign_transaction(transaction, sender_key)
-        tx_hash   = self._web3.eth.sendRawTransaction(signed_tx.rawTransaction)
-
-        return tx_hash
-
-    def invoke_contract_function(self, function, sender_address, sender_key,
-                                 amount=0, gas=3000000, wait=True):
-        """!
-        @brief Invoke a contract function via a transaction.
-
-        @param function The pre-built function 
-        @param amount The unit is Ether
-        @param wait Wait for the transaction receipt
-
-        @returns Return the transaction hash.
-        """
-
-        assert self._web3 is not None
-        assert function is not None
-
-        transaction_info = {
-            'nonce':    self._web3.eth.getTransactionCount(sender_address),
-            'from':     sender_address,
-            'value':    Web3.toWei(amount, 'ether'),
-            'chainId':  self._chain_id,
-            'gas':      gas,
-            'maxFeePerGas':         Web3.toWei(self._max_fee, 'gwei'),
-            'maxPriorityFeePerGas': Web3.toWei(self._max_priority_fee, 'gwei')
-        }
-
-        transaction = function.buildTransaction(transaction_info)
-        signed_tx   = self._web3.eth.account.sign_transaction(transaction, sender_key)
-        tx_hash     = self._web3.eth.sendRawTransaction(signed_tx.rawTransaction)
-
-        tx_receipt = None  
+        tx_hash = self.send_raw_transaction(None, sender_address, sender_key, amount=amount, data=data, gas=gas)
+        tx_receipt = None
         if wait:
             tx_receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
 
         return tx_hash, tx_receipt
 
+    def transfer_fund(self, receiver_address, sender_address, sender_key, amount=0, gas=3000000, wait=True):
+        tx_hash = self.send_raw_transaction(receiver_address, sender_address, sender_key, amount=amount, gas=gas)
+        tx_receipt = None
+        if wait:
+            tx_receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
+
+        return tx_hash, tx_receipt
+
+    def send_raw_transaction(self, recipient, sender_address, sender_key, data: str = "", amount=0, gas=300000):
+        transaction = {
+            "nonce": self._get_transaction_count(sender_address),
+            "from": sender_address,
+            "value": self._to_wei(amount, "ether"),
+            "chainId": self._chain_id,
+            "gas": gas,
+            "maxFeePerGas": self._to_wei(self._max_fee, "gwei"),
+            "maxPriorityFeePerGas": self._to_wei(self._max_priority_fee, "gwei"),
+            "data": data,
+        }
+        if recipient is not None:
+            transaction["to"] = recipient
+
+        signed_tx = self._web3.eth.account.sign_transaction(transaction, sender_key)
+        tx_hash = self._send_raw_transaction(self._raw_transaction(signed_tx))
+
+        return tx_hash
+
+    def invoke_contract_function(self, function, sender_address, sender_key, amount=0, gas=3000000, wait=True):
+        assert self._web3 is not None
+        assert function is not None
+
+        transaction_info = {
+            "nonce": self._get_transaction_count(sender_address),
+            "from": sender_address,
+            "value": self._to_wei(amount, "ether"),
+            "chainId": self._chain_id,
+            "gas": gas,
+            "maxFeePerGas": self._to_wei(self._max_fee, "gwei"),
+            "maxPriorityFeePerGas": self._to_wei(self._max_priority_fee, "gwei"),
+        }
+
+        transaction = self._build_transaction(function, transaction_info)
+        signed_tx = self._web3.eth.account.sign_transaction(transaction, sender_key)
+        tx_hash = self._send_raw_transaction(self._raw_transaction(signed_tx))
+
+        tx_receipt = None
+        if wait:
+            tx_receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash, timeout=300)
+
+        return tx_hash, tx_receipt

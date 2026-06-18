@@ -22,18 +22,6 @@ def expandPath(value: str) -> str:
     return str(Path(os.path.expanduser(value)).resolve())
 
 
-def expandPathList(value: Any) -> str:
-    """Expand one YAML scalar/list into the shell path-list used by scripts."""
-    if value is None:
-        return ""
-    if isinstance(value, list):
-        return " ".join(expandPath(str(item)) for item in value if str(item).strip())
-    text = str(value).strip()
-    if not text:
-        return ""
-    return " ".join(expandPath(part) for part in text.split())
-
-
 def readLocalIps() -> set[str]:
     """Return IP addresses configured on the host running this helper.
 
@@ -275,11 +263,6 @@ def configValues(data: dict[str, Any], nodes: list[dict[str, Any]]) -> dict[str,
         "fabricType": fabric_type,
         "dockerIoMirrorEndpoint": getNested(data, "registry.dockerIoMirrorEndpoint", "https://docker.m.daocloud.io"),
         "seedEmulatorDockerDir": expandPath(str(getNested(data, "seedemu.dockerImagesDir", defaultSeedEmulatorDockerDir()))),
-        "seedemuHostImageCacheDir": expandPath(
-            str(getNested(data, "seedemu.hostImageCacheDir", SETUP_DIR / "image-cache"))
-        ),
-        "seedemuImageCacheDirs": expandPathList(getNested(data, "seedemu.imageCacheDirs", "")),
-        "seedemuOffline": str(getNested(data, "seedemu.offline", False)).lower(),
         "cniMasterInterface": getNested(data, "cni.defaultMasterInterface", default_cni_master),
         "cni0HashMax": getNested(data, "tuning.cni0HashMax", 16384),
         "userMaxNetNamespaces": getNested(data, "tuning.userMaxNetNamespaces", 65536),
@@ -347,25 +330,6 @@ def ovnValues(data: dict[str, Any], nodes: list[dict[str, Any]]) -> dict[str, An
         "ovnCniBinDir": str(getNested(data, "ovn.cniBinDir", "/var/lib/rancher/k3s/data/cni")),
         "ovnHelmCacheDir": expandPath(str(getNested(data, "ovn.helmCacheDir", Path(vals["setupTmpDir"]) / "helm"))),
         "ovnMasterNodes": str(getNested(data, "ovn.masterNodes", vals["k3sMasterIp"])),
-        "ovnNorthdThreads": str(getNested(data, "ovn.northdThreads", 4)),
-        "ovnControllerWorkerNum": str(getNested(data, "ovn.controllerWorkerNum", 3)),
-        "ovnControllerRequestCpu": str(getNested(data, "ovn.controllerRequestCpu", "1000m")),
-        "ovnControllerLimitCpu": str(getNested(data, "ovn.controllerLimitCpu", "4")),
-        "ovnControllerRequestMemory": str(getNested(data, "ovn.controllerRequestMemory", "512Mi")),
-        "ovnControllerLimitMemory": str(getNested(data, "ovn.controllerLimitMemory", "2Gi")),
-        "ovnCentralRequestCpu": str(getNested(data, "ovn.centralRequestCpu", "1000m")),
-        "ovnCentralLimitCpu": str(getNested(data, "ovn.centralLimitCpu", "6")),
-        "ovnCentralRequestMemory": str(getNested(data, "ovn.centralRequestMemory", "1Gi")),
-        "ovnCentralLimitMemory": str(getNested(data, "ovn.centralLimitMemory", "8Gi")),
-        "ovnOvsRequestCpu": str(getNested(data, "ovn.ovsRequestCpu", "200m")),
-        "ovnOvsLimitCpu": str(getNested(data, "ovn.ovsLimitCpu", "2")),
-        "ovnOvsRequestMemory": str(getNested(data, "ovn.ovsRequestMemory", "200Mi")),
-        "ovnOvsLimitMemory": str(getNested(data, "ovn.ovsLimitMemory", "1000Mi")),
-        "ovnCniRequestCpu": str(getNested(data, "ovn.cniRequestCpu", "100m")),
-        "ovnCniLimitCpu": str(getNested(data, "ovn.cniLimitCpu", "1000m")),
-        "ovnCniRequestMemory": str(getNested(data, "ovn.cniRequestMemory", "100Mi")),
-        "ovnCniLimitMemory": str(getNested(data, "ovn.cniLimitMemory", "1Gi")),
-        "ovnCniOvsVsctlConcurrency": str(getNested(data, "ovn.cniOvsVsctlConcurrency", 10)),
     }
 
 
@@ -641,7 +605,6 @@ def commandWriteAnsibleInventory(args: argparse.Namespace) -> None:
                 "seed_k3s_max_pods": int(vals["k3sMaxPods"]),
                 "seed_k3s_expected_ready_nodes": len(nodes),
                 "seed_k3s_force_reinstall": str(vals["k3sForceReinstall"]).lower() == "true",
-                "seedemu_offline": str(vals["seedemuOffline"]).lower() == "true",
             },
             "children": {
                 "master": {

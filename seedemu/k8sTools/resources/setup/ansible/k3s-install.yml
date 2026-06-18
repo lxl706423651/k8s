@@ -79,11 +79,6 @@
       failed_when: false
       changed_when: false
 
-    - name: Fail offline when Docker is missing on master
-      fail:
-        msg: "seedemu.offline=true but Docker is not installed on the master VM; preinstall docker.io in the base image or run once online."
-      when: seedemu_offline | default(false) | bool and docker_command.rc != 0
-
     - name: Install Docker (used to host local registry container)
       shell: |
         set -euo pipefail
@@ -130,11 +125,6 @@
         state: restarted
       when: docker_daemon_config.changed
 
-    - name: Fail offline when K3s server is missing
-      fail:
-        msg: "seedemu.offline=true but K3s server is not installed; the current playbook would need get.k3s.io for a fresh server install."
-      when: seedemu_offline | default(false) | bool and not k3s_server_yaml.stat.exists
-
     - name: Install K3s server
       shell: |
         curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_install_version }} \
@@ -150,33 +140,11 @@
       retries: 30
       delay: 5
 
-    - name: Wait for K3s service and node token
-      shell: |
-        set -e
-        systemctl is-active --quiet k3s
-        test -s /etc/rancher/k3s/k3s.yaml
-        test -s /var/lib/rancher/k3s/server/node-token
-      register: k3s_token_ready
-      until: k3s_token_ready.rc == 0
-      retries: 60
-      delay: 5
-
     - name: Fetch K3s binary for offline worker installs
       fetch:
         src: /usr/local/bin/k3s
         dest: "/tmp/seedemu-k3s-binary-{{ k3s_install_version }}/k3s"
         flat: yes
-
-    - name: Check CNI plugins package on master
-      shell: dpkg -s containernetworking-plugins
-      register: master_cni_plugins_package
-      failed_when: false
-      changed_when: false
-
-    - name: Fail offline when CNI plugins are missing on master
-      fail:
-        msg: "seedemu.offline=true but containernetworking-plugins is not installed on the master VM; preinstall it in the base image or run once online."
-      when: seedemu_offline | default(false) | bool and master_cni_plugins_package.rc != 0
 
     - name: Install CNI plugins required by Multus (macvlan/ipvlan/static)
       shell: |
@@ -586,11 +554,6 @@
         state: restarted
       when: k3s_agent_dir.stat.exists and k3s_agent_config.changed
 
-    - name: Fail offline when K3s agent is missing
-      fail:
-        msg: "seedemu.offline=true but K3s agent is not installed; the current playbook would need get.k3s.io for a fresh agent install."
-      when: seedemu_offline | default(false) | bool and not k3s_agent_dir.stat.exists
-
     - name: Copy K3s binary prepared on master to worker
       copy:
         src: "/tmp/seedemu-k3s-binary-{{ k3s_install_version }}/k3s"
@@ -608,17 +571,6 @@
           sh -
       args:
         creates: /var/lib/rancher/k3s/agent
-
-    - name: Check CNI plugins package on worker
-      shell: dpkg -s containernetworking-plugins
-      register: worker_cni_plugins_package
-      failed_when: false
-      changed_when: false
-
-    - name: Fail offline when CNI plugins are missing on worker
-      fail:
-        msg: "seedemu.offline=true but containernetworking-plugins is not installed on this worker VM; preinstall it in the base image or run once online."
-      when: seedemu_offline | default(false) | bool and worker_cni_plugins_package.rc != 0
 
     - name: Install CNI plugins required by Multus (macvlan/ipvlan/static)
       shell: |

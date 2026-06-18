@@ -38,9 +38,6 @@ K3S_SYSTEM_BOOTSTRAP_IMAGES=(
     "rancher/local-path-provisioner:v0.0.24"
 )
 seedEmulatorDockerDir="${HOME}/seed-emulator/docker_images/multiarch"
-seedemuHostImageCacheDir=""
-seedemuImageCacheDirs=""
-seedemuOffline="false"
 seedBaseSourceImage="handsonsecurity/seedemu-multiarch-base:buildx-latest"
 seedRouterSourceImage="handsonsecurity/seedemu-multiarch-router:buildx-latest"
 seedBaseHashImage="98a2693c996c2294358552f48373498d:latest"
@@ -74,19 +71,6 @@ runWithTimeout() {
     fi
 }
 
-isTrue() {
-    # Args:
-    #   $1: boolean-like shell/YAML value.
-    case "${1,,}" in
-        true|1|yes|on)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
 resolveInput() {
     if [ "${CONFIG_PATH}" = "-h" ] || [ "${CONFIG_PATH}" = "--help" ]; then
         usage
@@ -110,9 +94,6 @@ loadConfigVars() {
         return 1
     fi
     eval "${vars_output}"
-    if [ -n "${seedemuHostImageCacheDir:-}" ]; then
-        HOST_IMAGE_CACHE_DIR="${seedemuHostImageCacheDir}"
-    fi
     MASTER_IS_LOCAL=false
     if [ "${k3sMasterConnection:-ssh}" = "local" ]; then
         MASTER_IS_LOCAL=true
@@ -329,16 +310,6 @@ ensureHostDockerImage() {
         return 0
     fi
 
-    if loadHostDockerImageFromTarball "${image}"; then
-        return 0
-    fi
-
-    if isTrue "${seedemuOffline}"; then
-        echo "Offline mode is enabled and no cached/local Docker image is available: ${image}" >&2
-        echo "Expected a matching tar under HOST_IMAGE_CACHE_DIR or seedemu.imageCacheDirs." >&2
-        return 1
-    fi
-
     echo "  host docker pull ${image}" >&2
     if runWithTimeout "${dockerPullTimeoutSeconds}s" docker pull "${image}" >/dev/null; then
         return 0
@@ -362,72 +333,15 @@ hostImageTarball() {
     printf '%s/%s.tar\n' "${HOST_IMAGE_CACHE_DIR}" "$(imageTarName "${image}")"
 }
 
-externalImageTarball() {
-    # Args:
-    #   $1: image reference.
-    # Prints a matching tar path from the host cache or seedemu.imageCacheDirs.
-    local image="$1"
-    local tar_name cache_dir candidate
-    tar_name="$(imageTarName "${image}").tar"
-    for cache_dir in "${HOST_IMAGE_CACHE_DIR}" ${seedemuImageCacheDirs:-}; do
-        [ -d "${cache_dir}" ] || continue
-        candidate="${cache_dir}/${tar_name}"
-        if [ -s "${candidate}" ]; then
-            printf '%s\n' "${candidate}"
-            return 0
-        fi
-    done
-    return 1
-}
-
-loadHostDockerImageFromTarball() {
-    # Args:
-    #   $1: image reference.
-    # Loads a cached image tar into host Docker when the requested tag is absent.
-    local image="$1"
-    local source_tar
-    if ! source_tar="$(externalImageTarball "${image}")"; then
-        return 1
-    fi
-    echo "  host docker load ${source_tar} for ${image}" >&2
-    docker load -i "${source_tar}" >/dev/null
-    if docker image inspect "${image}" >/dev/null 2>&1; then
-        return 0
-    fi
-    echo "Cached image tar did not provide expected tag: ${image} (${source_tar})" >&2
-    return 1
-}
-
-seedHostImageTarball() {
-    # Args:
-    #   $1: image reference.
-    # Copies an existing external image tar into this temporary setup cache.
-    # This helper is intentionally stdout-silent because callers may capture
-    # saveHostImageTarball output as the single local tar path.
-    local image="$1"
-    local tar_path source_tar
-    tar_path="$(hostImageTarball "${image}")"
-    if [ -s "${tar_path}" ]; then
-        return 0
-    fi
-    if source_tar="$(externalImageTarball "${image}")"; then
-        echo "  reuse image cache ${source_tar} -> ${tar_path}" >&2
-        mkdir -p "$(dirname "${tar_path}")"
-        cp --reflink=auto "${source_tar}" "${tar_path}"
-        return 0
-    fi
-    return 1
-}
-
 saveHostImageTarball() {
     local image="$1"
     local tar_path
     tar_path="$(hostImageTarball "${image}")"
-    if seedHostImageTarball "${image}"; then
+    ensureHostDockerImage "${image}"
+    if [ -s "${tar_path}" ]; then
         printf '%s\n' "${tar_path}"
         return 0
     fi
-    ensureHostDockerImage "${image}"
     echo "  host docker save ${image} -> ${tar_path}" >&2
     docker save -o "${tar_path}" "${image}"
     printf '%s\n' "${tar_path}"
@@ -472,10 +386,6 @@ ensureRegistry() {
     runMasterCommand "
         set -euo pipefail
         if ! docker buildx version >/dev/null 2>&1; then
-            if [ '${seedemuOffline}' = 'true' ]; then
-                echo 'Offline mode is enabled and docker buildx is missing on the master node.' >&2
-                exit 1
-            fi
             sudo -n apt-get update >/dev/null
             sudo -n apt-get install -y docker-buildx >/dev/null
         fi
@@ -490,29 +400,15 @@ ensureSeedemuHostBuildImages() {
     ensureHostDockerImage "${ubuntuBuildImage}"
 
     if ! docker image inspect "${seedBaseSourceImage}" >/dev/null 2>&1; then
-        if loadHostDockerImageFromTarball "${seedBaseSourceImage}"; then
-            :
-        elif isTrue "${seedemuOffline}"; then
-            echo "Offline mode is enabled and cached image is missing: ${seedBaseSourceImage}" >&2
-            exit 1
-        else
-            echo "  host docker build ${seedBaseSourceImage}" >&2
-            DOCKER_BUILDKIT=1 docker build -t "${seedBaseSourceImage}" \
-                "${seedEmulatorDockerDir}/seedemu-base" >/dev/null
-        fi
+        echo "  host docker build ${seedBaseSourceImage}" >&2
+        DOCKER_BUILDKIT=1 docker build -t "${seedBaseSourceImage}" \
+            "${seedEmulatorDockerDir}/seedemu-base" >/dev/null
     fi
 
     if ! docker image inspect "${seedRouterSourceImage}" >/dev/null 2>&1; then
-        if loadHostDockerImageFromTarball "${seedRouterSourceImage}"; then
-            :
-        elif isTrue "${seedemuOffline}"; then
-            echo "Offline mode is enabled and cached image is missing: ${seedRouterSourceImage}" >&2
-            exit 1
-        else
-            echo "  host docker build ${seedRouterSourceImage}" >&2
-            DOCKER_BUILDKIT=1 docker build -t "${seedRouterSourceImage}" \
-                "${seedEmulatorDockerDir}/seedemu-router" >/dev/null
-        fi
+        echo "  host docker build ${seedRouterSourceImage}" >&2
+        DOCKER_BUILDKIT=1 docker build -t "${seedRouterSourceImage}" \
+            "${seedEmulatorDockerDir}/seedemu-router" >/dev/null
     fi
 
     docker tag "${seedBaseSourceImage}" "${seedBaseHashImage}" >/dev/null

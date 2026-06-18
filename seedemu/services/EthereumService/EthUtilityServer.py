@@ -132,7 +132,7 @@ class EthUtilityServer(Server):
         node.appendClassName("EthUtilityServer")
 
         node.addSoftware('python3 python3-pip')        
-        node.addBuildCommand('pip3 install flask web3==5.31.1')
+        node.addBuildCommand('pip3 install --break-system-packages flask web3==5.31.1 || pip3 install flask web3==5.31.1')
 
         self._installScriptFile(node)
 

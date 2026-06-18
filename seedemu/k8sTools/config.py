@@ -73,37 +73,6 @@ def resolvePath(path: str | Path, base_dir: str | Path | None = None) -> Path:
     return (base / raw).resolve()
 
 
-def _resolveConfigPathValue(value: Any, base_dir: Path) -> Any:
-    """Resolve one YAML path scalar/list relative to the source config file."""
-    if value is None:
-        return value
-    if isinstance(value, list):
-        return [str(resolvePath(str(item), base_dir)) for item in value if str(item).strip()]
-    text = str(value).strip()
-    if not text:
-        return value
-    if " " in text:
-        return " ".join(str(resolvePath(part, base_dir)) for part in text.split())
-    return str(resolvePath(text, base_dir))
-
-
-def _resolveSourceRelativeSetupPaths(data: dict[str, Any], base_dir: Path) -> None:
-    """Resolve cache/base-image paths before setup config is copied to /tmp."""
-    for section_name, keys in {
-        "kvm": ("baseImagePath", "legacyBaseImagePath", "baseImageSearchDirs"),
-        "seedemu": ("hostImageCacheDir", "imageCacheDirs"),
-        "ovn": ("helmCacheDir",),
-    }.items():
-        section = data.get(section_name)
-        if not isinstance(section, dict):
-            continue
-        if section_name == "kvm":
-            _normalizeLegacyKvmKeys(section)
-        for key in keys:
-            if key in section:
-                section[key] = _resolveConfigPathValue(section[key], base_dir)
-
-
 def setOutputPaths(config: dict[str, Any], *, kubeconfig: str | Path, tmp_dir: str | Path, inventory: str | Path | None = None) -> None:
     """Set K3s-stage output paths in a config mapping.
 
@@ -231,10 +200,7 @@ def makeKvmConfig(
         raise ValueError("master=False is not supported by current KVM scripts")
 
     setup_path = Path(setup_dir).expanduser().resolve() if setup_dir is not None else None
-    source_dir = resolvePath(config).parent if config is not None else None
     data = copy.deepcopy(loadYaml(config)) if config is not None else {}
-    if source_dir is not None:
-        _resolveSourceRelativeSetupPaths(data, source_dir)
     effective_cluster_name = str(data.get("clusterName") or data.get("cluster_name") or cluster_name)
     data["clusterName"] = effective_cluster_name
     data.pop("cluster_name", None)

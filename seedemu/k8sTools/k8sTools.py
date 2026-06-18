@@ -73,6 +73,16 @@ class K8sTools:
         """
         cleanWorkload(outputDir, kubeconfig, keep_temp=keepTemp)
 
+    def clean(self, outputDir: str | Path, kubeconfig: str | Path, *, keepTemp: bool = False) -> None:
+        """Delete workload resources while keeping cluster infrastructure.
+
+        Args:
+            outputDir: Compile output directory.
+            kubeconfig: Kubeconfig path.
+            keepTemp: Keep temporary cleanup resources for debugging.
+        """
+        self.down(outputDir, kubeconfig, keepTemp=keepTemp)
+
     def destroy(self, configK3s: str | Path, *, keepTemp: bool = False) -> None:
         """Destroy K3s/OVN and optional KVM infrastructure.
 
@@ -113,6 +123,11 @@ class K8sTools:
         down.add_argument("-k", "--kubeconfig", required=True, help="kubeconfig.yaml")
         down.add_argument("--keep-temp", action="store_true", help="keep temporary cleanup resources")
 
+        clean = sub.add_parser("clean", help="delete workload resources only")
+        clean.add_argument("-f", "--folder", required=True, help="compile output directory")
+        clean.add_argument("-k", "--kubeconfig", required=True, help="kubeconfig.yaml")
+        clean.add_argument("--keep-temp", action="store_true", help="keep temporary cleanup resources")
+
         destroy = sub.add_parser("destroy", help="destroy cluster and optional KVM resources")
         destroy.add_argument("-d", "--config-k3s", required=True, help="configK3s.yaml")
         destroy.add_argument("--keep-temp", action="store_true", help="keep temporary destroy resources")
@@ -130,6 +145,8 @@ class K8sTools:
             )
         elif args.command == "down":
             self.down(args.folder, args.kubeconfig, keepTemp=args.keep_temp)
+        elif args.command == "clean":
+            self.clean(args.folder, args.kubeconfig, keepTemp=args.keep_temp)
         elif args.command == "destroy":
             self.destroy(args.config_k3s, keepTemp=args.keep_temp)
         else:

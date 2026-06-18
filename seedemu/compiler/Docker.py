@@ -103,7 +103,6 @@ ip -j addr | jq -cr '.[]' | while read -r iface; do {
 '''
 
 DockerCompilerFileTemplates['compose'] = """\
-version: "3.4"
 services:
 {dummies}
 {services}

@@ -2,6 +2,9 @@
 
 from flask import Flask, request, jsonify
 import os
+import inspect
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec
 from web3 import Web3, HTTPProvider
 import json
 

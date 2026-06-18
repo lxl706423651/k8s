@@ -1,8 +1,7 @@
 from __future__ import annotations
 from .Ospf import Ospf
 from .Ibgp import Ibgp
-from .Routing import Router
-from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer
+from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer, Router
 from seedemu.core.enums import NetworkType, NodeRole
 from typing import List, Tuple, Dict, Set
 
@@ -152,6 +151,20 @@ class Mpls(Layer, Graphable):
         """
         return self.__enabled
 
+    def __maskExistingControlPlaneLayers(self, emulator: Emulator) -> None:
+        """Mask OSPF/iBGP before those layers record non-MPLS intent."""
+        reg = emulator.getRegistry()
+        for asn in self.__enabled:
+            if reg.has('seedemu', 'layer', 'Ospf'):
+                self._log('Ospf layer exists, masking as{}'.format(asn))
+                ospf: Ospf = reg.get('seedemu', 'layer', 'Ospf')
+                ospf.maskAsn(asn)
+
+            if reg.has('seedemu', 'layer', 'Ibgp'):
+                self._log('Ibgp layer exists, masking as{}'.format(asn))
+                ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
+                ibgp.maskAsn(asn)
+
     def __getEdgeNodes(self, scope: ScopedRegistry) -> Tuple[List[Node], List[Node]]:
         """!
         @brief Helper tool - get list of routers (edge, non-edge) of an AS.
@@ -240,19 +253,14 @@ class Mpls(Layer, Graphable):
 
                 n += 1
 
+    def configure(self, emulator: Emulator):
+        super().configure(emulator)
+        self.__maskExistingControlPlaneLayers(emulator)
+
     def render(self, emulator: Emulator):
         reg = emulator.getRegistry()
+        self.__maskExistingControlPlaneLayers(emulator)
         for asn in self.__enabled:
-            if reg.has('seedemu', 'layer', 'Ospf'):
-                self._log('Ospf layer exists, masking as{}'.format(asn))
-                ospf: Ospf = reg.get('seedemu', 'layer', 'Ospf')
-                ospf.maskAsn(asn)
-
-            if reg.has('seedemu', 'layer', 'Ibgp'):
-                self._log('Ibgp layer exists, masking as{}'.format(asn))
-                ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
-                ibgp.maskAsn(asn)
-
             scope = ScopedRegistry(str(asn), reg)
             (enodes, nodes) = self.__getEdgeNodes(scope)
 
@@ -299,4 +307,3 @@ class Mpls(Layer, Graphable):
             out += 'as{}\n'.format(asn)
 
         return out
-            

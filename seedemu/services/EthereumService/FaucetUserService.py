@@ -52,7 +52,7 @@ class FaucetUserServer(Server):
         """
         node.appendClassName("FaucetUserService")
         node.addSoftware('python3 python3-pip')
-        node.addBuildCommand('pip3 install eth_account==0.5.9 requests')
+        node.addBuildCommand('pip3 install --break-system-packages eth_account==0.5.9 requests || pip3 install eth_account==0.5.9 requests')
         node.setFile(self.DIR_PREFIX + '/fundme.py', 
                      FaucetServerFileTemplates['fundme'].format(
                            faucet_url=self.__faucet_util.getFacuetUrl(),

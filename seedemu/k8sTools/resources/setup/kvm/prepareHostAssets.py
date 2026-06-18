@@ -34,9 +34,6 @@ K3S_SYSTEM_BOOTSTRAP_IMAGES=(
     "rancher/local-path-provisioner:v0.0.24"
 )
 seedEmulatorDockerDir="${HOME}/seed-emulator/docker_images/multiarch"
-seedemuHostImageCacheDir=""
-seedemuImageCacheDirs=""
-seedemuOffline="false"
 kvmBaseImageSearchDirs="${HOME}/k8s/output"
 seedBaseSourceImage="handsonsecurity/seedemu-multiarch-base:buildx-latest"
 seedRouterSourceImage="handsonsecurity/seedemu-multiarch-router:buildx-latest"
@@ -74,19 +71,6 @@ runWithTimeout() {
     else
         "$@"
     fi
-}
-
-isTrue() {
-    # Args:
-    #   $1: boolean-like shell/YAML value.
-    case "${1,,}" in
-        true|1|yes|on)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
 }
 
 resolveSeedEmulatorDockerDir() {
@@ -140,16 +124,6 @@ ensureHostDockerImage() {
         return 0
     fi
 
-    if loadHostDockerImageFromTarball "${image}"; then
-        return 0
-    fi
-
-    if isTrue "${seedemuOffline}"; then
-        echo "Offline mode is enabled and no cached/local Docker image is available: ${image}" >&2
-        echo "Expected a matching tar under HOST_IMAGE_CACHE_DIR or seedemu.imageCacheDirs." >&2
-        return 1
-    fi
-
     echo "  docker pull ${image}"
     if runWithTimeout "${dockerPullTimeoutSeconds}s" docker pull "${image}" >/dev/null; then
         return 0
@@ -172,67 +146,12 @@ hostImageTarball() {
     printf '%s/%s.tar\n' "${HOST_IMAGE_CACHE_DIR}" "$(imageTarName "${image}")"
 }
 
-externalImageTarball() {
-    # Args:
-    #   $1: image reference.
-    # Prints a matching tar path from the host cache or seedemu.imageCacheDirs.
-    local image="$1"
-    local tar_name cache_dir candidate
-    tar_name="$(imageTarName "${image}").tar"
-    for cache_dir in "${HOST_IMAGE_CACHE_DIR}" ${seedemuImageCacheDirs:-}; do
-        [ -d "${cache_dir}" ] || continue
-        candidate="${cache_dir}/${tar_name}"
-        if [ -s "${candidate}" ]; then
-            printf '%s\n' "${candidate}"
-            return 0
-        fi
-    done
-    return 1
-}
-
-loadHostDockerImageFromTarball() {
-    # Args:
-    #   $1: image reference.
-    # Loads a cached image tar into host Docker when the requested tag is absent.
-    local image="$1"
-    local source_tar
-    if ! source_tar="$(externalImageTarball "${image}")"; then
-        return 1
-    fi
-    echo "  docker load ${source_tar} for ${image}"
-    docker load -i "${source_tar}" >/dev/null
-    if docker image inspect "${image}" >/dev/null 2>&1; then
-        return 0
-    fi
-    echo "Cached image tar did not provide expected tag: ${image} (${source_tar})" >&2
-    return 1
-}
-
-seedHostImageTarball() {
-    # Args:
-    #   $1: image reference.
-    # Copies an existing external image tar into this temporary setup cache.
-    local image="$1"
-    local tar_path source_tar
-    tar_path="$(hostImageTarball "${image}")"
-    if [ "${prepareForce}" != "true" ] && [ -s "${tar_path}" ]; then
-        echo "  cache exists: ${tar_path}"
-        return 0
-    fi
-    if source_tar="$(externalImageTarball "${image}")"; then
-        echo "  reuse image cache ${source_tar} -> ${tar_path}"
-        mkdir -p "$(dirname "${tar_path}")"
-        cp --reflink=auto "${source_tar}" "${tar_path}"
-        return 0
-    fi
-    return 1
-}
-
 saveHostImageTarball() {
     local image="$1"
     local tar_path
     tar_path="$(hostImageTarball "${image}")"
-    if seedHostImageTarball "${image}"; then
+    if [ "${prepareForce}" != "true" ] && [ -s "${tar_path}" ]; then
+        echo "  cache exists: ${tar_path}"
         return
     fi
     ensureHostDockerImage "${image}"
@@ -314,10 +233,6 @@ prepareBaseImage() {
     echo "Downloading Ubuntu cloud image:"
     echo "  url=${kvmBaseImageUrl}"
     echo "  output=${kvmBaseImagePath}"
-    if isTrue "${seedemuOffline}"; then
-        echo "Offline mode is enabled and the KVM base image is missing: ${kvmBaseImagePath}" >&2
-        exit 1
-    fi
     downloadBaseImageFile "${kvmBaseImageUrl}" "${kvmBaseImagePath}"
 }
 
@@ -325,13 +240,7 @@ prepareSeedemuBuildImages() {
     ensureHostDockerImage "${ubuntuBuildImage}"
 
     if ! docker image inspect "${seedBaseSourceImage}" >/dev/null 2>&1; then
-        if loadHostDockerImageFromTarball "${seedBaseSourceImage}"; then
-            :
-        elif [ -d "${seedEmulatorDockerDir}/seedemu-base" ]; then
-            if isTrue "${seedemuOffline}"; then
-                echo "Offline mode is enabled and cached image is missing: ${seedBaseSourceImage}" >&2
-                exit 1
-            fi
+        if [ -d "${seedEmulatorDockerDir}/seedemu-base" ]; then
             echo "  docker build ${seedBaseSourceImage}"
             DOCKER_BUILDKIT=1 docker build -t "${seedBaseSourceImage}" \
                 "${seedEmulatorDockerDir}/seedemu-base" >/dev/null
@@ -341,13 +250,7 @@ prepareSeedemuBuildImages() {
     fi
 
     if ! docker image inspect "${seedRouterSourceImage}" >/dev/null 2>&1; then
-        if loadHostDockerImageFromTarball "${seedRouterSourceImage}"; then
-            :
-        elif [ -d "${seedEmulatorDockerDir}/seedemu-router" ]; then
-            if isTrue "${seedemuOffline}"; then
-                echo "Offline mode is enabled and cached image is missing: ${seedRouterSourceImage}" >&2
-                exit 1
-            fi
+        if [ -d "${seedEmulatorDockerDir}/seedemu-router" ]; then
             echo "  docker build ${seedRouterSourceImage}"
             DOCKER_BUILDKIT=1 docker build -t "${seedRouterSourceImage}" \
                 "${seedEmulatorDockerDir}/seedemu-router" >/dev/null
@@ -372,8 +275,10 @@ prepareImageCache() {
     saveHostImageTarball "${ubuntuBuildImage}"
     saveHostImageTarball "${seedBaseSourceImage}"
     saveHostImageTarball "${seedRouterSourceImage}"
-    saveHostImageTarball "${seedBaseHashImage}"
-    saveHostImageTarball "${seedRouterHashImage}"
+
+    echo "  hash tags prepared locally, not saved into image-cache:"
+    echo "    ${seedBaseHashImage}"
+    echo "    ${seedRouterHashImage}"
 }
 
 main() {
@@ -389,9 +294,6 @@ main() {
     requireCommand qemu-img
 
     eval "$(python3 "${HELPER}" "${CONFIG_PATH}" kvm-vars)"
-    if [ -n "${seedemuHostImageCacheDir:-}" ]; then
-        HOST_IMAGE_CACHE_DIR="${seedemuHostImageCacheDir}"
-    fi
     resolveSeedEmulatorDockerDir
 
     echo "Preparing setup assets using config: ${CONFIG_PATH}"
