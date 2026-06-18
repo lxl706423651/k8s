@@ -174,6 +174,18 @@ PY
     rm -f "${tmp_nodes}"
 }
 
+cleanupNetwork() {
+    # Destroy and undefine the libvirt network that belongs to this KVM state.
+    # Leaving it active keeps the NAT bridge and DHCP leases around, which can
+    # block the next experiment because all B62 worker-count variants reuse the
+    # same management CIDR.
+    if virsh net-info "${kvmNetwork}" >/dev/null 2>&1; then
+        echo "Cleaning KVM network ${kvmNetwork}"
+        virsh net-destroy "${kvmNetwork}" >/dev/null 2>&1 || true
+        virsh net-undefine "${kvmNetwork}" >/dev/null 2>&1 || true
+    fi
+}
+
 cleanupSetupOutputs() {
     echo "Cleaning stale setup outputs matching: ${setupOutputGlob}"
     rm -f ${setupOutputGlob}
@@ -207,7 +219,7 @@ verifyClean() {
             failed=1
         fi
 
-        if virsh net-dhcp-leases "${kvmNetwork}" 2>/dev/null \
+        if virsh net-info "${kvmNetwork}" >/dev/null 2>&1 && virsh net-dhcp-leases "${kvmNetwork}" 2>/dev/null \
             | awk -v name="${name}" -v ip="${ip}/24" -v mac="$(printf '%s' "${mac}" | tr '[:upper:]' '[:lower:]')" '
                 NR > 2 {
                     row = tolower($0)
@@ -221,6 +233,11 @@ verifyClean() {
             failed=1
         fi
     done < "${VERIFY_NODES_TSV}"
+
+    if virsh net-info "${kvmNetwork}" >/dev/null 2>&1; then
+        echo "Residual KVM network: ${kvmNetwork}" >&2
+        failed=1
+    fi
 
     if [ -e "${CONFIG_PATH}" ]; then
         echo "Residual KVM state: ${CONFIG_PATH}" >&2
@@ -258,6 +275,7 @@ main() {
     printPlan
     cleanupDomainsReservationsAndFiles
     cleanupDnsmasqStaleLeases
+    cleanupNetwork
     cleanupSetupOutputs
     verifyClean
 }

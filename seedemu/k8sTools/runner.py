@@ -79,6 +79,24 @@ def inferImageRegistryPrefix(output_dir: Path) -> str:
     return "seedemu"
 
 
+def resolveCompiledManifest(output_dir: Path) -> Path:
+    """Return the workload manifest implied by compiler networking metadata."""
+    metadata_path = output_dir / "networking.yaml"
+    default_manifest = output_dir / "k8s.yaml"
+    kube_ovn_manifest = output_dir / "k8s.kube-ovn.yaml"
+    if metadata_path.exists():
+        metadata = loadYaml(metadata_path)
+        cni_type = str(metadata.get("cniType") or "").strip().lower().replace("_", "-")
+        backend = str(metadata.get("networkBackend") or "").strip().lower().replace("_", "-")
+        value = cni_type or backend
+        if value in {"kube-ovn", "ovn"} and kube_ovn_manifest.exists():
+            return kube_ovn_manifest
+        return default_manifest
+    if kube_ovn_manifest.exists():
+        return kube_ovn_manifest
+    return default_manifest
+
+
 def buildCluster(
     input_config: str | Path,
     config_k3s: str | Path,
@@ -180,9 +198,7 @@ def cleanWorkload(output_dir: str | Path, kubeconfig: str | Path, *, keep_temp: 
         running_dir = copyTree("running", root / "running", overwrite=True)
         chmodScripts(running_dir)
         helper = running_dir / "manageK8sManifest.py"
-        manifest = output_path / "k8s.kube-ovn.yaml"
-        if not manifest.exists():
-            manifest = output_path / "k8s.yaml"
+        manifest = resolveCompiledManifest(output_path)
         namespace = subprocess.check_output(
             ["python3", str(helper), "namespace", "--manifest", str(manifest)],
             text=True,

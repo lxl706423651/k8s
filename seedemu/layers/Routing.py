@@ -4,6 +4,7 @@ from seedemu.core import (ScopedRegistry, Node, Interface, Network, Emulator,
 from seedemu.core.enums import NetworkType
 from typing import Dict, List, Set, Tuple
 from ipaddress import IPv4Network
+import random
 from ._bgp_metadata import (
     BGP_EXPORT_LOCAL_AND_CUSTOMER,
     BGP_BACKEND_BIRD,
@@ -289,6 +290,16 @@ class Routing(Layer):
         rnode.appendStartCommand("chmod +x /frr_start")
         rnode.appendStartCommand("/frr_start")
 
+    def _install_bird_kernel_conf(self, rnode: Router):
+        """Install the staged BIRD kernel protocol file used by phased starts."""
+        content = '\ninclude "/etc/bird/conf/*.conf";\n'
+        rnode.appendFile('/etc/bird/bird.conf', content)
+        interval = 60000 + random.randint(0, 12000)
+        rnode.setFile(
+            "/etc/bird/conf/kernel.conf",
+            RoutingFileTemplates["kernel1"].format(interval=interval),
+        )
+
     def _render_bird_ospf(self, rnode: Router):
         intents = get_ospf_interface_intents(rnode)
         if not intents["active"] and not intents["passive"]:
@@ -522,12 +533,14 @@ class Routing(Layer):
                 assert issubclass(obj.__class__, Router), 'routing: render: adding new RS/Router after routing layer configured is not currently supported.'
 
             if type == 'rs':
+                self._install_bird_kernel_conf(obj)
                 self._render_bird_control_plane(obj)
 
             if type == 'rnode':
                 rnode: Router = obj
                 backend = get_bgp_backend(rnode)
                 if backend == BGP_BACKEND_BIRD:
+                    self._install_bird_kernel_conf(rnode)
                     self._render_bird_control_plane(rnode)
                 else:
                     self._render_frr_control_plane(rnode)

@@ -194,6 +194,19 @@
       args:
         executable: /bin/bash
 
+    - name: Ensure K3s image import directory exists on master
+      file:
+        path: /var/lib/rancher/k3s/agent/images
+        state: directory
+        mode: "0755"
+
+    - name: Preload Multus bootstrap image tar on master
+      copy:
+        src: "{{ seed_multus_bootstrap_tar }}"
+        dest: /var/lib/rancher/k3s/agent/images/seedemu-multus-bootstrap.tar
+        mode: "0600"
+      when: seed_multus_bootstrap_tar is defined and seed_multus_bootstrap_tar | length > 0
+
     - name: Get K3s token
       shell: cat /var/lib/rancher/k3s/server/node-token
       register: k3s_token
@@ -561,6 +574,19 @@
         mode: "0755"
       when: not k3s_agent_dir.stat.exists or seed_k3s_force_reinstall | bool
 
+    - name: Ensure K3s image import directory exists on worker
+      file:
+        path: /var/lib/rancher/k3s/agent/images
+        state: directory
+        mode: "0755"
+
+    - name: Preload Multus bootstrap image tar on worker
+      copy:
+        src: "{{ seed_multus_bootstrap_tar }}"
+        dest: /var/lib/rancher/k3s/agent/images/seedemu-multus-bootstrap.tar
+        mode: "0600"
+      when: seed_multus_bootstrap_tar is defined and seed_multus_bootstrap_tar | length > 0
+
     - name: Install K3s agent
       shell: |
         curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_DOWNLOAD=true \
@@ -570,7 +596,7 @@
           K3S_TOKEN={{ hostvars[groups['master'][0]]['k3s_server_token'] }} \
           sh -
       args:
-        creates: /var/lib/rancher/k3s/agent
+        creates: /etc/systemd/system/k3s-agent.service
 
     - name: Install CNI plugins required by Multus (macvlan/ipvlan/static)
       shell: |

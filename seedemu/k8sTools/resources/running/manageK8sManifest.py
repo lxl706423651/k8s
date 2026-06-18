@@ -80,6 +80,39 @@ def get_nested(data: dict[str, Any], path: str, default: Any = None) -> Any:
     return cur
 
 
+def normalizeNetworkValue(value: Any) -> str:
+    """Normalize a network backend or CNI value from YAML/env/compiler metadata."""
+    return str(value or "").strip().lower().replace("_", "-")
+
+
+def networkBackendForCni(value: Any) -> str:
+    """Return the running backend implied by a compiler CNI value."""
+    normalized = normalizeNetworkValue(value)
+    if normalized in {"kube-ovn", "ovn"}:
+        return "kube-ovn"
+    return normalized or "macvlan"
+
+
+def loadCompileNetworking(output_dir: Path) -> dict[str, Any]:
+    """Read output/networking.yaml written by the compiler, if present."""
+    metadata_path = output_dir / "networking.yaml"
+    if not metadata_path.exists():
+        return {}
+    data = yaml.safe_load(metadata_path.read_text(encoding="utf-8")) or {}
+    return data if isinstance(data, dict) else {}
+
+
+def resolveCompileNetworkBackend(compile_networking: dict[str, Any], fallback: str) -> str:
+    """Resolve running backend, giving compile-time CNI metadata priority."""
+    cni_type = normalizeNetworkValue(compile_networking.get("cniType"))
+    network_backend = normalizeNetworkValue(compile_networking.get("networkBackend"))
+    if cni_type:
+        return networkBackendForCni(cni_type)
+    if network_backend:
+        return networkBackendForCni(network_backend)
+    return networkBackendForCni(fallback)
+
+
 def normalizeRole(role: Any) -> str:
     """Normalize a configK3s.yaml node role for master-node detection.
 
@@ -259,8 +292,10 @@ def running_context(config_path: str) -> dict[str, str]:
     cluster_name = str(setup.get("clusterName") or setup.get("cluster_name") or "seedemu-k3s")
     registry_host = resolveRegistryHost(setup, master_node)
     registry_port = str(get_nested(setup, "registry.port", "5000"))
-    fabric_type = str(get_nested(setup, "fabric.type", "none")).strip().lower()
-    network_backend = "kube-ovn" if fabric_type in {"ovn", "kube-ovn"} else "macvlan"
+    fabric_type = normalizeNetworkValue(get_nested(setup, "fabric.type", "none"))
+    compile_networking = loadCompileNetworking(output_dir)
+    default_network_backend = "kube-ovn" if fabric_type in {"ovn", "kube-ovn"} else "macvlan"
+    network_backend = resolveCompileNetworkBackend(compile_networking, default_network_backend)
     manifest_path = resolveManifestPath(running, output_dir, network_backend)
     default_cni_master = (
         str(get_nested(setup, "fabric.bridgeName", "br-seedemu"))
@@ -270,15 +305,22 @@ def running_context(config_path: str) -> dict[str, str]:
     attached_cni_type = str(
         get_nested(
             setup,
-            "cni.localLinkCniType",
-            get_nested(setup, "fabric.attachedCniType", os.environ.get("SEED_LOCAL_LINK_CNI_TYPE", "kube-ovn")),
+            "cni.attachedCniType",
+            get_nested(
+                setup,
+                "cni.localLinkCniType",
+                get_nested(setup, "fabric.attachedCniType", os.environ.get("SEED_LOCAL_LINK_CNI_TYPE", "kube-ovn")),
+            ),
         )
     )
+    compile_cni_type = normalizeNetworkValue(compile_networking.get("cniType"))
+    if compile_cni_type and network_backend != "kube-ovn":
+        attached_cni_type = compile_cni_type
     return {
         "setupConfig": str(setup_config_path),
         "outputDir": str(output_dir),
         "manifest": str(manifest_path),
-        "imagesYaml": str(resolveImagesPath(output_dir)),
+        "imagesYaml": str(output_dir / "images.yaml"),
         "kustomization": str(output_dir / "kustomization.yaml"),
         "imageRegistryPrefix": str(running.get("imageRegistryPrefix") or "seedemu"),
         "registryPrefix": f"{registry_host}:{registry_port}",
@@ -327,18 +369,6 @@ def resolveManifestPath(running: dict[str, Any], output_dir: Path, network_backe
     if network_backend in {"kube-ovn", "ovn"} and kube_ovn_manifest.exists():
         return kube_ovn_manifest
     return default_manifest
-
-
-def resolveImagesPath(output_dir: Path) -> Path:
-    """Return the generated image metadata file for the compile output.
-
-    Args:
-        output_dir: Compile output directory.
-    """
-    images_yaml = output_dir / "images.yaml"
-    if images_yaml.exists():
-        return images_yaml
-    return output_dir / "images.txt"
 
 
 def config_value(args: argparse.Namespace) -> None:
@@ -391,48 +421,8 @@ def strip_prefix(image: str, prefix: str) -> str:
 
 
 def load_images(path: str) -> list[dict[str, str]]:
-    """Load image metadata from images.yaml or legacy images.txt.
-
-    Args:
-        path: Compiler image metadata file.
-    """
-    image_path = Path(path)
-    text = image_path.read_text(encoding="utf-8")
-    if image_path.name == "images.txt":
-        return imagesFromText(text)
-    data = yaml.safe_load(text) or {}
-    if isinstance(data, dict):
-        images = data.get("images", [])
-        if isinstance(images, list):
-            return images
-    return imagesFromText(text)
-
-
-def imagesFromText(text: str) -> list[dict[str, str]]:
-    """Parse one-image-reference-per-line metadata from KubernetesCompiler.
-
-    Args:
-        text: Contents of images.txt.
-    """
-    images: list[dict[str, str]] = []
-    for line in text.splitlines():
-        image = line.strip()
-        if not image or image.startswith("#"):
-            continue
-        images.append({"name": image, "context": contextFromImage(image)})
-    return images
-
-
-def contextFromImage(image: str) -> str:
-    """Infer a Docker build context directory from an image reference.
-
-    Args:
-        image: Full image reference generated by the compiler.
-    """
-    repo = image.rsplit("/", 1)[-1]
-    if ":" in repo:
-        repo = repo.rsplit(":", 1)[0]
-    return repo
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    return data.get("images", [])
 
 
 def mapped_images(args: argparse.Namespace) -> None:
@@ -466,7 +456,7 @@ def render_kustomization(args: argparse.Namespace) -> None:
         images.append({"name": logical_repo, "newName": f"{registry}/{repo}", "newTag": tag})
     output_path = Path(args.output)
     manifest_path = Path(args.manifest)
-    network_backend = str(args.network_backend or "macvlan").strip().lower()
+    network_backend = normalizeNetworkValue(args.network_backend or "macvlan")
     if network_backend in {"kube-ovn", "ovn"}:
         rendered_manifest = output_path.parent / "k8s.kube-ovn.yaml"
         if manifest_path.resolve() != rendered_manifest.resolve():
@@ -478,7 +468,7 @@ def render_kustomization(args: argparse.Namespace) -> None:
             )
         payload = {"resources": [rendered_manifest.name], "images": images}
     else:
-        payload = {"resources": namespaceResources(manifest_path, output_path.parent) + ["k8s.yaml"], "images": images}
+        payload = {"resources": [manifest_path.name], "images": images}
         patches = networkAttachmentPatches(args.manifest, args.cni_master_interface)
         if patches:
             payload["patches"] = patches
@@ -507,25 +497,27 @@ def renderKubeOvnManifest(
     output. In macvlan mode, Kube-OVN acts as the centralized IPAM plugin and
     avoids creating thousands of OVN logical switches/routes for scale tests.
     """
-    docs = loadManifestDocs(Path(manifest_path))
+    with open(manifest_path, "r", encoding="utf-8") as fh:
+        docs = [doc for doc in yaml.safe_load_all(fh) if isinstance(doc, dict)]
 
     namespace_name = findNamespaceName(docs)
     attached_cni = resolveAttachedCniType(attached_cni_type)
     use_ovn_attached = isKubeOvnAttachedCni(attached_cni)
-    vpc_name = kubeOvnResourceName("vpc", namespace_name)
+    # Macvlan mode still renders Kube-OVN Subnet resources for IPAM, but those
+    # Subnets do not attach to a Kube-OVN VPC. Keep one placeholder name so the
+    # shared NAD conversion path can run without requiring a shard list.
+    vpc_names = kubeOvnVpcNames(namespace_name) if use_ovn_attached else [kubeOvnResourceName("vpc", namespace_name)]
     rendered: list[dict[str, Any]] = []
     vpc_written = False
-    namespace_written = any(doc.get("kind") == "Namespace" for doc in docs)
-    if not namespace_written:
-        rendered.append(namespaceResource(namespace_name))
 
     for doc in docs:
         if use_ovn_attached and doc.get("kind") == "Namespace" and not vpc_written:
             rendered.append(doc)
-            rendered.append(kubeOvnVpc(namespace_name, vpc_name))
+            rendered.extend(kubeOvnVpc(namespace_name, item) for item in vpc_names)
             vpc_written = True
             continue
         if doc.get("kind") == "NetworkAttachmentDefinition":
+            vpc_name = selectKubeOvnVpcName(doc, namespace_name, vpc_names) if use_ovn_attached else vpc_names[0]
             converted = convertNetworkAttachmentToKubeOvn(
                 doc,
                 namespace_name,
@@ -539,31 +531,9 @@ def renderKubeOvnManifest(
         rendered.append(doc)
 
     if use_ovn_attached and not vpc_written:
-        insert_at = 1 if rendered and rendered[0].get("kind") == "Namespace" else 0
-        rendered.insert(insert_at, kubeOvnVpc(namespace_name, vpc_name))
+        rendered[0:0] = [kubeOvnVpc(namespace_name, item) for item in vpc_names]
 
     output_path.write_text(yaml.safe_dump_all(rendered, sort_keys=False), encoding="utf-8")
-
-
-def namespaceResource(namespace_name: str) -> dict[str, Any]:
-    """Return a Kubernetes Namespace resource for compiler outputs without one."""
-    return {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": namespace_name}}
-
-
-def namespaceResources(manifest_path: Path, output_dir: Path) -> list[str]:
-    """Write namespace.yaml when the manifest lacks an explicit Namespace.
-
-    Args:
-        manifest_path: Source manifest path.
-        output_dir: Directory that will contain kustomization.yaml.
-    """
-    docs = loadManifestDocs(manifest_path)
-    if any(doc.get("kind") == "Namespace" for doc in docs):
-        return []
-    namespace_name = findNamespaceName(docs)
-    namespace_path = output_dir / "namespace.yaml"
-    namespace_path.write_text(yaml.safe_dump(namespaceResource(namespace_name), sort_keys=False), encoding="utf-8")
-    return [namespace_path.name]
 
 
 def resolveAttachedCniType(attached_cni_type: str | None = None) -> str:
@@ -575,16 +545,6 @@ def resolveAttachedCniType(attached_cni_type: str | None = None) -> str:
         or "kube-ovn"
     )
     return str(value).strip().lower().replace("_", "-")
-
-
-def loadManifestDocs(manifest_path: Path) -> list[dict[str, Any]]:
-    """Load Kubernetes documents from a manifest path.
-
-    Args:
-        manifest_path: YAML manifest path.
-    """
-    with open(manifest_path, "r", encoding="utf-8") as fh:
-        return [doc for doc in yaml.safe_load_all(fh) if isinstance(doc, dict)]
 
 
 def isKubeOvnAttachedCni(attached_cni_type: str) -> bool:
@@ -615,13 +575,55 @@ def kubeOvnResourceName(prefix: str, value: str) -> str:
     return base[:63].rstrip("-")
 
 
+def kubeOvnVpcShardCount() -> int:
+    """Return the configured number of VPC shards for Kube-OVN attached mode.
+
+    The renderer keeps one VPC by default. Setting
+    ``SEED_KUBE_OVN_VPC_SHARDS`` above 1 spreads Subnets across multiple VPCs
+    so one logical router does not receive every static route mutation.
+    """
+    raw = os.environ.get("SEED_KUBE_OVN_VPC_SHARDS", "1").strip() or "1"
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise SystemExit(f"SEED_KUBE_OVN_VPC_SHARDS must be an integer, got {raw!r}") from exc
+    if value < 1:
+        raise SystemExit("SEED_KUBE_OVN_VPC_SHARDS must be >= 1")
+    return value
+
+
+def kubeOvnVpcNames(namespace_name: str) -> list[str]:
+    """Return VPC names for this namespace and shard count."""
+    count = kubeOvnVpcShardCount()
+    if count == 1:
+        return [kubeOvnResourceName("vpc", namespace_name)]
+    return [kubeOvnResourceName("vpc", f"{namespace_name}-shard-{index}") for index in range(count)]
+
+
+def selectKubeOvnVpcName(doc: dict[str, Any], default_namespace: str, vpc_names: list[str]) -> str:
+    """Return the VPC shard for one NetworkAttachmentDefinition document."""
+    if not vpc_names:
+        raise SystemExit("internal error: Kube-OVN VPC shard list is empty")
+    if len(vpc_names) == 1:
+        return vpc_names[0]
+    metadata = doc.get("metadata") or {}
+    namespace_name = str(metadata.get("namespace") or default_namespace)
+    nad_name = str(metadata.get("name") or "")
+    key = f"{namespace_name}/{nad_name}"
+    digest = hashlib.sha1(key.encode("utf-8")).hexdigest()
+    return vpc_names[int(digest[:8], 16) % len(vpc_names)]
+
+
 def kubeOvnVpc(namespace_name: str, vpc_name: str) -> dict[str, Any]:
     """Return a Kube-OVN Vpc that isolates one SeedEMU namespace."""
+    spec: dict[str, Any] = {}
+    if kubeOvnVpcShardCount() == 1:
+        spec["namespaces"] = [namespace_name]
     return {
         "apiVersion": "kubeovn.io/v1",
         "kind": "Vpc",
         "metadata": {"name": vpc_name},
-        "spec": {"namespaces": [namespace_name]},
+        "spec": spec,
     }
 
 
@@ -670,6 +672,8 @@ def convertNetworkAttachmentToKubeOvn(
     if use_ovn_attached:
         subnet["spec"]["vpc"] = vpc_name
         subnet["spec"]["gatewayType"] = "distributed"
+        subnet["spec"]["disableInterConnection"] = True
+        subnet["spec"]["disableGatewayCheck"] = True
 
     converted = dict(doc)
     converted["spec"] = {"config": renderConvertedNadConfig(doc, provider, attached_cni_type, cni_master_interface)}
@@ -912,7 +916,14 @@ def deployment_names(args: argparse.Namespace) -> None:
 
 
 def namespace(args: argparse.Namespace) -> None:
-    print(findNamespaceName(loadManifestDocs(Path(args.manifest))))
+    with open(args.manifest, "r", encoding="utf-8") as fh:
+        for doc in yaml.safe_load_all(fh):
+            if isinstance(doc, dict) and doc.get("kind") == "Namespace":
+                name = (doc.get("metadata") or {}).get("name")
+                if name:
+                    print(name)
+                    return
+    raise SystemExit(f"No Namespace object found in {args.manifest}")
 
 
 def validate_manifest(args: argparse.Namespace) -> None:
