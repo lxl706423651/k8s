@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -70,6 +71,34 @@ def kvmSettings(config: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def extraNetworkSettings(config: dict[str, Any]) -> list[dict[str, str]]:
+    """Return L2-only libvirt networks used by additional macvlan trunks."""
+    kvm = config.get("kvm") if isinstance(config.get("kvm"), dict) else {}
+    raw = kvm.get("extraNetworks") or kvm.get("extra_networks") or []
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise SystemExit("kvm.extraNetworks must be a list")
+    out: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise SystemExit(f"kvm.extraNetworks[{index}] must be a mapping")
+        network = str(item.get("name") or item.get("network") or "").strip()
+        if not network:
+            raise SystemExit(f"kvm.extraNetworks[{index}] requires name or network")
+        if network in seen:
+            raise SystemExit(f"duplicate kvm.extraNetworks network: {network}")
+        seen.add(network)
+        out.append(
+            {
+                "network": network,
+                "bridge": str(item.get("bridge") or network).strip(),
+            }
+        )
+    return out
+
+
 def nodes(config: dict[str, Any]) -> list[dict[str, str]]:
     """Return explicit node reservation records."""
     values = config.get("nodes") or []
@@ -93,6 +122,45 @@ def netXml(network: str) -> ET.Element:
     """Return parsed libvirt network XML."""
     result = run(["virsh", "-c", "qemu:///system", "net-dumpxml", network])
     return ET.fromstring(result.stdout)
+
+
+def siblingNetworkPrefix(network: str) -> str:
+    """Return the worker-count-independent network prefix."""
+    match = re.match(r"^(.*-w)\d+$", network)
+    if match:
+        return match.group(1)
+    return network
+
+
+def cleanupSiblingNetworks(network: str, bridge: str) -> None:
+    """Remove stale b62 libvirt networks left by another worker-count run."""
+    prefix = siblingNetworkPrefix(network)
+    if prefix == network:
+        return
+    result = run(["virsh", "-c", "qemu:///system", "net-list", "--all", "--name"], check=False)
+    if result.returncode != 0:
+        return
+    for candidate in result.stdout.splitlines():
+        candidate = candidate.strip()
+        if not candidate or candidate == network or not candidate.startswith(prefix):
+            continue
+        print(f"cleanup stale sibling libvirt network: {candidate}", flush=True)
+        candidate_bridge = ""
+        xml = run(["virsh", "-c", "qemu:///system", "net-dumpxml", candidate], check=False)
+        if xml.returncode == 0 and xml.stdout:
+            try:
+                root = ET.fromstring(xml.stdout)
+                bridge_node = root.find("bridge")
+                if bridge_node is not None:
+                    candidate_bridge = str(bridge_node.get("name") or "")
+            except ET.ParseError:
+                candidate_bridge = ""
+        run(["virsh", "-c", "qemu:///system", "net-destroy", candidate], check=False)
+        run(["virsh", "-c", "qemu:///system", "net-undefine", candidate], check=False)
+        if candidate_bridge:
+            run(["ip", "link", "delete", candidate_bridge], check=False)
+    if bridge:
+        run(["ip", "link", "delete", bridge], check=False)
 
 
 def ensureNetwork(settings: dict[str, str]) -> None:
@@ -137,6 +205,50 @@ def ensureNetwork(settings: dict[str, str]) -> None:
     if not isActive(info.stdout):
         start = run(["virsh", "-c", "qemu:///system", "net-start", network], check=False)
         if start.returncode != 0:
+            if "Network is already in use by interface" in (start.stderr or ""):
+                cleanupSiblingNetworks(network, settings.get("bridge", ""))
+                start = run(["virsh", "-c", "qemu:///system", "net-start", network], check=False)
+            info = run(["virsh", "-c", "qemu:///system", "net-info", network], check=False)
+            if not isActive(info.stdout):
+                raise subprocess.CalledProcessError(start.returncode, start.args, output=start.stdout, stderr=start.stderr)
+
+
+def ensureLayer2Network(settings: dict[str, str]) -> None:
+    """Define and start an isolated libvirt bridge network for a trunk NIC."""
+    network = settings["network"]
+    bridge = settings["bridge"]
+
+    def isActive(info_stdout: str) -> bool:
+        for line in info_stdout.splitlines():
+            if line.strip().lower().startswith("active:"):
+                return line.split(":", 1)[1].strip().lower() == "yes"
+        return False
+
+    info = run(["virsh", "-c", "qemu:///system", "net-info", network], check=False)
+    if info.returncode != 0:
+        if not bridge:
+            raise SystemExit(f"extra libvirt network {network} requires bridge")
+        xml = f"""<network>
+  <name>{network}</name>
+  <bridge name='{bridge}' stp='off' delay='0'/>
+</network>
+"""
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".xml", delete=False) as handle:
+            handle.write(xml)
+            xml_path = handle.name
+        try:
+            run(["virsh", "-c", "qemu:///system", "net-define", xml_path])
+            run(["virsh", "-c", "qemu:///system", "net-autostart", network])
+        finally:
+            Path(xml_path).unlink(missing_ok=True)
+
+    info = run(["virsh", "-c", "qemu:///system", "net-info", network], check=False)
+    if not isActive(info.stdout):
+        start = run(["virsh", "-c", "qemu:///system", "net-start", network], check=False)
+        if start.returncode != 0:
+            if "Network is already in use by interface" in (start.stderr or ""):
+                cleanupSiblingNetworks(network, bridge)
+                start = run(["virsh", "-c", "qemu:///system", "net-start", network], check=False)
             info = run(["virsh", "-c", "qemu:///system", "net-info", network], check=False)
             if not isActive(info.stdout):
                 raise subprocess.CalledProcessError(start.returncode, start.args, output=start.stdout, stderr=start.stderr)
@@ -219,6 +331,8 @@ def main() -> int:
     config = loadConfig(args.config)
     settings = kvmSettings(config)
     ensureNetwork(settings)
+    for extra in extraNetworkSettings(config):
+        ensureLayer2Network(extra)
     network = networkName(config)
     records = nodes(config)
     root = netXml(network)

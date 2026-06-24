@@ -2,10 +2,10 @@
 # worker count, VM resources, and cluster addressing. Stage tuning parameters
 # are fixed directly in the corresponding stage scripts.
 experiment:
-  name: b62-scale-4954
+  name: b62-macvlan-vlan-4954
   topologySize: 4954
   workerCount: 5
-  namespace: seedemu-b62-4954
+  namespace: seedemu-b62-mvlan-vlan-4954
   sourceRoot: ../..
   topologyDir: ~/seed-emulator/topology
 
@@ -45,7 +45,7 @@ kvm:
 
 k3s:
   version: v1.29.15+k3s1
-  clusterCidr: 10.42.0.0/16
+  clusterCidr: 10.48.0.0/12
   serviceCidr: 10.43.0.0/16
   flannelBackend: host-gw
   nodeCidrMaskSizeIpv4: 20
@@ -66,29 +66,78 @@ seedemu:
 ovn:
   helmCacheDir: base_image/helm
   iface: ens2
-  northdThreads: 4
-  controllerWorkerNum: 12
-  controllerRequestCpu: 1000m
-  controllerLimitCpu: "4"
-  controllerRequestMemory: 512Mi
-  controllerLimitMemory: 2Gi
-  centralRequestCpu: 1000m
-  centralLimitCpu: "6"
-  centralRequestMemory: 1Gi
-  centralLimitMemory: 8Gi
-  ovsRequestCpu: 1000m
-  ovsLimitCpu: "6"
-  ovsRequestMemory: 2Gi
-  ovsLimitMemory: 8Gi
-  cniRequestCpu: 500m
-  cniLimitCpu: "2"
-  cniRequestMemory: 512Mi
-  cniLimitMemory: 2Gi
-  cniOvsVsctlConcurrency: 5
+  northdThreads: 8
+  controllerWorkerNum: 24
+  controllerRequestCpu: 4000m
+  controllerLimitCpu: "16"
+  controllerRequestMemory: 2Gi
+  controllerLimitMemory: 8Gi
+  centralRequestCpu: 4000m
+  centralLimitCpu: "24"
+  centralRequestMemory: 4Gi
+  centralLimitMemory: 16Gi
+  ovsRequestCpu: 2000m
+  ovsLimitCpu: "12"
+  ovsRequestMemory: 4Gi
+  ovsLimitMemory: 16Gi
+  cniRequestCpu: 1000m
+  cniLimitCpu: "6"
+  cniRequestMemory: 1Gi
+  cniLimitMemory: 4Gi
+  cniOvsVsctlConcurrency: 1
+  cniOvsVsctlTimeoutSeconds: 180
+  interfaceReadyTimeoutSeconds: 0
+  chartVersion: v1.16.2
+  imageTag: v1.16.2-seed-ifskip
+  vpcShards: 4
 
 networking:
-  backend: kube-ovn
+  backend: macvlan
   cniType: macvlan
   cniMasterInterface: ens2
   localLinkCniType: macvlan
   attachedCniType: macvlan
+  macvlanVlanMode: true
+  macvlanVlanIdStart: 1
+  vlanTrunks:
+  - name: trunk0
+    masterInterface: ens2
+    vlanStart: 1
+    vlanEnd: 4094
+  - name: trunk1
+    masterInterface: ens3
+    vlanStart: 1
+    vlanEnd: 4094
+    networkPrefix: seedemu-b62-fabric1
+    bridgePrefix: virbrb62f1
+
+placement:
+  excludeControlPlane: false
+  nodePodReserve: 20
+
+deploy:
+  batchSize: 80
+  batchSleepSeconds: 0
+  subnetBatchSize: 100
+  subnetBatchSleepSeconds: 0
+  monitorInterval: 20
+  monitorEnabled: false
+  staticApplyMode: batch
+  controllerApplyMode: batch
+  warmupBatches: 12
+  warmupBatchSize: 1
+  postControllerApplySettleSeconds: 5
+  pressureCheckSeconds: 5
+  stabilizeTimeoutSeconds: 36000
+  maxPendingPods: 160
+  maxCreatingPods: 160
+  maxCreatingPodsPerNode: 40
+  maxNotReadyPods: 160
+  maxFailedPods: 10
+  requireAllNodesReady: true
+  waitKubeOvnSubnets: false
+  kubeOvnSubnetTimeoutSeconds: 36000
+  postSubnetCooldownSeconds: 0
+  nodeStreamObserveTimeoutSeconds: 120
+  nodeStreamMaxActivePerNode: 4
+  skipKubeOvnGatewayCheck: false

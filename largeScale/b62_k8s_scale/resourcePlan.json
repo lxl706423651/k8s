@@ -1,44 +1,392 @@
 {
   "master": {
     "diskGb": 80,
-    "memoryMb": 98304,
-    "vcpus": 48
+    "memoryMb": 131072,
+    "vcpus": 64
   },
   "total": {
     "diskGb": 80,
-    "memoryMb": 614400,
-    "vcpus": 300
+    "memoryMb": 819200,
+    "vcpus": 360
   },
   "workers": [
     {
       "diskGb": 80,
       "index": 1,
-      "memoryMb": 103220,
-      "vcpus": 51
+      "memoryMb": 10923,
+      "vcpus": 5
     },
     {
       "diskGb": 80,
       "index": 2,
-      "memoryMb": 103219,
-      "vcpus": 51
+      "memoryMb": 10923,
+      "vcpus": 5
     },
     {
       "diskGb": 80,
       "index": 3,
-      "memoryMb": 103219,
-      "vcpus": 50
+      "memoryMb": 10923,
+      "vcpus": 5
     },
     {
       "diskGb": 80,
       "index": 4,
-      "memoryMb": 103219,
-      "vcpus": 50
+      "memoryMb": 10923,
+      "vcpus": 5
     },
     {
       "diskGb": 80,
       "index": 5,
-      "memoryMb": 103219,
-      "vcpus": 50
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 6,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 7,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 8,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 9,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 10,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 11,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 12,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 13,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 14,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 15,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 16,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 17,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 18,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 19,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 20,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 21,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 22,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 23,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 24,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 25,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 26,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 27,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 28,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 29,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 30,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 31,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 32,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 33,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 34,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 35,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 36,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 37,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 38,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 39,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 40,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 41,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 42,
+      "memoryMb": 10923,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 43,
+      "memoryMb": 10922,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 44,
+      "memoryMb": 10922,
+      "vcpus": 5
+    },
+    {
+      "diskGb": 80,
+      "index": 45,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 46,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 47,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 48,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 49,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 50,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 51,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 52,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 53,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 54,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 55,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 56,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 57,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 58,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 59,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 60,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 61,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 62,
+      "memoryMb": 10922,
+      "vcpus": 4
+    },
+    {
+      "diskGb": 80,
+      "index": 63,
+      "memoryMb": 10922,
+      "vcpus": 4
     }
   ]
 }

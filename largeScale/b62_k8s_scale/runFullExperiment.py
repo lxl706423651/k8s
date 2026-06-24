@@ -283,7 +283,26 @@ def createRuntimeEnv(assignment_path: Path, assignment: dict[str, Any], run_dir:
     network_backend = str(getNested(assignment, "networking.backend", "kube-ovn")).strip().lower() or "kube-ovn"
     cni_type = str(getNested(assignment, "networking.cniType", "kube-ovn") or "kube-ovn").strip().lower()
     local_link_cni_type = str(getNested(assignment, "networking.localLinkCniType", cni_type) or cni_type).strip().lower()
-    attached_cni_type = str(getNested(assignment, "networking.attachedCniType", network_backend) or network_backend).strip().lower()
+    attached_cni_type = str(getNested(assignment, "networking.attachedCniType", local_link_cni_type) or local_link_cni_type).strip().lower()
+    vlan_capable_cni = cni_type.replace("_", "-") in {"macvlan", "ipvlan", "bridge"}
+    vlan_backend = network_backend.replace("_", "-") in {
+        "macvlan",
+        "macvlan-vlan",
+        "ipvlan",
+        "ipvlan-vlan",
+        "bridge",
+        "bridge-vlan",
+    }
+    macvlan_vlan_mode = getNested(assignment, "networking.macvlanVlanMode", None)
+    if isinstance(macvlan_vlan_mode, str):
+        macvlan_vlan_enabled = macvlan_vlan_mode.strip().lower() in {"true", "1", "yes", "on"}
+    elif macvlan_vlan_mode is None:
+        macvlan_vlan_enabled = vlan_backend and vlan_capable_cni
+    else:
+        macvlan_vlan_enabled = bool(macvlan_vlan_mode)
+    macvlan_vlan_start = int(getNested(assignment, "networking.macvlanVlanIdStart", 100) or 100)
+    vlan_trunks_raw = getNested(assignment, "networking.vlanTrunks", [])
+    vlan_trunks = vlan_trunks_raw if isinstance(vlan_trunks_raw, list) else []
 
     env = os.environ.copy()
     env.update(
@@ -318,6 +337,9 @@ def createRuntimeEnv(assignment_path: Path, assignment: dict[str, Any], run_dir:
             "SEED_LOCAL_LINK_CNI_TYPE": local_link_cni_type,
             "SEED_ATTACHED_CNI_TYPE": attached_cni_type,
             "SEED_CNI_MASTER_INTERFACE": str(getNested(assignment, "networking.cniMasterInterface", "ens2")),
+            "SEED_MACVLAN_VLAN_MODE": "1" if macvlan_vlan_enabled else "0",
+            "SEED_MACVLAN_VLAN_START": str(macvlan_vlan_start),
+            "SEED_MACVLAN_VLAN_TRUNKS_JSON": json.dumps(vlan_trunks, separators=(",", ":")),
         }
     )
     return env
@@ -341,6 +363,64 @@ def runStage(
         raise SystemExit(rc)
 
 
+def runNonBlockingStage(
+    name: str,
+    cmd: list[str],
+    *,
+    summary: dict[str, Any],
+    summary_path: Path,
+    log_path: Path,
+    env: dict[str, str] | None = None,
+) -> int:
+    """Run one diagnostic stage and continue even if it reports failure."""
+    rc = runCommand(name, cmd, cwd=SCRIPT_DIR, log_path=log_path, summary=summary, env=env, summary_path=summary_path)
+    if rc != 0:
+        failures = summary.setdefault("nonBlockingStageFailures", [])
+        if isinstance(failures, list):
+            failures.append({"name": name, "exitCode": rc, "log": str(log_path)})
+        writeJson(summary_path, summary)
+    return rc
+
+
+def recordTestSummary(
+    summary: dict[str, Any],
+    summary_path: Path,
+    run_dir: Path,
+    key: str,
+    filename: str,
+) -> None:
+    """Copy a verification JSON payload into the orchestrator summary."""
+    test_path = run_dir / filename
+    if not test_path.exists():
+        summary.setdefault("tests", {})[key] = {"success": False, "missing": str(test_path)}
+        writeJson(summary_path, summary)
+        return
+    summary.setdefault("tests", {})[key] = json.loads(test_path.read_text(encoding="utf-8"))
+    writeJson(summary_path, summary)
+
+
+def runVerificationStage(
+    name: str,
+    cmd: list[str],
+    *,
+    summary: dict[str, Any],
+    summary_path: Path,
+    log_path: Path,
+    env: dict[str, str] | None,
+    test_key: str,
+    test_filename: str,
+    run_dir: Path,
+) -> None:
+    """Run one required verification stage and always record its JSON summary."""
+    rc = runCommand(name, cmd, cwd=SCRIPT_DIR, log_path=log_path, summary=summary, env=env, summary_path=summary_path)
+    recordTestSummary(summary, summary_path, run_dir, test_key, test_filename)
+    if rc != 0:
+        summary["status"] = "FAIL"
+        summary["finishedAt"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        writeJson(summary_path, summary)
+        raise SystemExit(rc)
+
+
 def maybeDestroyExisting(summary: dict[str, Any], summary_path: Path, run_dir: Path, env: dict[str, str]) -> None:
     """Destroy the currently recorded cluster before building a fresh assignment cluster."""
     config = SCRIPT_DIR / "configK3s.yaml"
@@ -354,13 +434,15 @@ def maybeDestroyExisting(summary: dict[str, Any], summary_path: Path, run_dir: P
         })
         writeJson(summary_path, summary)
         return
+    destroy_env = dict(env)
+    destroy_env.setdefault("SEED_DESTROY_CLUSTER_TIMEOUT_SECONDS", "180")
     runStage(
         "destroy-existing-cluster",
-        ["python3", "k8sTools.py", "destroy", "-d", str(config), "--keep-temp"],
+        [str(SCRIPT_DIR / "destroyCluster.sh")],
         summary=summary,
         summary_path=summary_path,
         log_path=run_dir / "destroy-existing-cluster.log",
-        env=env,
+        env=destroy_env,
     )
 
 
@@ -399,11 +481,19 @@ def buildCluster(summary: dict[str, Any], summary_path: Path, run_dir: Path, env
         log_path=run_dir / "build-cluster.log",
         env=env,
     )
+    runStage(
+        "ensure-all-nodes-schedulable",
+        [str(SCRIPT_DIR / "ensureAllNodesSchedulable.sh"), str(run_dir)],
+        summary=summary,
+        summary_path=summary_path,
+        log_path=run_dir / "ensure-all-nodes-schedulable.orchestrator.log",
+        env=env,
+    )
 
 
 def runWorkloadStages(summary: dict[str, Any], summary_path: Path, run_dir: Path, env: dict[str, str]) -> None:
     """Run B62 workload stages on the built cluster."""
-    stages = [
+    required_before_bird = [
         ("clean", "clean.sh"),
         ("preflight", "preflight.sh"),
         ("compile", "compile.sh"),
@@ -411,9 +501,8 @@ def runWorkloadStages(summary: dict[str, Any], summary_path: Path, run_dir: Path
         ("deploy", "deploy.sh"),
         ("wait-ready", "wait-ready.sh"),
         ("start-bird", "start_bird.sh"),
-        ("start-kernel", "start_bird_kernel.sh"),
     ]
-    for name, script in stages:
+    for name, script in required_before_bird:
         runStage(
             name,
             [str(SCRIPT_DIR / script), str(run_dir)],
@@ -422,6 +511,47 @@ def runWorkloadStages(summary: dict[str, Any], summary_path: Path, run_dir: Path
             log_path=run_dir / f"{name}.orchestrator.log",
             env=env,
         )
+    runVerificationStage(
+        "verify-after-start-bird",
+        [str(SCRIPT_DIR / "verifyStartBird.sh"), str(run_dir)],
+        summary=summary,
+        summary_path=summary_path,
+        log_path=run_dir / "verify-after-start-bird.orchestrator.log",
+        env=env,
+        test_key="verify_after_start_bird",
+        test_filename="verify_after_start_bird_summary.json",
+        run_dir=run_dir,
+    )
+    runStage(
+        "start-kernel",
+        [str(SCRIPT_DIR / "start_bird_kernel.sh"), str(run_dir)],
+        summary=summary,
+        summary_path=summary_path,
+        log_path=run_dir / "start-kernel.orchestrator.log",
+        env=env,
+    )
+    runVerificationStage(
+        "verify-after-fib-write",
+        [str(SCRIPT_DIR / "verifyFibRoutes.sh"), str(run_dir)],
+        summary=summary,
+        summary_path=summary_path,
+        log_path=run_dir / "verify-after-fib-write.orchestrator.log",
+        env=env,
+        test_key="verify_after_fib_write",
+        test_filename="verify_after_fib_write_summary.json",
+        run_dir=run_dir,
+    )
+    runVerificationStage(
+        "reconvergence",
+        [str(SCRIPT_DIR / "runReconvergence.sh"), str(run_dir)],
+        summary=summary,
+        summary_path=summary_path,
+        log_path=run_dir / "reconvergence.orchestrator.log",
+        env=env,
+        test_key="reconvergence",
+        test_filename="reconvergence_summary.json",
+        run_dir=run_dir,
+    )
 
 
 def runBgpTest(summary: dict[str, Any], summary_path: Path, run_dir: Path, env: dict[str, str]) -> None:

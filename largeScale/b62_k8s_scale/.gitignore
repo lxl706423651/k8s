@@ -1,0 +1,23 @@
+# Runtime experiment artifacts.
+/runs/
+/base_image/
+/__pycache__/
+*.pyc
+
+# Generated cluster/runtime state. Keep local copies for the active cluster,
+# but do not publish them.
+/configK3s.yaml
+/configKvmOvn.yaml
+/kubeconfig.yaml
+/cluster.inventory.yaml
+/resourcePlan.yaml
+/resourcePlan.json
+
+# Local lifecycle markers.
+/.cluster-lifecycle.lock
+/.latest_run_dir
+/.latest_rebuild_compare_root
+
+# Ad-hoc logs or temporary outputs created while debugging stages.
+*.log
+*.tmp

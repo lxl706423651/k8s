@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -82,6 +83,94 @@ def boolValue(value: Any, *, default: bool = False) -> bool:
     return bool(value)
 
 
+def normalizeNetworkValue(value: Any) -> str:
+    """Normalize a network backend or CNI value from YAML."""
+    return str(value or "").strip().lower().replace("_", "-")
+
+
+def normalizeVlanTrunks(
+    assignment: dict[str, Any],
+    worker_count: int,
+    *,
+    default_master_interface: str,
+    default_vlan_start: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Return compiler trunks and extra KVM networks for macvlan VLAN mode.
+
+    Args:
+        assignment: Parsed assignment.yaml.
+        worker_count: Number used to suffix generated libvirt networks.
+        default_master_interface: Backward-compatible single-trunk interface.
+        default_vlan_start: Backward-compatible first VLAN ID.
+    """
+    raw = getNested(assignment, "networking.vlanTrunks", None)
+    if raw is None:
+        raw_items: list[dict[str, Any]] = [
+            {
+                "name": "trunk0",
+                "masterInterface": default_master_interface,
+                "vlanStart": default_vlan_start,
+                "vlanEnd": 4094,
+            }
+        ]
+    elif isinstance(raw, list):
+        raw_items = [item for item in raw if isinstance(item, dict)]
+    else:
+        raise SystemExit("networking.vlanTrunks must be a list of mappings")
+    if not raw_items:
+        raise SystemExit("networking.vlanTrunks cannot be empty when macvlan VLAN mode is enabled")
+
+    trunks: list[dict[str, Any]] = []
+    extra_networks: list[dict[str, str]] = []
+    seen_interfaces: set[str] = set()
+    seen_networks: set[str] = set()
+    for index, item in enumerate(raw_items):
+        name = str(item.get("name") or f"trunk{index}").strip()
+        master_interface = str(item.get("masterInterface") or item.get("master_interface") or "").strip()
+        if not master_interface:
+            raise SystemExit(f"networking.vlanTrunks[{index}] requires masterInterface")
+        if master_interface in seen_interfaces:
+            raise SystemExit(f"duplicate VLAN trunk masterInterface: {master_interface}")
+        seen_interfaces.add(master_interface)
+        vlan_start = int(item.get("vlanStart") or item.get("vlan_start") or default_vlan_start)
+        vlan_end = int(item.get("vlanEnd") or item.get("vlan_end") or 4094)
+        if vlan_start < 1 or vlan_end > 4094 or vlan_start > vlan_end:
+            raise SystemExit(
+                f"invalid VLAN range for trunk {name}: {vlan_start}..{vlan_end}; expected 1..4094"
+            )
+        trunks.append(
+            {
+                "name": name,
+                "masterInterface": master_interface,
+                "vlanStart": vlan_start,
+                "vlanEnd": vlan_end,
+            }
+        )
+
+        network = str(item.get("network") or "").strip()
+        network_prefix = str(item.get("networkPrefix") or item.get("network_prefix") or "").strip()
+        if not network and network_prefix:
+            network = f"{network_prefix}-w{worker_count}"
+        bridge = str(item.get("bridge") or "").strip()
+        bridge_prefix = str(item.get("bridgePrefix") or item.get("bridge_prefix") or "").strip()
+        if not bridge and bridge_prefix:
+            bridge = f"{bridge_prefix}w{worker_count}"
+        if network:
+            if network in seen_networks:
+                raise SystemExit(f"duplicate extra libvirt network in vlanTrunks: {network}")
+            seen_networks.add(network)
+            extra_networks.append(
+                {
+                    "name": network,
+                    "bridge": bridge or network,
+                    "model": str(item.get("model") or "virtio"),
+                    "trunk": name,
+                    "masterInterface": master_interface,
+                }
+            )
+    return trunks, extra_networks
+
+
 def giBToMiB(value: Any) -> int:
     """Convert a GiB YAML number to MiB."""
     if value is None:
@@ -96,6 +185,39 @@ def distributeTotal(total: int, count: int) -> list[int]:
     base = total // count
     remainder = total % count
     return [base + (1 if index < remainder else 0) for index in range(count)]
+
+
+def validateK3sPodCidrCapacity(assignment: dict[str, Any], worker_count: int) -> None:
+    """Validate that the K3s pod CIDR can allocate one node CIDR per VM."""
+    cluster_text = str(getNested(assignment, "k3s.clusterCidr"))
+    service_text = str(getNested(assignment, "k3s.serviceCidr"))
+    mask = int(getNested(assignment, "k3s.nodeCidrMaskSizeIpv4"))
+    max_pods = int(getNested(assignment, "k3s.maxPods"))
+    required_nodes = worker_count + 1
+    try:
+        cluster = ipaddress.ip_network(cluster_text, strict=False)
+        service = ipaddress.ip_network(service_text, strict=False)
+    except ValueError as exc:
+        raise SystemExit(f"invalid k3s CIDR setting: {exc}") from exc
+    if cluster.version != 4 or service.version != 4:
+        raise SystemExit("k3s.clusterCidr and k3s.serviceCidr must be IPv4 networks")
+    if cluster.overlaps(service):
+        raise SystemExit(f"k3s.clusterCidr {cluster} overlaps k3s.serviceCidr {service}")
+    if mask < cluster.prefixlen:
+        raise SystemExit(f"k3s.nodeCidrMaskSizeIpv4 /{mask} is larger than cluster CIDR {cluster}")
+    node_cidr_count = 1 << (mask - cluster.prefixlen)
+    if node_cidr_count < required_nodes:
+        raise SystemExit(
+            "k3s.clusterCidr cannot allocate enough per-node PodCIDRs: "
+            f"{cluster} with /{mask} gives {node_cidr_count} nodes, "
+            f"but workerCount={worker_count} requires {required_nodes} including master"
+        )
+    usable_per_node = max(0, (1 << (32 - mask)) - 2)
+    if max_pods > usable_per_node:
+        raise SystemExit(
+            f"k3s.maxPods={max_pods} exceeds usable addresses per /{mask} node CIDR "
+            f"({usable_per_node}); increase nodeCidrMaskSizeIpv4 capacity or lower maxPods"
+        )
 
 
 def resolveDataRoot(worker_count: int) -> Path:
@@ -203,10 +325,36 @@ def createGeneratedPaths(assignment: dict[str, Any], run_dir: Path) -> dict[str,
 def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, Path], plan: dict[str, Any]) -> dict[str, Any]:
     """Create the kvmOvn YAML consumed by k8sTools.py build."""
     worker_count = int(getNested(assignment, "experiment.workerCount"))
+    validateK3sPodCidrCapacity(assignment, worker_count)
     cluster_name = f"{getNested(assignment, 'kvm.clusterNamePrefix')}-w{worker_count}"
     registry_port = int(getNested(assignment, "registry.port", 5000))
-    local_link_cni_type = str(getNested(assignment, "networking.localLinkCniType", "kube-ovn"))
+    network_backend = normalizeNetworkValue(getNested(assignment, "networking.backend", "kube-ovn"))
+    cni_type = normalizeNetworkValue(getNested(assignment, "networking.cniType", "kube-ovn"))
+    local_link_cni_type = normalizeNetworkValue(getNested(assignment, "networking.localLinkCniType", cni_type))
+    attached_cni_type = normalizeNetworkValue(getNested(assignment, "networking.attachedCniType", local_link_cni_type))
     cni_master_interface = str(getNested(assignment, "networking.cniMasterInterface", "ens2"))
+    vlan_capable_cni = cni_type in {"macvlan", "ipvlan", "bridge"}
+    vlan_backend = network_backend in {"macvlan", "macvlan-vlan", "ipvlan", "ipvlan-vlan", "bridge", "bridge-vlan"}
+    macvlan_vlan_mode = boolValue(
+        getNested(assignment, "networking.macvlanVlanMode", None),
+        default=(vlan_backend and vlan_capable_cni),
+    )
+    macvlan_vlan_start = int(getNested(assignment, "networking.macvlanVlanIdStart", 100) or 100)
+    vlan_trunks: list[dict[str, Any]] = []
+    extra_networks: list[dict[str, str]] = []
+    if vlan_capable_cni and macvlan_vlan_mode:
+        vlan_trunks, extra_networks = normalizeVlanTrunks(
+            assignment,
+            worker_count,
+            default_master_interface=cni_master_interface,
+            default_vlan_start=macvlan_vlan_start,
+        )
+    if network_backend in {"kube-ovn", "ovn"}:
+        fabric_type = "ovn"
+    elif vlan_capable_cni and macvlan_vlan_mode:
+        fabric_type = f"{cni_type}-vlan"
+    else:
+        fabric_type = network_backend or "macvlan"
     legacy_base_image = str(getNested(assignment, "kvm.legacyBaseImagePath", "") or "")
     base_cache_dir = SCRIPT_DIR / "base_image"
     configured_base_image = str(
@@ -262,9 +410,11 @@ def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, 
             "user": str(getNested(assignment, "kvm.ssh.user")),
             "key": str(getNested(assignment, "kvm.ssh.key")),
         },
-        "fabric": {"type": "ovn"},
+        "fabric": {"type": fabric_type, "vlanTrunks": vlan_trunks} if vlan_trunks else {"type": fabric_type},
         "cni": {
+            "cniType": cni_type,
             "localLinkCniType": local_link_cni_type,
+            "attachedCniType": attached_cni_type,
             "defaultMasterInterface": cni_master_interface,
         },
         "registry": {"port": registry_port},
@@ -283,6 +433,10 @@ def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, 
             "tmpDir": str(run_dir / "setup-tmp"),
         },
     }
+    if extra_networks:
+        config["kvm"]["extraNetworks"] = extra_networks
+    if vlan_trunks:
+        config["cni"]["vlanTrunks"] = vlan_trunks
     config["seedemu"] = seedemu
     config["ovn"] = ovn
     return config

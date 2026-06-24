@@ -1,7 +1,7 @@
-clusterName: seedemu-b62-w5
+clusterName: seedemu-b62-w63
 runtime: k3s
 k3s:
-  clusterCidr: 10.42.0.0/16
+  clusterCidr: 10.48.0.0/12
   serviceCidr: 10.43.0.0/16
   flannelBackend: host-gw
   nodeCidrMaskSizeIpv4: 20
@@ -10,7 +10,7 @@ registry:
   host: 192.168.126.130
   port: 5000
 nodes:
-- name: seedemu-b62-master-w5
+- name: seedemu-b62-master-w63
   role: master
   managementIp: 192.168.126.130
   connection: ssh
@@ -18,12 +18,12 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 48
-    memoryMb: 98304
+    vcpus: 64
+    memoryMb: 131072
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-master-w5
-- name: seedemu-b62-worker1-w5
+    kubernetes.io/hostname: seedemu-b62-master-w63
+- name: seedemu-b62-worker1-w63
   role: worker
   managementIp: 192.168.126.131
   connection: ssh
@@ -31,12 +31,12 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 51
-    memoryMb: 103220
+    vcpus: 5
+    memoryMb: 10923
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-worker1-w5
-- name: seedemu-b62-worker2-w5
+    kubernetes.io/hostname: seedemu-b62-worker1-w63
+- name: seedemu-b62-worker2-w63
   role: worker
   managementIp: 192.168.126.132
   connection: ssh
@@ -44,12 +44,12 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 51
-    memoryMb: 103219
+    vcpus: 5
+    memoryMb: 10923
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-worker2-w5
-- name: seedemu-b62-worker3-w5
+    kubernetes.io/hostname: seedemu-b62-worker2-w63
+- name: seedemu-b62-worker3-w63
   role: worker
   managementIp: 192.168.126.133
   connection: ssh
@@ -57,12 +57,12 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 50
-    memoryMb: 103219
+    vcpus: 5
+    memoryMb: 10923
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-worker3-w5
-- name: seedemu-b62-worker4-w5
+    kubernetes.io/hostname: seedemu-b62-worker3-w63
+- name: seedemu-b62-worker4-w63
   role: worker
   managementIp: 192.168.126.134
   connection: ssh
@@ -70,12 +70,12 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 50
-    memoryMb: 103219
+    vcpus: 5
+    memoryMb: 10923
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-worker4-w5
-- name: seedemu-b62-worker5-w5
+    kubernetes.io/hostname: seedemu-b62-worker4-w63
+- name: seedemu-b62-worker5-w63
   role: worker
   managementIp: 192.168.126.135
   connection: ssh
@@ -83,8 +83,762 @@ nodes:
     user: ubuntu
     key: /home/lxl/.ssh/id_ed25519
   resources:
-    vcpus: 50
-    memoryMb: 103219
+    vcpus: 5
+    memoryMb: 10923
     diskGb: 80
   labels:
-    kubernetes.io/hostname: seedemu-b62-worker5-w5
+    kubernetes.io/hostname: seedemu-b62-worker5-w63
+- name: seedemu-b62-worker6-w63
+  role: worker
+  managementIp: 192.168.126.136
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker6-w63
+- name: seedemu-b62-worker7-w63
+  role: worker
+  managementIp: 192.168.126.137
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker7-w63
+- name: seedemu-b62-worker8-w63
+  role: worker
+  managementIp: 192.168.126.138
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker8-w63
+- name: seedemu-b62-worker9-w63
+  role: worker
+  managementIp: 192.168.126.139
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker9-w63
+- name: seedemu-b62-worker10-w63
+  role: worker
+  managementIp: 192.168.126.140
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker10-w63
+- name: seedemu-b62-worker11-w63
+  role: worker
+  managementIp: 192.168.126.141
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker11-w63
+- name: seedemu-b62-worker12-w63
+  role: worker
+  managementIp: 192.168.126.142
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker12-w63
+- name: seedemu-b62-worker13-w63
+  role: worker
+  managementIp: 192.168.126.143
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker13-w63
+- name: seedemu-b62-worker14-w63
+  role: worker
+  managementIp: 192.168.126.144
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker14-w63
+- name: seedemu-b62-worker15-w63
+  role: worker
+  managementIp: 192.168.126.145
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker15-w63
+- name: seedemu-b62-worker16-w63
+  role: worker
+  managementIp: 192.168.126.146
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker16-w63
+- name: seedemu-b62-worker17-w63
+  role: worker
+  managementIp: 192.168.126.147
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker17-w63
+- name: seedemu-b62-worker18-w63
+  role: worker
+  managementIp: 192.168.126.148
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker18-w63
+- name: seedemu-b62-worker19-w63
+  role: worker
+  managementIp: 192.168.126.149
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker19-w63
+- name: seedemu-b62-worker20-w63
+  role: worker
+  managementIp: 192.168.126.150
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker20-w63
+- name: seedemu-b62-worker21-w63
+  role: worker
+  managementIp: 192.168.126.151
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker21-w63
+- name: seedemu-b62-worker22-w63
+  role: worker
+  managementIp: 192.168.126.152
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker22-w63
+- name: seedemu-b62-worker23-w63
+  role: worker
+  managementIp: 192.168.126.153
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker23-w63
+- name: seedemu-b62-worker24-w63
+  role: worker
+  managementIp: 192.168.126.154
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker24-w63
+- name: seedemu-b62-worker25-w63
+  role: worker
+  managementIp: 192.168.126.155
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker25-w63
+- name: seedemu-b62-worker26-w63
+  role: worker
+  managementIp: 192.168.126.156
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker26-w63
+- name: seedemu-b62-worker27-w63
+  role: worker
+  managementIp: 192.168.126.157
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker27-w63
+- name: seedemu-b62-worker28-w63
+  role: worker
+  managementIp: 192.168.126.158
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker28-w63
+- name: seedemu-b62-worker29-w63
+  role: worker
+  managementIp: 192.168.126.159
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker29-w63
+- name: seedemu-b62-worker30-w63
+  role: worker
+  managementIp: 192.168.126.160
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker30-w63
+- name: seedemu-b62-worker31-w63
+  role: worker
+  managementIp: 192.168.126.161
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker31-w63
+- name: seedemu-b62-worker32-w63
+  role: worker
+  managementIp: 192.168.126.162
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker32-w63
+- name: seedemu-b62-worker33-w63
+  role: worker
+  managementIp: 192.168.126.163
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker33-w63
+- name: seedemu-b62-worker34-w63
+  role: worker
+  managementIp: 192.168.126.164
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker34-w63
+- name: seedemu-b62-worker35-w63
+  role: worker
+  managementIp: 192.168.126.165
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker35-w63
+- name: seedemu-b62-worker36-w63
+  role: worker
+  managementIp: 192.168.126.166
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker36-w63
+- name: seedemu-b62-worker37-w63
+  role: worker
+  managementIp: 192.168.126.167
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker37-w63
+- name: seedemu-b62-worker38-w63
+  role: worker
+  managementIp: 192.168.126.168
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker38-w63
+- name: seedemu-b62-worker39-w63
+  role: worker
+  managementIp: 192.168.126.169
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker39-w63
+- name: seedemu-b62-worker40-w63
+  role: worker
+  managementIp: 192.168.126.170
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker40-w63
+- name: seedemu-b62-worker41-w63
+  role: worker
+  managementIp: 192.168.126.171
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker41-w63
+- name: seedemu-b62-worker42-w63
+  role: worker
+  managementIp: 192.168.126.172
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10923
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker42-w63
+- name: seedemu-b62-worker43-w63
+  role: worker
+  managementIp: 192.168.126.173
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker43-w63
+- name: seedemu-b62-worker44-w63
+  role: worker
+  managementIp: 192.168.126.174
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 5
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker44-w63
+- name: seedemu-b62-worker45-w63
+  role: worker
+  managementIp: 192.168.126.175
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker45-w63
+- name: seedemu-b62-worker46-w63
+  role: worker
+  managementIp: 192.168.126.176
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker46-w63
+- name: seedemu-b62-worker47-w63
+  role: worker
+  managementIp: 192.168.126.177
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker47-w63
+- name: seedemu-b62-worker48-w63
+  role: worker
+  managementIp: 192.168.126.178
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker48-w63
+- name: seedemu-b62-worker49-w63
+  role: worker
+  managementIp: 192.168.126.179
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker49-w63
+- name: seedemu-b62-worker50-w63
+  role: worker
+  managementIp: 192.168.126.180
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker50-w63
+- name: seedemu-b62-worker51-w63
+  role: worker
+  managementIp: 192.168.126.181
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker51-w63
+- name: seedemu-b62-worker52-w63
+  role: worker
+  managementIp: 192.168.126.182
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker52-w63
+- name: seedemu-b62-worker53-w63
+  role: worker
+  managementIp: 192.168.126.183
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker53-w63
+- name: seedemu-b62-worker54-w63
+  role: worker
+  managementIp: 192.168.126.184
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker54-w63
+- name: seedemu-b62-worker55-w63
+  role: worker
+  managementIp: 192.168.126.185
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker55-w63
+- name: seedemu-b62-worker56-w63
+  role: worker
+  managementIp: 192.168.126.186
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker56-w63
+- name: seedemu-b62-worker57-w63
+  role: worker
+  managementIp: 192.168.126.187
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker57-w63
+- name: seedemu-b62-worker58-w63
+  role: worker
+  managementIp: 192.168.126.188
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker58-w63
+- name: seedemu-b62-worker59-w63
+  role: worker
+  managementIp: 192.168.126.189
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker59-w63
+- name: seedemu-b62-worker60-w63
+  role: worker
+  managementIp: 192.168.126.190
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker60-w63
+- name: seedemu-b62-worker61-w63
+  role: worker
+  managementIp: 192.168.126.191
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker61-w63
+- name: seedemu-b62-worker62-w63
+  role: worker
+  managementIp: 192.168.126.192
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker62-w63
+- name: seedemu-b62-worker63-w63
+  role: worker
+  managementIp: 192.168.126.193
+  connection: ssh
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+  resources:
+    vcpus: 4
+    memoryMb: 10922
+    diskGb: 80
+  labels:
+    kubernetes.io/hostname: seedemu-b62-worker63-w63

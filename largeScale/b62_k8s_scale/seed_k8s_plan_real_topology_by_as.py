@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Plan hard Kubernetes node placement for B62 real-topology AS groups.
+
+Inputs: topology metadata, assignment.pkl, a kubectl nodes JSON snapshot, and
+optional placement controls exported from assignment.yaml by lib.sh.
+Outputs: AS-to-nodeSelector mapping JSON and a placement plan JSON.
+Side effects: writes only the requested mapping/plan files.
+Context: called by compile.sh before KubernetesCompiler renders manifests.
+"""
 from __future__ import annotations
 
 import ast
@@ -29,10 +37,42 @@ def load_assignment(path: Path) -> dict:
     return data
 
 
-def ready_nodes(nodes_json: Path, pod_reserve: int) -> List[dict]:
+def bool_env(name: str, default: bool = False) -> bool:
+    """Return a boolean from common environment variable spellings."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def csv_env(name: str) -> Set[str]:
+    """Return a set from a comma-separated environment variable."""
+    value = os.environ.get(name, "")
+    return {item.strip() for item in value.split(",") if item.strip()}
+
+
+def is_control_plane_node(item: dict) -> bool:
+    """Return whether a Kubernetes node carries control-plane/master labels."""
+    labels = item.get("metadata", {}).get("labels", {}) or {}
+    return any(
+        key in labels
+        for key in (
+            "node-role.kubernetes.io/control-plane",
+            "node-role.kubernetes.io/master",
+        )
+    )
+
+
+def ready_nodes(nodes_json: Path, pod_reserve: int, exclude_control_plane: bool, exclude_nodes: Set[str]) -> List[dict]:
+    """Return Ready schedulable nodes that are eligible for workload placement."""
     data = json.loads(nodes_json.read_text(encoding="utf-8"))
     nodes = []
     for item in data.get("items", []):
+        name = str(item.get("metadata", {}).get("name", ""))
+        if name in exclude_nodes:
+            continue
+        if exclude_control_plane and is_control_plane_node(item):
+            continue
         conds = item.get("status", {}).get("conditions", []) or []
         ready = any(c.get("type") == "Ready" and c.get("status") == "True" for c in conds)
         if not ready:
@@ -46,7 +86,7 @@ def ready_nodes(nodes_json: Path, pod_reserve: int) -> List[dict]:
         else:
             allocatable_pods = int(raw_pods)
         nodes.append({
-            "name": str(item.get("metadata", {}).get("name", "")),
+            "name": name,
             "allocatable_pods": allocatable_pods,
             "effective_capacity": max(1, allocatable_pods - pod_reserve),
             "assigned_pods": 0,
@@ -121,12 +161,19 @@ def main() -> int:
     mapping_json = Path(sys.argv[4])
     plan_json = Path(sys.argv[5])
     pod_reserve = int(os.environ.get("SEED_NODE_POD_RESERVE", "20"))
+    exclude_control_plane = bool_env("SEED_PLACEMENT_EXCLUDE_CONTROL_PLANE", False)
+    exclude_nodes = csv_env("SEED_PLACEMENT_EXCLUDE_NODES")
 
     topo = load_topology(topology_file)
     assignment = load_assignment(assignment_file)
     counts = compute_as_pod_counts(topo, assignment)
-    nodes = ready_nodes(nodes_json, pod_reserve)
+    nodes = ready_nodes(nodes_json, pod_reserve, exclude_control_plane, exclude_nodes)
     mapping, plan = assign(counts, nodes)
+    plan["controls"] = {
+        "pod_reserve": pod_reserve,
+        "exclude_control_plane": exclude_control_plane,
+        "exclude_nodes": sorted(exclude_nodes),
+    }
 
     mapping_json.parent.mkdir(parents=True, exist_ok=True)
     mapping_json.write_text(json.dumps(mapping, indent=2), encoding="utf-8")

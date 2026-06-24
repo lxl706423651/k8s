@@ -19,7 +19,7 @@ OspfFileTemplates['ospf_body'] = """
 """
 
 OspfFileTemplates['ospf_interface'] = """\
-        interface "{interfaceName}" {{ hello 10; dead 40; type pointopoint; retransmit 20;}};
+        interface "{interfaceName}" {{ hello 10; dead 40;}};
 """
 # OspfFileTemplates['ospf_interface'] = """\
 #         interface "{interfaceName}" {{ hello 1; dead count 2; }};

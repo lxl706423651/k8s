@@ -1,84 +1,633 @@
 kind: kvmOvn
-clusterName: seedemu-b62-w5
+clusterName: seedemu-b62-w63
 nodes:
-- name: seedemu-b62-master-w5
+- name: seedemu-b62-master-w63
   role: master
   ip: 192.168.126.130
   mac: 52:54:00:62:20:82
-  vcpus: 48
-  memory_mb: 98304
+  vcpus: 64
+  memory_mb: 131072
   disk_gb: 80
-  memoryMb: 98304
+  memoryMb: 131072
   diskGb: 80
-- name: seedemu-b62-worker1-w5
+- name: seedemu-b62-worker1-w63
   role: worker
   ip: 192.168.126.131
   mac: 52:54:00:62:20:83
-  vcpus: 51
-  memory_mb: 103220
+  vcpus: 5
+  memory_mb: 10923
   disk_gb: 80
-  memoryMb: 103220
+  memoryMb: 10923
   diskGb: 80
-- name: seedemu-b62-worker2-w5
+- name: seedemu-b62-worker2-w63
   role: worker
   ip: 192.168.126.132
   mac: 52:54:00:62:20:84
-  vcpus: 51
-  memory_mb: 103219
+  vcpus: 5
+  memory_mb: 10923
   disk_gb: 80
-  memoryMb: 103219
+  memoryMb: 10923
   diskGb: 80
-- name: seedemu-b62-worker3-w5
+- name: seedemu-b62-worker3-w63
   role: worker
   ip: 192.168.126.133
   mac: 52:54:00:62:20:85
-  vcpus: 50
-  memory_mb: 103219
+  vcpus: 5
+  memory_mb: 10923
   disk_gb: 80
-  memoryMb: 103219
+  memoryMb: 10923
   diskGb: 80
-- name: seedemu-b62-worker4-w5
+- name: seedemu-b62-worker4-w63
   role: worker
   ip: 192.168.126.134
   mac: 52:54:00:62:20:86
-  vcpus: 50
-  memory_mb: 103219
+  vcpus: 5
+  memory_mb: 10923
   disk_gb: 80
-  memoryMb: 103219
+  memoryMb: 10923
   diskGb: 80
-- name: seedemu-b62-worker5-w5
+- name: seedemu-b62-worker5-w63
   role: worker
   ip: 192.168.126.135
   mac: 52:54:00:62:20:87
-  vcpus: 50
-  memory_mb: 103219
+  vcpus: 5
+  memory_mb: 10923
   disk_gb: 80
-  memoryMb: 103219
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker6-w63
+  role: worker
+  ip: 192.168.126.136
+  mac: 52:54:00:62:20:88
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker7-w63
+  role: worker
+  ip: 192.168.126.137
+  mac: 52:54:00:62:20:89
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker8-w63
+  role: worker
+  ip: 192.168.126.138
+  mac: 52:54:00:62:20:8a
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker9-w63
+  role: worker
+  ip: 192.168.126.139
+  mac: 52:54:00:62:20:8b
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker10-w63
+  role: worker
+  ip: 192.168.126.140
+  mac: 52:54:00:62:20:8c
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker11-w63
+  role: worker
+  ip: 192.168.126.141
+  mac: 52:54:00:62:20:8d
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker12-w63
+  role: worker
+  ip: 192.168.126.142
+  mac: 52:54:00:62:20:8e
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker13-w63
+  role: worker
+  ip: 192.168.126.143
+  mac: 52:54:00:62:20:8f
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker14-w63
+  role: worker
+  ip: 192.168.126.144
+  mac: 52:54:00:62:20:90
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker15-w63
+  role: worker
+  ip: 192.168.126.145
+  mac: 52:54:00:62:20:91
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker16-w63
+  role: worker
+  ip: 192.168.126.146
+  mac: 52:54:00:62:20:92
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker17-w63
+  role: worker
+  ip: 192.168.126.147
+  mac: 52:54:00:62:20:93
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker18-w63
+  role: worker
+  ip: 192.168.126.148
+  mac: 52:54:00:62:20:94
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker19-w63
+  role: worker
+  ip: 192.168.126.149
+  mac: 52:54:00:62:20:95
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker20-w63
+  role: worker
+  ip: 192.168.126.150
+  mac: 52:54:00:62:20:96
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker21-w63
+  role: worker
+  ip: 192.168.126.151
+  mac: 52:54:00:62:20:97
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker22-w63
+  role: worker
+  ip: 192.168.126.152
+  mac: 52:54:00:62:20:98
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker23-w63
+  role: worker
+  ip: 192.168.126.153
+  mac: 52:54:00:62:20:99
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker24-w63
+  role: worker
+  ip: 192.168.126.154
+  mac: 52:54:00:62:20:9a
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker25-w63
+  role: worker
+  ip: 192.168.126.155
+  mac: 52:54:00:62:20:9b
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker26-w63
+  role: worker
+  ip: 192.168.126.156
+  mac: 52:54:00:62:20:9c
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker27-w63
+  role: worker
+  ip: 192.168.126.157
+  mac: 52:54:00:62:20:9d
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker28-w63
+  role: worker
+  ip: 192.168.126.158
+  mac: 52:54:00:62:20:9e
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker29-w63
+  role: worker
+  ip: 192.168.126.159
+  mac: 52:54:00:62:20:9f
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker30-w63
+  role: worker
+  ip: 192.168.126.160
+  mac: 52:54:00:62:20:a0
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker31-w63
+  role: worker
+  ip: 192.168.126.161
+  mac: 52:54:00:62:20:a1
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker32-w63
+  role: worker
+  ip: 192.168.126.162
+  mac: 52:54:00:62:20:a2
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker33-w63
+  role: worker
+  ip: 192.168.126.163
+  mac: 52:54:00:62:20:a3
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker34-w63
+  role: worker
+  ip: 192.168.126.164
+  mac: 52:54:00:62:20:a4
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker35-w63
+  role: worker
+  ip: 192.168.126.165
+  mac: 52:54:00:62:20:a5
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker36-w63
+  role: worker
+  ip: 192.168.126.166
+  mac: 52:54:00:62:20:a6
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker37-w63
+  role: worker
+  ip: 192.168.126.167
+  mac: 52:54:00:62:20:a7
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker38-w63
+  role: worker
+  ip: 192.168.126.168
+  mac: 52:54:00:62:20:a8
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker39-w63
+  role: worker
+  ip: 192.168.126.169
+  mac: 52:54:00:62:20:a9
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker40-w63
+  role: worker
+  ip: 192.168.126.170
+  mac: 52:54:00:62:20:aa
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker41-w63
+  role: worker
+  ip: 192.168.126.171
+  mac: 52:54:00:62:20:ab
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker42-w63
+  role: worker
+  ip: 192.168.126.172
+  mac: 52:54:00:62:20:ac
+  vcpus: 5
+  memory_mb: 10923
+  disk_gb: 80
+  memoryMb: 10923
+  diskGb: 80
+- name: seedemu-b62-worker43-w63
+  role: worker
+  ip: 192.168.126.173
+  mac: 52:54:00:62:20:ad
+  vcpus: 5
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker44-w63
+  role: worker
+  ip: 192.168.126.174
+  mac: 52:54:00:62:20:ae
+  vcpus: 5
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker45-w63
+  role: worker
+  ip: 192.168.126.175
+  mac: 52:54:00:62:20:af
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker46-w63
+  role: worker
+  ip: 192.168.126.176
+  mac: 52:54:00:62:20:b0
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker47-w63
+  role: worker
+  ip: 192.168.126.177
+  mac: 52:54:00:62:20:b1
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker48-w63
+  role: worker
+  ip: 192.168.126.178
+  mac: 52:54:00:62:20:b2
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker49-w63
+  role: worker
+  ip: 192.168.126.179
+  mac: 52:54:00:62:20:b3
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker50-w63
+  role: worker
+  ip: 192.168.126.180
+  mac: 52:54:00:62:20:b4
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker51-w63
+  role: worker
+  ip: 192.168.126.181
+  mac: 52:54:00:62:20:b5
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker52-w63
+  role: worker
+  ip: 192.168.126.182
+  mac: 52:54:00:62:20:b6
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker53-w63
+  role: worker
+  ip: 192.168.126.183
+  mac: 52:54:00:62:20:b7
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker54-w63
+  role: worker
+  ip: 192.168.126.184
+  mac: 52:54:00:62:20:b8
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker55-w63
+  role: worker
+  ip: 192.168.126.185
+  mac: 52:54:00:62:20:b9
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker56-w63
+  role: worker
+  ip: 192.168.126.186
+  mac: 52:54:00:62:20:ba
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker57-w63
+  role: worker
+  ip: 192.168.126.187
+  mac: 52:54:00:62:20:bb
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker58-w63
+  role: worker
+  ip: 192.168.126.188
+  mac: 52:54:00:62:20:bc
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker59-w63
+  role: worker
+  ip: 192.168.126.189
+  mac: 52:54:00:62:20:bd
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker60-w63
+  role: worker
+  ip: 192.168.126.190
+  mac: 52:54:00:62:20:be
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker61-w63
+  role: worker
+  ip: 192.168.126.191
+  mac: 52:54:00:62:20:bf
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker62-w63
+  role: worker
+  ip: 192.168.126.192
+  mac: 52:54:00:62:20:c0
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
+  diskGb: 80
+- name: seedemu-b62-worker63-w63
+  role: worker
+  ip: 192.168.126.193
+  mac: 52:54:00:62:20:c1
+  vcpus: 4
+  memory_mb: 10922
+  disk_gb: 80
+  memoryMb: 10922
   diskGb: 80
 kvm:
-  network: seedemu-b62-net-w5
-  networkBridge: virbrb62w5
+  network: seedemu-b62-net-w63
+  networkBridge: virbrb62w63
   networkCidr: 192.168.126.0/24
   networkGateway: 192.168.126.1
   dhcpStart: 192.168.126.2
   dhcpEnd: 192.168.126.254
   baseImagePath: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
   legacyBaseImagePath: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
-  diskDir: /data/lxl/k8sTools/b62/w5/disks
-  cloudInitDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/build_cluster_20260610_235953/cloud-init
+  diskDir: /data/lxl/k8sTools/b62/w63/disks
+  cloudInitDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/macvlan_vlan_9955_20260623_225237_w63/cloud-init
+  extraNetworks:
+  - name: seedemu-b62-fabric1-w63
+    bridge: virbrb62f1w63
+    model: virtio
+    trunk: trunk1
+    masterInterface: ens3
+  - name: seedemu-b62-fabric2-w63
+    bridge: virbrb62f2w63
+    model: virtio
+    trunk: trunk2
+    masterInterface: ens4
 ssh:
   user: ubuntu
   key: ~/.ssh/id_ed25519
 fabric:
-  type: ovn
+  type: macvlan-vlan
+  vlanTrunks: &id001
+  - name: trunk0
+    masterInterface: ens2
+    vlanStart: 1
+    vlanEnd: 4094
+  - name: trunk1
+    masterInterface: ens3
+    vlanStart: 1
+    vlanEnd: 4094
+  - name: trunk2
+    masterInterface: ens4
+    vlanStart: 1
+    vlanEnd: 4094
 cni:
+  cniType: macvlan
   localLinkCniType: macvlan
+  attachedCniType: macvlan
   defaultMasterInterface: ens2
+  vlanTrunks: *id001
 registry:
   port: 5000
 k3s:
   version: v1.29.15+k3s1
-  clusterCidr: 10.42.0.0/16
+  clusterCidr: 10.48.0.0/12
   serviceCidr: 10.43.0.0/16
   flannelBackend: host-gw
   nodeCidrMaskSizeIpv4: 20
@@ -87,7 +636,7 @@ k3s:
   kubeletRegistryBurst: 20
 outputs:
   kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfig.yaml
-  tmpDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/build_cluster_20260610_235953/setup-tmp
+  tmpDir: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/macvlan_vlan_9955_20260623_225237_w63/setup-tmp
 seedemu:
   offline: false
   hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
@@ -97,22 +646,27 @@ seedemu:
 ovn:
   helmCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/helm
   iface: ens2
-  northdThreads: 4
-  controllerWorkerNum: 12
-  controllerRequestCpu: 1000m
-  controllerLimitCpu: '4'
-  controllerRequestMemory: 512Mi
-  controllerLimitMemory: 2Gi
-  centralRequestCpu: 1000m
-  centralLimitCpu: '6'
-  centralRequestMemory: 1Gi
-  centralLimitMemory: 8Gi
-  ovsRequestCpu: 1000m
-  ovsLimitCpu: '6'
-  ovsRequestMemory: 2Gi
-  ovsLimitMemory: 8Gi
-  cniRequestCpu: 500m
-  cniLimitCpu: '2'
-  cniRequestMemory: 512Mi
-  cniLimitMemory: 2Gi
-  cniOvsVsctlConcurrency: 5
+  northdThreads: 8
+  controllerWorkerNum: 24
+  controllerRequestCpu: 4000m
+  controllerLimitCpu: '16'
+  controllerRequestMemory: 2Gi
+  controllerLimitMemory: 8Gi
+  centralRequestCpu: 4000m
+  centralLimitCpu: '24'
+  centralRequestMemory: 4Gi
+  centralLimitMemory: 16Gi
+  ovsRequestCpu: 2000m
+  ovsLimitCpu: '12'
+  ovsRequestMemory: 4Gi
+  ovsLimitMemory: 16Gi
+  cniRequestCpu: 1000m
+  cniLimitCpu: '6'
+  cniRequestMemory: 1Gi
+  cniLimitMemory: 4Gi
+  cniOvsVsctlConcurrency: 1
+  cniOvsVsctlTimeoutSeconds: 180
+  interfaceReadyTimeoutSeconds: 0
+  chartVersion: v1.16.2
+  imageTag: v1.16.2-seed-ifskip
+  vpcShards: 4

@@ -281,7 +281,8 @@ runAnsibleInstall() {
         -i "${inventory_tmp}" \
         "${playbook_tmp}" \
         --extra-vars "seed_multus_bootstrap_tar=${multus_tar_path}" \
-        --ssh-common-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o IdentitiesOnly=yes -o IdentityAgent=none"
+        --ssh-common-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o IdentitiesOnly=yes -o IdentityAgent=none" \
+        < /dev/null
     rm -f "${inventory_tmp}" "${playbook_tmp}"
 }
 

@@ -49,6 +49,10 @@ class KubernetesCompiler(Docker):
     __cni_type: str
     __local_link_cni_type: Optional[str]
     __cni_master_interface: str
+    __macvlan_vlan_mode: bool
+    __macvlan_vlan_id_start: int
+    __macvlan_vlan_trunks: List[Dict[str, Any]]
+    __macvlan_vlan_allocations: Dict[str, Tuple[str, str, int]]
     __generate_services: bool
     __service_type: str
     __image_pull_policy: str
@@ -66,6 +70,9 @@ class KubernetesCompiler(Docker):
         cni_type: str = "kube-ovn",
         local_link_cni_type: Optional[str] = None,
         cni_master_interface: str = "eth0",
+        macvlan_vlan_mode: bool = False,
+        macvlan_vlan_id_start: int = 100,
+        macvlan_vlan_trunks: Optional[List[Dict[str, Any]]] = None,
         generate_services: bool = False,
         service_type: str = "ClusterIP",
         image_pull_policy: str = "Always",
@@ -98,6 +105,16 @@ class KubernetesCompiler(Docker):
         @param local_link_cni_type (optional) Override CNI type for node-local internal links.
             When left unset, all network types use `cni_type`.
         @param cni_master_interface (optional) Master interface for macvlan/ipvlan. Default "eth0".
+        @param macvlan_vlan_mode (optional) Put each macvlan/ipvlan/bridge NAD
+            on a dedicated VLAN subinterface of cni_master_interface. Default
+            False. The historical parameter name is kept for API
+            compatibility.
+        @param macvlan_vlan_id_start (optional) First VLAN ID assigned in
+            macvlan_vlan_mode. Default 100.
+        @param macvlan_vlan_trunks (optional) Multiple underlay trunks for
+            VLAN-backed CNI mode. Each item can set name, masterInterface,
+            vlanStart, and vlanEnd. This allows more than 4094 isolated L2
+            networks by spreading VLAN IDs across independent VM NICs/fabrics.
         @param generate_services (optional) Generate K8s Service resources for nodes. Default False.
         @param service_type (optional) Service type when generate_services is True. 
             Options: "ClusterIP", "NodePort". Default "ClusterIP".
@@ -134,6 +151,12 @@ class KubernetesCompiler(Docker):
             else None
         )
         self.__cni_master_interface = cni_master_interface
+        self.__macvlan_vlan_mode = bool(macvlan_vlan_mode)
+        self.__macvlan_vlan_id_start = int(macvlan_vlan_id_start)
+        if self.__macvlan_vlan_id_start < 1 or self.__macvlan_vlan_id_start > 4094:
+            raise ValueError("macvlan_vlan_id_start must be in VLAN range 1..4094")
+        self.__macvlan_vlan_trunks = self._normalizeMacvlanVlanTrunks(macvlan_vlan_trunks)
+        self.__macvlan_vlan_allocations = {}
         self.__generate_services = generate_services
         self.__service_type = service_type
         self.__image_pull_policy = image_pull_policy
@@ -564,6 +587,58 @@ class KubernetesCompiler(Docker):
             return "kube-ovn"
         return value or "bridge"
 
+    def _normalizeMacvlanVlanTrunks(
+        self,
+        raw_trunks: Optional[List[Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        """Normalize VLAN trunk settings into validated ranges."""
+        if not raw_trunks:
+            raw_trunks = [
+                {
+                    "name": "trunk0",
+                    "masterInterface": self.__cni_master_interface,
+                    "vlanStart": self.__macvlan_vlan_id_start,
+                    "vlanEnd": 4094,
+                }
+            ]
+
+        trunks: List[Dict[str, Any]] = []
+        seen_names: Set[str] = set()
+        seen_interfaces: Set[str] = set()
+        for index, item in enumerate(raw_trunks):
+            if not isinstance(item, dict):
+                raise ValueError(f"macvlan_vlan_trunks[{index}] must be a mapping")
+            name = str(item.get("name") or f"trunk{index}").strip()
+            master_interface = str(
+                item.get("masterInterface") or item.get("master_interface") or ""
+            ).strip()
+            if not name:
+                raise ValueError(f"macvlan_vlan_trunks[{index}] requires name")
+            if not master_interface:
+                raise ValueError(f"macvlan_vlan_trunks[{index}] requires masterInterface")
+            if name in seen_names:
+                raise ValueError(f"duplicate macvlan VLAN trunk name: {name}")
+            if master_interface in seen_interfaces:
+                raise ValueError(f"duplicate macvlan VLAN trunk masterInterface: {master_interface}")
+            seen_names.add(name)
+            seen_interfaces.add(master_interface)
+            vlan_start = int(item.get("vlanStart") or item.get("vlan_start") or self.__macvlan_vlan_id_start)
+            vlan_end = int(item.get("vlanEnd") or item.get("vlan_end") or 4094)
+            if vlan_start < 1 or vlan_end > 4094 or vlan_start > vlan_end:
+                raise ValueError(
+                    f"invalid VLAN range for VLAN trunk {name}: "
+                    f"{vlan_start}..{vlan_end}; expected 1..4094"
+                )
+            trunks.append(
+                {
+                    "name": name,
+                    "masterInterface": master_interface,
+                    "vlanStart": vlan_start,
+                    "vlanEnd": vlan_end,
+                }
+            )
+        return trunks
+
     def _writeNetworkingMetadata(self) -> None:
         """Write compile-time networking metadata for deploy wrappers."""
         backend = self._networkBackendForCni(self.__cni_type)
@@ -573,10 +648,51 @@ class KubernetesCompiler(Docker):
             "cniType": self.__cni_type,
             "localLinkCniType": self.__local_link_cni_type or "",
             "cniMasterInterface": self.__cni_master_interface,
+            "macvlanVlanMode": self.__macvlan_vlan_mode,
+            "macvlanVlanIdStart": self.__macvlan_vlan_id_start,
+            "macvlanVlanTrunks": self.__macvlan_vlan_trunks if self.__macvlan_vlan_mode else [],
             "runtimeManifest": "k8s.kube-ovn.yaml" if backend == "kube-ovn" else "k8s.yaml",
         }
         with open("networking.yaml", "w", encoding="utf-8") as f:
             yaml.safe_dump(payload, f, sort_keys=False)
+
+    def _macvlanVlanAllocation(self, network_name: str) -> Tuple[str, str, int]:
+        """Return (trunk name, base interface, VLAN ID) for one VLAN-backed NAD."""
+        if network_name not in self.__macvlan_vlan_allocations:
+            allocation_index = len(self.__macvlan_vlan_allocations)
+            remaining = allocation_index
+            total_capacity = 0
+            for trunk in self.__macvlan_vlan_trunks:
+                vlan_start = int(trunk["vlanStart"])
+                vlan_end = int(trunk["vlanEnd"])
+                capacity = vlan_end - vlan_start + 1
+                total_capacity += capacity
+                if remaining < capacity:
+                    self.__macvlan_vlan_allocations[network_name] = (
+                        str(trunk["name"]),
+                        str(trunk["masterInterface"]),
+                        vlan_start + remaining,
+                    )
+                    break
+                remaining -= capacity
+            else:
+                raise ValueError(
+                    "VLAN-backed CNI mode ran out of VLAN IDs across configured trunks. "
+                    f"capacity={total_capacity} requested_index={allocation_index}. "
+                    "Add another underlay trunk network or lower the number of isolated L2 domains."
+                )
+        return self.__macvlan_vlan_allocations[network_name]
+
+    def _usesVlanBackedInterface(self, cni_type: str) -> bool:
+        """Return whether one CNI type should use a per-network VLAN parent."""
+        return self.__macvlan_vlan_mode and cni_type in {"macvlan", "ipvlan", "bridge"}
+
+    def _vlanBackedMasterInterface(self, network_name: str) -> Tuple[str, Optional[int], Optional[str], Optional[str]]:
+        """Return (master interface, VLAN ID, base interface, trunk name) for one VLAN-backed NAD."""
+        if not self.__macvlan_vlan_mode:
+            return self.__cni_master_interface, None, None, None
+        trunk_name, base_interface, vlan_id = self._macvlanVlanAllocation(network_name)
+        return f"{base_interface}.{vlan_id}", vlan_id, base_interface, trunk_name
 
     def _compileNetK8s(self, net: Network) -> str:
         """Generates NetworkAttachmentDefinition for a network.
@@ -593,11 +709,19 @@ class KubernetesCompiler(Docker):
         cni_type = self._resolveNetworkCniType(net)
 
         # Build CNI config based on cni_type
+        vlan_id = None
+        vlan_base_interface = None
+        vlan_trunk = None
+        master_interface = self.__cni_master_interface
+        if self._usesVlanBackedInterface(cni_type):
+            master_interface, vlan_id, vlan_base_interface, vlan_trunk = self._vlanBackedMasterInterface(name)
+
+        vlan_bridge_interface = None
         if cni_type == "macvlan":
             config = {
                 "cniVersion": "0.3.1",
                 "type": "macvlan",
-                "master": self.__cni_master_interface,
+                "master": master_interface,
                 "mode": "bridge",
                 "ipam": {
                     "type": "static"  # We manage IPs inside the container
@@ -607,8 +731,19 @@ class KubernetesCompiler(Docker):
             config = {
                 "cniVersion": "0.3.1",
                 "type": "ipvlan",
-                "master": self.__cni_master_interface,
+                "master": master_interface,
                 "mode": "l2",
+                "ipam": {
+                    "type": "static"
+                }
+            }
+        elif cni_type == "bridge" and vlan_id is not None:
+            vlan_bridge_interface = self._safeBridgeName(f"{self.__namespace}:{name}:vlan")
+            config = {
+                "cniVersion": "0.3.1",
+                "type": "bridge",
+                "bridge": vlan_bridge_interface,
+                "isGateway": False,
                 "ipam": {
                     "type": "static"
                 }
@@ -651,6 +786,13 @@ class KubernetesCompiler(Docker):
             "org.seedsecuritylabs.seedemu.meta.name": str(registry_name),
             "org.seedsecuritylabs.seedemu.meta.prefix": prefix,
         }
+        if vlan_id is not None:
+            annotations["org.seedsecuritylabs.seedemu.meta.vlan-id"] = str(vlan_id)
+            annotations["org.seedsecuritylabs.seedemu.meta.vlan-base-interface"] = str(vlan_base_interface)
+            annotations["org.seedsecuritylabs.seedemu.meta.vlan-master-interface"] = master_interface
+            annotations["org.seedsecuritylabs.seedemu.meta.vlan-trunk"] = str(vlan_trunk)
+            if vlan_bridge_interface is not None:
+                annotations["org.seedsecuritylabs.seedemu.meta.vlan-bridge-interface"] = vlan_bridge_interface
         if net.getDisplayName() is not None:
             annotations["org.seedsecuritylabs.seedemu.meta.displayname"] = str(net.getDisplayName())
         if net.getDescription() is not None:
@@ -759,7 +901,7 @@ class KubernetesCompiler(Docker):
                 net_name = self._getRealNetName(net).replace('_', '-').lower()
                 nets.append(net_name)
                 resolved_cni_type = self._resolveNetworkCniType(net)
-                if resolved_cni_type in {"macvlan", "ipvlan", "kube-ovn", "ovn"}:
+                if resolved_cni_type in {"macvlan", "ipvlan", "kube-ovn", "ovn"} or self._usesVlanBackedInterface(resolved_cni_type):
                     prefix_len = net.getPrefix().prefixlen
                     net_specs.append({
                         "name": net_name,

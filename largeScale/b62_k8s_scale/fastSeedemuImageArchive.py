@@ -27,6 +27,7 @@ from typing import Dict, Iterable, List, Tuple
 
 
 BUILD_RE = re.compile(r"^seedemu_build_and_push\s+(\S+)\s+(\S+)\s*$")
+COMPILER_HASH_RE = re.compile(r"^[0-9a-f]{32}(:latest)?$")
 
 COPY_MAP = (
     ("92872f20cfb75af4e3e1c588b00d6484", "replace_address.sh", None),
@@ -82,9 +83,25 @@ def mirror_image_name(image: str) -> str:
     return f"{mirror_host}/library/{image}"
 
 
-def ensure_source_image(image: str) -> None:
+def compiler_base_context(work_dir: Path, image: str) -> Path:
+    """Return the compiler-staged base-image context for one source image."""
+    tag = hashlib.md5(image.encode("utf-8")).hexdigest()
+    return work_dir / "base_images" / tag
+
+
+def ensure_source_image(image: str, work_dir: Path | None = None) -> None:
+    """Ensure a Docker image exists, preferring compiler-staged local contexts."""
     if docker_image_exists(image):
         return
+    if work_dir is not None:
+        context_dir = compiler_base_context(work_dir, image)
+        dockerfile = context_dir / "Dockerfile"
+        if dockerfile.exists():
+            for source in dockerfile_from_images(dockerfile):
+                ensure_source_image(source, work_dir)
+            print(f"[fast-archive] building source image {image} from {context_dir}", flush=True)
+            run(["docker", "build", "-t", image, str(context_dir)])
+            return
     mirror = mirror_image_name(image)
     if mirror != image:
         if subprocess.run(["docker", "pull", mirror], check=False).returncode == 0:
@@ -106,10 +123,12 @@ def ensure_base_image(base_image: str, work_dir: Path) -> None:
     context_dir = work_dir / "base_images" / base_image
     dockerfile = context_dir / "Dockerfile"
     if not dockerfile.exists():
-        ensure_source_image(base_image)
+        if COMPILER_HASH_RE.match(base_image):
+            raise RuntimeError(f"missing compiler base image context: {dockerfile}")
+        ensure_source_image(base_image, work_dir)
         return
     for source in dockerfile_from_images(dockerfile):
-        ensure_source_image(source)
+        ensure_source_image(source, work_dir)
     print(f"[fast-archive] building base image {base_image} from {context_dir}", flush=True)
     run(["docker", "build", "-t", base_image, str(context_dir)])
 

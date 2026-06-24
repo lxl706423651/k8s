@@ -23,6 +23,7 @@ CONFIG_PATH="${1:-${SETUP_DIR}/kvmState.yaml}"
 HELPER="${SCRIPT_DIR}/manageKvmConfig.py"
 NODES_TSV=""
 VERIFY_NODES_TSV=""
+EXTRA_NETWORKS_TSV=""
 dnsmasqStatus="/var/lib/libvirt/dnsmasq/virbr0.status"
 setupOutputGlob="${SETUP_DIR}/seedemu-k3s.*"
 
@@ -46,6 +47,7 @@ requireCommand() {
 cleanupTmp() {
     [ -n "${NODES_TSV}" ] && rm -f "${NODES_TSV}" || true
     [ -n "${VERIFY_NODES_TSV}" ] && rm -f "${VERIFY_NODES_TSV}" || true
+    [ -n "${EXTRA_NETWORKS_TSV}" ] && rm -f "${EXTRA_NETWORKS_TSV}" || true
 }
 
 loadConfig() {
@@ -63,13 +65,19 @@ loadConfig() {
     fi
     NODES_TSV="$(mktemp "${SCRIPT_DIR}/destroy-nodes.XXXXXX.tsv")"
     VERIFY_NODES_TSV="$(mktemp "${SCRIPT_DIR}/destroy-verify-nodes.XXXXXX.tsv")"
+    EXTRA_NETWORKS_TSV="$(mktemp "${SCRIPT_DIR}/destroy-extra-networks.XXXXXX.tsv")"
     python3 "${HELPER}" "${SETUP_DIR}/kvm.yaml" state-nodes-tsv --state "${CONFIG_PATH}" > "${NODES_TSV}"
+    python3 "${HELPER}" "${SETUP_DIR}/kvm.yaml" state-extra-networks-tsv --state "${CONFIG_PATH}" > "${EXTRA_NETWORKS_TSV}"
     cp "${NODES_TSV}" "${VERIFY_NODES_TSV}"
 }
 
 printPlan() {
     echo "Cleaning KVM nodes from: ${CONFIG_PATH}"
     echo "KVM network: ${kvmNetwork}"
+    if [ -s "${EXTRA_NETWORKS_TSV}" ]; then
+        echo "Extra KVM networks:"
+        awk -F '\t' '{printf "  %-24s bridge=%-16s model=%-8s trunk=%s master=%s\n", $1, $2, $3, $4, $5}' "${EXTRA_NETWORKS_TSV}"
+    fi
     echo "Disk dir: ${kvmDiskDir}"
     echo "Cloud-init dir: ${kvmCloudInitDir}"
     awk -F '\t' '{printf "  %-24s role=%-6s ip=%-15s mac=%s\n", $1, $2, $3, $4}' "${NODES_TSV}"
@@ -184,6 +192,14 @@ cleanupNetwork() {
         virsh net-destroy "${kvmNetwork}" >/dev/null 2>&1 || true
         virsh net-undefine "${kvmNetwork}" >/dev/null 2>&1 || true
     fi
+    while IFS=$'\t' read -r network bridge model trunk master_interface; do
+        [ -n "${network}" ] || continue
+        if virsh net-info "${network}" >/dev/null 2>&1; then
+            echo "Cleaning extra KVM network ${network}"
+            virsh net-destroy "${network}" >/dev/null 2>&1 || true
+            virsh net-undefine "${network}" >/dev/null 2>&1 || true
+        fi
+    done < "${EXTRA_NETWORKS_TSV}"
 }
 
 cleanupSetupOutputs() {
@@ -238,6 +254,13 @@ verifyClean() {
         echo "Residual KVM network: ${kvmNetwork}" >&2
         failed=1
     fi
+    while IFS=$'\t' read -r network bridge model trunk master_interface; do
+        [ -n "${network}" ] || continue
+        if virsh net-info "${network}" >/dev/null 2>&1; then
+            echo "Residual extra KVM network: ${network}" >&2
+            failed=1
+        fi
+    done < "${EXTRA_NETWORKS_TSV}"
 
     if [ -e "${CONFIG_PATH}" ]; then
         echo "Residual KVM state: ${CONFIG_PATH}" >&2

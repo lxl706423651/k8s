@@ -16,6 +16,7 @@ CONFIG_K3S="${SCRIPT_DIR}/configK3s.yaml"
 CONFIG_KVM="${SCRIPT_DIR}/configKvmOvn.yaml"
 ASSIGNMENT_FILE="${SCRIPT_DIR}/assignment.yaml"
 LOCK_FILE="${SCRIPT_DIR}/.cluster-lifecycle.lock"
+DESTROY_TIMEOUT_SECONDS="${SEED_DESTROY_CLUSTER_TIMEOUT_SECONDS:-900}"
 CHILD_PID=""
 
 mkdir -p "${RUN_DIR}"
@@ -98,15 +99,37 @@ seen = set()
 
 kvm_config = config.get("kvm") if isinstance(config.get("kvm"), dict) else {}
 add(values, seen, kvm_config.get("network"))
+extra_networks = kvm_config.get("extraNetworks") or kvm_config.get("extra_networks") or []
+if isinstance(extra_networks, list):
+    for item in extra_networks:
+        if isinstance(item, dict):
+            add(values, seen, item.get("name") or item.get("network"))
 
 experiment = assignment.get("experiment") if isinstance(assignment.get("experiment"), dict) else {}
 kvm_assignment = assignment.get("kvm") if isinstance(assignment.get("kvm"), dict) else {}
+networking_assignment = assignment.get("networking") if isinstance(assignment.get("networking"), dict) else {}
 worker_count = experiment.get("workerCount")
 network_prefix = str(kvm_assignment.get("networkPrefix") or "").strip()
+network_prefixes = []
 if network_prefix and worker_count is not None:
     add(values, seen, f"{network_prefix}-w{worker_count}")
+    network_prefixes.append(network_prefix)
 
-if network_prefix:
+vlan_trunks = networking_assignment.get("vlanTrunks") or networking_assignment.get("vlan_trunks") or []
+if isinstance(vlan_trunks, list):
+    for item in vlan_trunks:
+        if not isinstance(item, dict):
+            continue
+        trunk_network = str(item.get("network") or "").strip()
+        trunk_prefix = str(item.get("networkPrefix") or item.get("network_prefix") or "").strip()
+        if trunk_network:
+            add(values, seen, trunk_network)
+        if trunk_prefix:
+            network_prefixes.append(trunk_prefix)
+            if worker_count is not None:
+                add(values, seen, f"{trunk_prefix}-w{worker_count}")
+
+if network_prefixes:
     listed = subprocess.run(
         ["virsh", "-c", "qemu:///system", "net-list", "--all", "--name"],
         text=True,
@@ -116,8 +139,10 @@ if network_prefix:
     if listed.returncode == 0:
         for line in listed.stdout.splitlines():
             name = line.strip()
-            if name.startswith(f"{network_prefix}-"):
-                add(values, seen, name)
+            for prefix in network_prefixes:
+                if name.startswith(f"{prefix}-"):
+                    add(values, seen, name)
+                    break
 
 for value in values:
     print(value)
@@ -173,14 +198,95 @@ cleanup_libvirt_networks() {
     fi
 }
 
+cleanup_libvirt_domains() {
+    local vm
+    local state
+    local found=0
+    while IFS= read -r vm; do
+        [ -n "${vm}" ] || continue
+        found=1
+        echo "Cleaning libvirt domain: ${vm}"
+        state="$(virsh -c qemu:///system domstate "${vm}" 2>/dev/null || true)"
+        if [ "${state}" = "running" ]; then
+            virsh -c qemu:///system destroy "${vm}" || true
+        fi
+        virsh -c qemu:///system undefine "${vm}" --nvram || virsh -c qemu:///system undefine "${vm}" || true
+    done < <(virsh -c qemu:///system list --all --name | awk '/^seedemu-b62-/ {print}')
+    if [ "${found}" -eq 0 ]; then
+        echo "No B62 libvirt domains found to clean."
+    fi
+}
+
+collect_kvm_disk_dirs() {
+    # Print generated KVM disk directories from the current config only. The
+    # safety check in cleanup_kvm_disk_dirs constrains deletion to the B62
+    # k8sTools workspace.
+    python3 - "${CONFIG_KVM}" <<'PY'
+import sys
+from pathlib import Path
+
+import yaml
+
+config_path = Path(sys.argv[1])
+if not config_path.exists():
+    raise SystemExit(0)
+data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+if not isinstance(data, dict):
+    raise SystemExit(0)
+kvm = data.get("kvm") if isinstance(data.get("kvm"), dict) else {}
+disk_dir = str(kvm.get("diskDir") or kvm.get("disk_dir") or "").strip()
+if disk_dir:
+    print(disk_dir)
+PY
+}
+
+cleanup_kvm_disk_dirs() {
+    local disk_dir
+    local resolved
+    local found=0
+    while IFS= read -r disk_dir; do
+        [ -n "${disk_dir}" ] || continue
+        resolved="$(realpath -m "${disk_dir}")"
+        case "${resolved}" in
+            /data/lxl/k8sTools/b62/w*/disks)
+                found=1
+                if [ -e "${resolved}" ]; then
+                    echo "Removing generated KVM disk directory: ${resolved}"
+                    rm -rf -- "${resolved}"
+                else
+                    echo "Generated KVM disk directory not found, skip: ${resolved}"
+                fi
+                ;;
+            *)
+                echo "WARNING: refusing to remove unexpected disk directory: ${resolved}" >&2
+                ;;
+        esac
+    done < <(collect_kvm_disk_dirs)
+    if [ "${found}" -eq 0 ]; then
+        echo "No generated B62 KVM disk directories found to clean."
+    fi
+}
+
 echo "===== destroy-cluster started $(date --iso-8601=seconds) ====="
 destroy_rc=0
 if [ ! -f "${CONFIG_K3S}" ]; then
     echo "No configK3s file found at ${CONFIG_K3S}; nothing to destroy."
 else
-    run_tracked python3 "${SCRIPT_DIR}/k8sTools.py" destroy -d "${CONFIG_K3S}" --keep-temp || destroy_rc=$?
+    if ! [[ "${DESTROY_TIMEOUT_SECONDS}" =~ ^[0-9]+$ ]] || [ "${DESTROY_TIMEOUT_SECONDS}" -lt 1 ]; then
+        echo "Invalid SEED_DESTROY_CLUSTER_TIMEOUT_SECONDS: ${DESTROY_TIMEOUT_SECONDS}" >&2
+        exit 1
+    fi
+    echo "K3s/KVM destroy timeout: ${DESTROY_TIMEOUT_SECONDS}s"
+    run_tracked timeout --kill-after=30s "${DESTROY_TIMEOUT_SECONDS}s" \
+        python3 "${SCRIPT_DIR}/k8sTools.py" destroy -d "${CONFIG_K3S}" --keep-temp || destroy_rc=$?
+    if [ "${destroy_rc}" -ne 0 ]; then
+        echo "WARNING: k8sTools destroy returned ${destroy_rc}; continuing with host-side VM/network cleanup for rebuild."
+        destroy_rc=0
+    fi
 fi
 
+cleanup_libvirt_domains
 cleanup_libvirt_networks
+cleanup_kvm_disk_dirs
 echo "===== destroy-cluster completed $(date --iso-8601=seconds) ====="
 exit "${destroy_rc}"

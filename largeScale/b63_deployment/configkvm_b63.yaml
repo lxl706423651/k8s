@@ -1,0 +1,52 @@
+kind: kvmOvn
+clusterName: seedemu-b63-placement-kvm
+
+nodes:
+  - name: seedemu-b63-placement-master
+    role: master
+    ip: 192.168.122.230
+    mac: 52:54:00:63:30:01
+    vcpus: 8
+    memory_mb: 8192
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker1
+    role: worker
+    ip: 192.168.122.231
+    mac: 52:54:00:63:30:02
+    vcpus: 6
+    memory_mb: 10240
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker2
+    role: worker
+    ip: 192.168.122.232
+    mac: 52:54:00:63:30:03
+    vcpus: 8
+    memory_mb: 12288
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker3
+    role: worker
+    ip: 192.168.122.233
+    mac: 52:54:00:63:30:04
+    vcpus: 4
+    memory_mb: 8192
+    disk_gb: 80
+
+kvm:
+  legacyBaseImagePath: ""
+  allowExisting: false
+
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+
+fabric:
+  type: ovn
+
+registry:
+  port: 5063
+
+k3s:
+  maxPods: 4000
+
+tuning:
+  userMaxNetNamespaces: 65536

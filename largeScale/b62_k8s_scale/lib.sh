@@ -30,6 +30,7 @@ load_assignment_runtime() {
     local run_dir="$2"
     eval "$(
         python3 - "${assignment_path}" "${run_dir}" "${TEST_DIR}" <<'PY'
+import json
 import os
 import shlex
 import sys
@@ -79,7 +80,41 @@ registry_port = int(get(assignment, "registry.port", 5000))
 network_backend = str(get(assignment, "networking.backend", "kube-ovn")).strip().lower() or "kube-ovn"
 cni_type = str(get(assignment, "networking.cniType", "kube-ovn")).strip().lower() or "kube-ovn"
 local_link_cni_type = str(get(assignment, "networking.localLinkCniType", cni_type) or cni_type).strip().lower()
-attached_cni_type = str(get(assignment, "networking.attachedCniType", network_backend) or network_backend).strip().lower()
+attached_cni_type = str(get(assignment, "networking.attachedCniType", local_link_cni_type) or local_link_cni_type).strip().lower()
+vlan_capable_cni = cni_type.replace("_", "-") in {"macvlan", "ipvlan", "bridge"}
+vlan_backend = network_backend.replace("_", "-") in {
+    "macvlan",
+    "macvlan-vlan",
+    "ipvlan",
+    "ipvlan-vlan",
+    "bridge",
+    "bridge-vlan",
+}
+macvlan_vlan_mode_raw = get(assignment, "networking.macvlanVlanMode", None)
+if isinstance(macvlan_vlan_mode_raw, str):
+    macvlan_vlan_mode = macvlan_vlan_mode_raw.strip().lower() in {"true", "1", "yes", "on"}
+elif macvlan_vlan_mode_raw is None:
+    macvlan_vlan_mode = vlan_backend and vlan_capable_cni
+else:
+    macvlan_vlan_mode = bool(macvlan_vlan_mode_raw)
+macvlan_vlan_start = int(get(assignment, "networking.macvlanVlanIdStart", 100) or 100)
+vlan_trunks_raw = get(assignment, "networking.vlanTrunks", [])
+vlan_trunks = vlan_trunks_raw if isinstance(vlan_trunks_raw, list) else []
+ovn_vpc_shards = int(get(assignment, "ovn.vpcShards", 1) or 1)
+if ovn_vpc_shards < 1:
+    raise SystemExit("ovn.vpcShards must be >= 1")
+placement = assignment.get("placement") if isinstance(assignment.get("placement"), dict) else {}
+exclude_control_plane = placement.get("excludeControlPlane", placement.get("exclude_control_plane", False))
+if isinstance(exclude_control_plane, str):
+    exclude_control_plane = exclude_control_plane.strip().lower() in {"true", "1", "yes", "on"}
+exclude_nodes_raw = placement.get("excludeNodes", placement.get("exclude_nodes", []))
+if isinstance(exclude_nodes_raw, str):
+    exclude_nodes = [item.strip() for item in exclude_nodes_raw.split(",") if item.strip()]
+elif isinstance(exclude_nodes_raw, list):
+    exclude_nodes = [str(item).strip() for item in exclude_nodes_raw if str(item).strip()]
+else:
+    exclude_nodes = []
+node_pod_reserve = int(placement.get("nodePodReserve", placement.get("node_pod_reserve", 20)) or 20)
 
 values = {
     "B62_ASSIGNMENT_FILE": str(assignment_path),
@@ -112,6 +147,13 @@ values = {
     "SEED_LOCAL_LINK_CNI_TYPE": local_link_cni_type,
     "SEED_ATTACHED_CNI_TYPE": attached_cni_type,
     "SEED_CNI_MASTER_INTERFACE": str(get(assignment, "networking.cniMasterInterface", "ens2")),
+    "SEED_MACVLAN_VLAN_MODE": "1" if macvlan_vlan_mode else "0",
+    "SEED_MACVLAN_VLAN_START": str(macvlan_vlan_start),
+    "SEED_MACVLAN_VLAN_TRUNKS_JSON": json.dumps(vlan_trunks, separators=(",", ":")),
+    "SEED_KUBE_OVN_VPC_SHARDS": str(ovn_vpc_shards),
+    "SEED_PLACEMENT_EXCLUDE_CONTROL_PLANE": "1" if exclude_control_plane else "0",
+    "SEED_PLACEMENT_EXCLUDE_NODES": ",".join(exclude_nodes),
+    "SEED_NODE_POD_RESERVE": str(node_pod_reserve),
 }
 
 for key, value in values.items():
@@ -294,10 +336,20 @@ ssh_node() {
         -o BatchMode=yes \
         -o ConnectTimeout=8 \
         -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        -o IdentitiesOnly=yes \
+        -o IdentityAgent=none \
         "${SEED_K3S_USER}@${ip}" "$@"
 }
 
 run_in_seedpy310() {
+    local env_dir="${SEEDPY310_ENV_DIR:-$HOME/anaconda3/envs/${SEEDPY310_ENV_NAME}}"
+    if [ -x "${env_dir}/bin/python3" ]; then
+        PATH="${env_dir}/bin:${PATH}" CONDA_PREFIX="${env_dir}" "$@"
+        return
+    fi
+
     require_file "${SEEDPY310_CONDA_SH}"
     # shellcheck disable=SC1090
     source "${SEEDPY310_CONDA_SH}"
@@ -319,9 +371,66 @@ generate_as_placement_plan() {
         "${plan_file}"
 }
 
+normalizeNetworkValue() {
+    # Normalize one network mode string read from assignment.yaml, env, or
+    # output/networking.yaml.
+    # Args: $1=rawValue.
+    printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'
+}
+
+seedCompiledNetworkBackend() {
+    # Return the backend declared by the compiler output, if available.
+    # Reads OUTPUT_DIR/networking.yaml written by KubernetesCompiler.
+    local metadata="${OUTPUT_DIR}/networking.yaml"
+    [ -f "${metadata}" ] || return 1
+    python3 - "${metadata}" <<'PY'
+import sys
+
+import yaml
+
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    data = yaml.safe_load(handle) or {}
+if not isinstance(data, dict):
+    raise SystemExit(1)
+
+cni = str(data.get("cniType") or "").strip().lower().replace("_", "-")
+backend = str(data.get("networkBackend") or "").strip().lower().replace("_", "-")
+value = cni or backend
+if value in {"kube-ovn", "ovn"}:
+    print("kube-ovn")
+elif value:
+    print(value)
+else:
+    raise SystemExit(1)
+PY
+}
+
 seed_network_backend() {
-    local backend="${SEED_NETWORK_BACKEND:-${SEED_CNI_TYPE:-kube-ovn}}"
-    printf '%s\n' "${backend}" | tr '[:upper:]' '[:lower:]'
+    local compiled cni backend
+    compiled="$(seedCompiledNetworkBackend 2>/dev/null || true)"
+    if [ -n "${compiled}" ]; then
+        printf '%s\n' "${compiled}"
+        return 0
+    fi
+
+    cni="$(normalizeNetworkValue "${SEED_CNI_TYPE:-}")"
+    case "${cni}" in
+        kube-ovn|ovn)
+            printf 'kube-ovn\n'
+            return 0
+            ;;
+        macvlan|ipvlan|host-local|bridge)
+            printf '%s\n' "${cni}"
+            return 0
+            ;;
+    esac
+
+    backend="$(normalizeNetworkValue "${SEED_NETWORK_BACKEND:-kube-ovn}")"
+    if [ "${backend}" = "ovn" ]; then
+        backend="kube-ovn"
+    fi
+    printf '%s\n' "${backend}"
 }
 
 seed_manage_manifest_helper() {
@@ -347,20 +456,20 @@ render_runtime_manifest() {
     require_file "${source_manifest}"
 
     if [ "${target_manifest}" = "${source_manifest}" ]; then
+        rm -f "${OUTPUT_DIR}/k8s.kube-ovn.yaml"
         printf '%s\n' "${target_manifest}"
         return 0
     fi
 
     require_file "${helper}"
-    if [ ! -f "${target_manifest}" ] || [ "${source_manifest}" -nt "${target_manifest}" ] || [ "${helper}" -nt "${target_manifest}" ]; then
-        echo "Rendering Kube-OVN manifest: ${target_manifest}" >&2
-        run_in_seedpy310 env PYTHONPATH="${REPO_ROOT}" PYTHONNOUSERSITE=1 \
-            python3 - \
-            "${helper}" \
-            "${source_manifest}" \
-            "${target_manifest}" \
-            "${SEED_ATTACHED_CNI_TYPE:-${SEED_NETWORK_BACKEND:-kube-ovn}}" \
-            "${SEED_CNI_MASTER_INTERFACE}" <<'PY'
+    echo "Rendering Kube-OVN manifest: ${target_manifest}" >&2
+    run_in_seedpy310 env PYTHONPATH="${REPO_ROOT}" PYTHONNOUSERSITE=1 \
+        python3 - \
+        "${helper}" \
+        "${source_manifest}" \
+        "${target_manifest}" \
+        "${SEED_ATTACHED_CNI_TYPE:-${SEED_NETWORK_BACKEND:-kube-ovn}}" \
+        "${SEED_CNI_MASTER_INTERFACE}" <<'PY'
 import importlib.util
 import sys
 from pathlib import Path
@@ -381,7 +490,6 @@ module.renderKubeOvnManifest(
     cni_master_interface=cni_master_interface,
 )
 PY
-    fi
     printf '%s\n' "${target_manifest}"
 }
 

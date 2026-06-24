@@ -323,3 +323,94 @@ Notes:
   cluster files.
 - After the VM-level restart, rerun `clean.sh <RUN_DIR>` only if the namespace
   or Kube-OVN resources still remain.
+
+## 2026-06-14 23:08 - 4954 Kube-OVN attached deploy blocked before BIRD
+
+User intent:
+
+- Rerun the 4954-scale B62 experiment with `start-bird` interval `0.1s`,
+  `start-bird` load threshold `80`, run `test.sh` after `start-bird`, and run
+  `test_kernel.sh` after `start-kernel`.
+
+Scope:
+
+- Run directory: `runs/20260614_205653_4954_w5`.
+- Data plane requested by the current assignment: pure Kube-OVN attached
+  networks, `networking.attachedCniType: kube-ovn`.
+- Kube-OVN generated 4763 `Subnet` CRs, 4765 NB logical switches, 4774 NB
+  logical switch ports, 4777 logical router policies, 4764 static routes, and
+  9539 SB port bindings before workload Pods started.
+
+Stage result:
+
+- `render-assignment`: PASS, 0.05s.
+- `destroy-existing-cluster`: PASS, 44.41s.
+- `prepare-libvirt-dhcp`: PASS, 9.06s.
+- `build-cluster`: PASS, 480.87s.
+- `clean`: PASS, 1.72s.
+- `preflight`: PASS, 2.92s.
+- `compile`: PASS, 252.77s.
+- `build`: PASS, 201.84s.
+- `deploy`: INTERRUPTED after 6461.06s because it could not pass the first
+  workload Pod. `start-bird`, `test.sh`, `start-kernel`, and `test_kernel.sh`
+  were not reached.
+
+Observed failure:
+
+- Deployment was intentionally throttled to `DEPLOY_BATCH_SIZE=6`,
+  warmup `12 x 1`, `DEPLOY_MAX_CREATING_PODS=0`,
+  `ovn.cniOvsVsctlConcurrency=1`, and a 900s post-subnet cooldown.
+- Even with only one workload Deployment applied, the first Pod stayed
+  `ContainerCreating`.
+- Kubelet events repeatedly showed:
+  `ovs interface <id>_net1_h is not ready after 30s`,
+  `ovs-vsctl --timeout=30 ... signal: alarm clock`, and
+  `add nic to ovs failed context canceled by timeout`.
+- On the master OVS pod, the transient interface sometimes had empty `ofport`;
+  `ovs-vswitchd` logged long 22s poll intervals and RCU blocks while handling
+  `br-int`.
+- `kube-ovn-controller` and `ovn-northd` were still processing subnet/router
+  policy route work after the script had already observed all Subnet CRs as
+  `Ready`. Upstream Kube-OVN has similar performance reports around slow
+  repeated "add policy route" work in large VPC/subnet cases:
+  https://github.com/kubeovn/kube-ovn/issues/4822.
+- Upstream Kube-OVN also has reports for the same class of
+  `ovs interface ... is not ready after 30s` errors:
+  https://github.com/kubeovn/kube-ovn/issues/6220.
+
+Attempted mitigation:
+
+- Runtime-patched `kube-ovn-controller` in the live cluster to reduce
+  non-essential controller work:
+  `--enable-lb=false`, `--enable-np=false`, `--enable-eip-snat=false`,
+  `--inspect-interval=600`, and
+  `--enable-live-migration-optimize=false`.
+- Restarted the controller rollout and force-deleted the stuck first Pod.
+- The replacement Pod still failed on the same Kube-OVN/OVS add-port path, so
+  this did not unblock pure Kube-OVN attached mode.
+- After cleanup, the live `kube-ovn-controller` Deployment was restored to the
+  original Helm-installed argument values to avoid leaving hidden runtime
+  differences.
+
+Cleanup:
+
+- Stopped `runFullExperiment.py` with Ctrl-C after confirming the blocker.
+- Ran `./clean.sh runs/20260614_205653_4954_w5`.
+- Cleanup deleted the namespace, 4763 NADs, 4763 matching Kube-OVN Subnets,
+  and the matching VPC. It finished after 185s by clearing remaining Subnet
+  finalizers.
+- Final state check showed `ns=0`, `nads=0`, `pods=0`, `subnets=0`, `ips=0`,
+  `vpcs=0`; all six K3s nodes remained `Ready`.
+
+Conclusion:
+
+- This run did not test the requested `start-bird` interval/load threshold
+  because the experiment never reached BIRD.
+- The blocker is the current pure Kube-OVN attached design at 4954 scale:
+  thousands of SeedEMU links become thousands of OVN logical switches/routes in
+  one VPC, and OVS/OVN cannot create even the first workload secondary
+  interface within Kube-OVN's hardcoded 30s operation windows.
+- The already implemented `attachedCniType: macvlan` mode keeps Kube-OVN as
+  IPAM but avoids creating thousands of OVN logical switches/routes. It is the
+  practical path for finishing the 4954 BIRD experiment today, but it is not
+  pure OVN+OVS dataplane.

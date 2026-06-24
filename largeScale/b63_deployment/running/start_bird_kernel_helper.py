@@ -146,7 +146,6 @@ def apply_kernel_conf_on_node(
     scan_jitter: int,
     retries: int,
     retry_backoff: float,
-    switch_delay: float,
 ) -> tuple[int, list[dict[str, str]]]:
     processed = 0
     failures: list[dict[str, str]] = []
@@ -173,7 +172,7 @@ def apply_kernel_conf_on_node(
             failures.append({"pod": target.name, "stderr": last_error})
         if idx % 50 == 0 or idx == len(targets):
             log(f"node={node_name} switched={idx}/{len(targets)}")
-        time.sleep(switch_delay)
+        time.sleep(START_DELAY_SECONDS)
     return processed, failures
 
 
@@ -193,9 +192,11 @@ def wait_for_cluster_idle(
     exec_timeout: int,
     threshold: float,
     interval_seconds: int,
-) -> None:
+    timeout_seconds: int,
+) -> bool:
     probes = {node: pods[0].name for node, pods in nodes_map.items() if pods}
     log(f"waiting for kernel route injection load to drop below {threshold:.1f}")
+    started = time.monotonic()
     while True:
         all_idle = True
         status = []
@@ -206,12 +207,15 @@ def wait_for_cluster_idle(
                 all_idle = False
         log("load_check " + " ".join(status))
         if all_idle:
-            return
+            return False
+        if timeout_seconds > 0 and time.monotonic() - started >= timeout_seconds:
+            log(f"load_wait_timeout after {timeout_seconds}s; continuing")
+            return True
         time.sleep(interval_seconds)
 
 
 def parseArgs() -> argparse.Namespace:
-    """Parse explicit B62 kernel-start parameters."""
+    """Parse explicit b63 kernel-start parameters."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--namespace", required=True)
     parser.add_argument("--artifact-dir", type=Path, required=True)
@@ -224,9 +228,9 @@ def parseArgs() -> argparse.Namespace:
     parser.add_argument("--scan-jitter-seconds", type=int, default=120)
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--retry-backoff-seconds", type=float, default=1.0)
-    parser.add_argument("--switch-delay-seconds", type=float, default=START_DELAY_SECONDS)
     parser.add_argument("--load-threshold", type=float, default=40.0)
     parser.add_argument("--load-check-interval-seconds", type=int, default=20)
+    parser.add_argument("--load-wait-timeout-seconds", type=int, default=600)
     parser.add_argument("--post-switch-settle-seconds", type=int, default=15)
     return parser.parse_args()
 
@@ -247,9 +251,9 @@ def main() -> int:
     scan_jitter = args.scan_jitter_seconds
     retries = max(1, args.retries)
     retry_backoff = args.retry_backoff_seconds
-    switch_delay = args.switch_delay_seconds
     load_threshold = args.load_threshold
     load_check_interval = args.load_check_interval_seconds
+    load_wait_timeout = args.load_wait_timeout_seconds
     settle_seconds = args.post_switch_settle_seconds
 
     start_time = time.time()
@@ -267,21 +271,7 @@ def main() -> int:
         "kernel_export_mode": export_mode,
         "status": "PASS",
         "failure_reason": "",
-        "strategy": "kubectl-exec-node-aware-concurrency",
-        "parameters": {
-            "kubectl_exec_timeout_seconds": args.kubectl_exec_timeout_seconds,
-            "kernel_exec_timeout_seconds": args.kernel_exec_timeout_seconds,
-            "birdc_timeout_seconds": birdc_timeout,
-            "export_mode": export_mode,
-            "scan_base_seconds": scan_base,
-            "scan_jitter_seconds": scan_jitter,
-            "switch_delay_seconds": switch_delay,
-            "retries": retries,
-            "retry_backoff_seconds": retry_backoff,
-            "load_threshold": load_threshold,
-            "load_check_interval_seconds": load_check_interval,
-            "post_switch_settle_seconds": settle_seconds,
-        },
+        "strategy": "node-aware-concurrency",
     }
     if not targets:
         summary["status"] = "FAIL"
@@ -310,7 +300,6 @@ def main() -> int:
                 scan_jitter,
                 retries,
                 retry_backoff,
-                switch_delay,
             ): node
             for node, pods in nodes_map.items()
         }
@@ -332,7 +321,14 @@ def main() -> int:
 
     log(f"sleeping {settle_seconds}s before load probe")
     time.sleep(settle_seconds)
-    wait_for_cluster_idle(namespace, nodes_map, exec_timeout, load_threshold, load_check_interval)
+    summary["load_wait_timed_out"] = wait_for_cluster_idle(
+        namespace,
+        nodes_map,
+        exec_timeout,
+        load_threshold,
+        load_check_interval,
+        load_wait_timeout,
+    )
 
     summary["duration_seconds"] = round(time.time() - start_time, 2)
     (artifact_dir / "start_bird_kernel_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

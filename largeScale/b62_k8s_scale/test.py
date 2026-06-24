@@ -14,6 +14,7 @@ Side effects:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -27,15 +28,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 EXIT_BGP_TEST_FAILED = 61
 TARGET_RE = re.compile(r"^as(?P<asn>\d+)brd-r(?P<rid>\d+)-")
 ROUTE_TOTAL_RE = re.compile(r"^Total:\s+(?P<routes>\d+)\s+of\s+\d+\s+routes\s+for\s+(?P<networks>\d+)\s+networks", re.M)
 OUTPUT_MARKER = "__SEEDEMU_BGP_ROUTE_COUNT__"
 POD_LIST_TIMEOUT_SECONDS = 300
+KUBECTL_REQUEST_TIMEOUT_SECONDS = 120
 BGP_TEST_EXEC_TIMEOUT_SECONDS = 45
 BGP_TEST_TIMEOUT_SECONDS = 1800
 BGP_TEST_RETRY_INTERVAL_SECONDS = 10
+KUBECONFIG_PATH: str | None = None
 
 
 @dataclass
@@ -66,9 +71,80 @@ def run(cmd: list[str], timeout: int | None = None) -> subprocess.CompletedProce
         return subprocess.CompletedProcess(cmd, 124, stdout, stderr)
 
 
+def resolveKubeconfig(explicit_path: str | None) -> str | None:
+    """Resolve the kubeconfig path used by this read-only test."""
+    if explicit_path:
+        return explicit_path
+    local_path = Path(__file__).resolve().with_name("kubeconfig.yaml")
+    if local_path.exists():
+        return str(local_path)
+    env_path = os.environ.get("KUBECONFIG")
+    return env_path or None
+
+
+def getNested(data: dict[str, Any], dotted: str, default: Any = None) -> Any:
+    """Read a dotted key from a nested dict."""
+    cur: Any = data
+    for part in dotted.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return cur
+
+
+def resolveAssignmentPath(run_dir: Path) -> Path:
+    """Find the assignment.yaml used to infer the namespace for one-arg mode."""
+    run_assignment = run_dir / "assignment.yaml"
+    if run_assignment.exists():
+        return run_assignment
+    local_assignment = Path(__file__).resolve().with_name("assignment.yaml")
+    if local_assignment.exists():
+        return local_assignment
+    raise SystemExit(f"Cannot infer namespace: no assignment.yaml in {run_dir} or beside test.py")
+
+
+def inferNamespace(run_dir: Path) -> str:
+    """Infer the Kubernetes namespace from assignment.yaml."""
+    assignment_path = resolveAssignmentPath(run_dir)
+    assignment = yaml.safe_load(assignment_path.read_text(encoding="utf-8")) or {}
+    namespace = str(getNested(assignment, "experiment.namespace", "") or "").strip()
+    if namespace:
+        return namespace
+    topology_size = getNested(assignment, "experiment.topologySize")
+    if topology_size is not None:
+        return f"seedemu-b62-{int(topology_size)}"
+    raise SystemExit(f"Cannot infer namespace from {assignment_path}")
+
+
+def parseArgs(argv: list[str]) -> argparse.Namespace:
+    """Parse CLI arguments while keeping the legacy two-position form."""
+    parser = argparse.ArgumentParser(
+        description="Validate BGP protocols from one deterministic BRD pod per AS.",
+        usage="test.py <run_dir> [--kubeconfig PATH] | test.py <namespace> <artifact_dir> [--kubeconfig PATH]",
+    )
+    parser.add_argument("values", nargs="+")
+    parser.add_argument("--kubeconfig", default=None)
+    parsed = parser.parse_args(argv)
+    if len(parsed.values) == 1:
+        artifact_dir = Path(parsed.values[0])
+        parsed.namespace = inferNamespace(artifact_dir)
+        parsed.artifact_dir = artifact_dir
+        return parsed
+    if len(parsed.values) == 2:
+        parsed.namespace = parsed.values[0]
+        parsed.artifact_dir = Path(parsed.values[1])
+        return parsed
+    parser.error("expected either <run_dir> or <namespace> <artifact_dir>")
+    raise AssertionError("unreachable")
+
+
 def kubectl(namespace: str, args: list[str], timeout: int | None = None) -> subprocess.CompletedProcess[str]:
-    """Run kubectl in one namespace; KUBECONFIG is inherited from environment."""
-    return run(["kubectl", "-n", namespace, *args], timeout=timeout)
+    """Run kubectl in one namespace with a stable kubeconfig when available."""
+    cmd = ["kubectl"]
+    if KUBECONFIG_PATH:
+        cmd.extend(["--kubeconfig", KUBECONFIG_PATH])
+    cmd.extend([f"--request-timeout={KUBECTL_REQUEST_TIMEOUT_SECONDS}s", "-n", namespace, *args])
+    return run(cmd, timeout=timeout)
 
 
 def loadBrdTargets(namespace: str) -> list[BgpTarget]:
@@ -247,12 +323,12 @@ def checkTargetsOnNode(namespace: str, node: str, targets: list[BgpTarget], exec
 
 def main() -> int:
     """CLI entrypoint."""
-    if len(sys.argv) != 3:
-        print("Usage: test.py <namespace> <artifact_dir>", file=sys.stderr)
-        return 2
-
-    namespace = sys.argv[1]
-    artifact_dir = Path(sys.argv[2])
+    args = parseArgs(sys.argv[1:])
+    namespace = args.namespace
+    artifact_dir = args.artifact_dir
+    explicit_kubeconfig = args.kubeconfig
+    global KUBECONFIG_PATH
+    KUBECONFIG_PATH = resolveKubeconfig(explicit_kubeconfig)
     artifact_dir.mkdir(parents=True, exist_ok=True)
     targets_file = artifact_dir / "bgp_test_targets.json"
     summary_file = artifact_dir / "bgp_test_summary.json"
@@ -266,6 +342,7 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "namespace": namespace,
         "status": "PASS",
+        "kubeconfig": KUBECONFIG_PATH,
         "targets": len(targets),
         "verified": 0,
         "failures": [],

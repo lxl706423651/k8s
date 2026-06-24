@@ -3,12 +3,12 @@
 
 Inputs are the Kubernetes namespace and experiment artifact directory. The
 script writes target and summary JSON files and performs read-only kubectl exec
-checks for the B62 flow.
+checks for the b63 running flow.
 """
 from __future__ import annotations
 
+import argparse
 import json
-import os
 import subprocess
 import sys
 import time
@@ -21,6 +21,7 @@ from pathlib import Path
 ROLE_SET = {"r", "brd", "rs"}
 EXIT_BIRD_VERIFY_FAILED = 51
 PHASE_PROGRESS_EVERY = 100
+KUBECONFIG_PATH = ""
 
 
 @dataclass
@@ -50,7 +51,11 @@ def run(cmd: list[str], timeout: int | None = None) -> subprocess.CompletedProce
 
 
 def kubectl(namespace: str, args: list[str], timeout: int | None = None) -> subprocess.CompletedProcess[str]:
-    return run(["kubectl", "-n", namespace, *args], timeout=timeout)
+    command = ["kubectl"]
+    if KUBECONFIG_PATH:
+        command.extend(["--kubeconfig", KUBECONFIG_PATH])
+    command.extend(["-n", namespace, *args])
+    return run(command, timeout=timeout)
 
 
 def kubectl_exec(namespace: str, pod: str, shell_cmd: str, timeout: int) -> subprocess.CompletedProcess[str]:
@@ -58,8 +63,7 @@ def kubectl_exec(namespace: str, pod: str, shell_cmd: str, timeout: int) -> subp
 
 
 def load_targets(namespace: str) -> list[PodTarget]:
-    list_timeout = int(os.environ.get("SEED_BIRD_VERIFY_LIST_TIMEOUT_SECONDS", "300"))
-    result = kubectl(namespace, ["get", "pods", "-o", "json"], timeout=list_timeout)
+    result = kubectl(namespace, ["get", "pods", "-o", "json"], timeout=60)
     result.check_returncode()
     data = json.loads(result.stdout)
     targets: list[PodTarget] = []
@@ -114,19 +118,30 @@ def verify_node(
     return verified, failures
 
 
-def main() -> int:
-    if len(sys.argv) != 3:
-        print("Usage: verify_bird_helper.py <namespace> <artifact_dir>", file=sys.stderr)
-        return 2
+def parseArgs() -> argparse.Namespace:
+    """Parse explicit BIRD verification parameters."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--namespace", required=True)
+    parser.add_argument("--artifact-dir", type=Path, required=True)
+    parser.add_argument("--kubeconfig", default="")
+    parser.add_argument("--kubectl-exec-timeout-seconds", type=int, default=30)
+    parser.add_argument("--verify-timeout-seconds", type=int, default=1200)
+    parser.add_argument("--verify-retry-interval-seconds", type=int, default=10)
+    return parser.parse_args()
 
-    namespace = sys.argv[1]
-    artifact_dir = Path(sys.argv[2])
+
+def main() -> int:
+    global KUBECONFIG_PATH
+    args = parseArgs()
+    namespace = args.namespace
+    artifact_dir = args.artifact_dir
+    KUBECONFIG_PATH = args.kubeconfig
 
     artifact_dir.mkdir(parents=True, exist_ok=True)
-    base_exec_timeout = int(os.environ.get("SEED_KUBECTL_EXEC_TIMEOUT_SECONDS", "30"))
+    base_exec_timeout = args.kubectl_exec_timeout_seconds
     exec_timeout = max(base_exec_timeout, 45)
-    timeout_seconds = int(os.environ.get("SEED_BIRD_VERIFY_TIMEOUT_SECONDS", "1200"))
-    retry_interval = int(os.environ.get("SEED_BIRD_VERIFY_RETRY_INTERVAL_SECONDS", "10"))
+    timeout_seconds = args.verify_timeout_seconds
+    retry_interval = args.verify_retry_interval_seconds
 
     targets = load_targets(namespace)
     file_prefix = "verify_bird"
@@ -149,7 +164,6 @@ def main() -> int:
         summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
         return EXIT_BIRD_VERIFY_FAILED
 
-    target_by_name = {target.name: target for target in targets}
     nodes_map: dict[str, list[PodTarget]] = defaultdict(list)
     for target in targets:
         nodes_map[target.node].append(target)
@@ -158,21 +172,15 @@ def main() -> int:
 
     deadline = time.time() + timeout_seconds
     round_id = 0
-    round_targets = targets
     while time.time() < deadline:
         round_id += 1
         log(f"verify_round={round_id} mode=bird")
         failures: list[dict[str, str]] = []
         verified = 0
-        round_nodes_map: dict[str, list[PodTarget]] = defaultdict(list)
-        for target in round_targets:
-            round_nodes_map[target.node].append(target)
-        if round_id > 1:
-            log(f"retrying_failed_targets={len(round_targets)} nodes={len(round_nodes_map)}")
         with ThreadPoolExecutor(max_workers=len(nodes_map)) as pool:
             futures = {
                 pool.submit(verify_node, node, namespace, pods, exec_timeout): node
-                for node, pods in round_nodes_map.items()
+                for node, pods in nodes_map.items()
             }
             for future in as_completed(futures):
                 try:
@@ -181,22 +189,14 @@ def main() -> int:
                     failures.extend(node_failures)
                 except Exception as exc:
                     failures.append({"pod": f"node:{futures[future]}", "stderr": str(exc), "node": futures[future]})
-        failed_names = {failure.get("pod", "") for failure in failures}
-        summary["verified"] = len(targets) - len(failed_names)
+        summary["verified"] = verified
         summary["failures"] = failures
         if not failures:
-            summary["verified"] = len(targets)
             summary["duration_seconds"] = round(timeout_seconds - max(0, deadline - time.time()), 2)
             summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-            log(f"verify bird completed verified={len(targets)}/{len(targets)}")
+            log(f"verify bird completed verified={verified}/{len(targets)}")
             return 0
         log(f"verify bird pending_failures={len(failures)}; retry in {retry_interval}s")
-        round_targets = [target_by_name[name] for name in failed_names if name in target_by_name]
-        if not round_targets:
-            summary["status"] = "FAIL"
-            summary["failure_reason"] = "bird_verify_internal_failure"
-            summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
-            return EXIT_BIRD_VERIFY_FAILED
         time.sleep(retry_interval)
 
     summary["status"] = "FAIL"

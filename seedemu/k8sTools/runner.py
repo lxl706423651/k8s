@@ -298,7 +298,7 @@ def _buildKvmOvn(
         inventory_path=inventory_path or setup_dir / "cluster.inventory.yaml",
         tmp_dir=setup_dir / "tmp",
     )
-    kvm_config.setdefault("fabric", {})["type"] = "ovn"
+    kvm_config.setdefault("fabric", {}).setdefault("type", "ovn")
     _applyOvnK3sDefaults(kvm_config)
     writeYaml(setup_dir / "kvm.yaml", kvm_config)
     runCommand(["python3", str(setup_dir / "kvm" / "prepareHostAssets.py"), str(setup_dir / "kvm.yaml")], cwd=setup_dir)
