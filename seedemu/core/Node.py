@@ -20,6 +20,10 @@ from .BaseSystem import BaseSystem
 
 DEFAULT_SOFTWARE: List[str] = ['zsh', 'curl', 'nano', 'vim-nox', 'mtr-tiny', 'iproute2', 'iputils-ping', 'tcpdump', 'termshark', 'dnsutils', 'jq', 'ipcalc', 'netcat-openbsd']
 
+ROUTER_BGP_ROLE_EDGE = "edge"
+ROUTER_BGP_ROLE_CORE = "core"
+ROUTER_BGP_ROLES = {ROUTER_BGP_ROLE_EDGE, ROUTER_BGP_ROLE_CORE}
+
 class File(Printable):
     """!
     @brief File class.
@@ -1137,6 +1141,8 @@ class Router(Node):
     __is_bgp_rr: bool
     __bgp_cluster_id: Optional[str]
     __routing_backend: str
+    __bgp_role: Optional[str]
+    __disabled_control_planes: Set[str]
     __extensions: Dict[str, RouterExtension]
 
     def __init__(self, name: str, role: NodeRole, asn: int, scope: str = None, routingBackend: str = "bird"):
@@ -1145,11 +1151,69 @@ class Router(Node):
         self.__is_bgp_rr = False
         self.__bgp_cluster_id = None
         self.__routing_backend = "bird"
+        self.__bgp_role = None
+        self.__disabled_control_planes = set()
         self.__extensions = {}
         self.__is_bgp_rr = False
         self.__bgp_cluster_id = None
         super().__init__( name,role,asn,scope)
         self.setRoutingBackend(routingBackend)
+
+    def setBgpRole(self, role: str) -> Router:
+        """!
+        @brief Set this router's BGP participation role.
+
+        This does not change the structural NodeRole. It is an AS-level routing
+        hint used by iBGP designs such as edge-only BGP with a BGP-free core.
+
+        @param role edge or core.
+
+        @returns self, for chaining API calls.
+        """
+        value = str(role or "").strip().lower()
+        assert value in ROUTER_BGP_ROLES, "unsupported BGP role: {}. valid values: {}".format(
+            role, sorted(ROUTER_BGP_ROLES)
+        )
+        self.__bgp_role = value
+        self.setLabel("seedemu_bgp_role", value)
+        return self
+
+    def getBgpRole(self) -> Optional[str]:
+        """!
+        @brief Get this router's optional BGP participation role.
+
+        @returns role name, or None if no role was set.
+        """
+        return self.__bgp_role
+
+    def disableControlPlane(self, protocol: str) -> Router:
+        """!
+        @brief Disable a protocol-layer participation hint on this router.
+
+        The first supported flag is ibgp. It lets new opt-in iBGP modes exclude
+        a specific router without changing AS-wide legacy defaults.
+
+        @param protocol protocol participation flag to disable.
+
+        @returns self, for chaining API calls.
+        """
+        value = str(protocol or "").strip().lower()
+        assert value in {"ibgp"}, "unsupported router control-plane disable flag: {}".format(protocol)
+        self.__disabled_control_planes.add(value)
+        self.setLabel("seedemu_control_plane_disabled_{}".format(value), "true")
+        return self
+
+    def isControlPlaneDisabled(self, protocol: str) -> bool:
+        """!
+        @brief Check whether a protocol-layer participation hint is disabled.
+        """
+        return str(protocol or "").strip().lower() in self.__disabled_control_planes
+
+    def getDisabledControlPlanes(self) -> Set[str]:
+        """!
+        @brief Get disabled protocol-layer participation hints.
+        """
+        return set(self.__disabled_control_planes)
 
     def makeRouteReflector(self, is_rr: bool = True) -> Router:
         """!

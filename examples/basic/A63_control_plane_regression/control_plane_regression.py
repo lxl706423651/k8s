@@ -58,6 +58,24 @@ def build_route_server_slice(emu: Emulator, base: Base, ebgp: Ebgp, web: WebServ
         ebgp.addRsPeer(100, asn)
 
 
+def build_frr_route_server_slice(emu: Emulator, base: Base, ebgp: Ebgp, web: WebService) -> None:
+    """Exercise a FRR route-server IX without changing the legacy BIRD RS default."""
+
+    ix = base.createInternetExchange(107)
+    ix.getRouteServerNode().setRoutingBackend("frr")
+
+    for asn in [157, 158]:
+        current_as = base.createAutonomousSystem(asn)
+        current_as.createNetwork("net0")
+        current_as.createRouter("router0").joinNetwork("net0").joinNetwork("ix107")
+        current_as.createHost("web").joinNetwork("net0")
+
+        vnode = "web{}".format(asn)
+        web.install(vnode)
+        emu.addBinding(Binding(vnode, filter=Filter(nodeName="web", asn=asn)))
+        ebgp.addRsPeer(107, asn)
+
+
 def build_mixed_backend_slice(emu: Emulator, base: Base, ebgp: Ebgp, web: WebService) -> None:
     """Exercise one transit AS with BIRD and FRR routers from shared BGP/OSPF intent."""
 
@@ -94,6 +112,7 @@ def build_frr_route_reflector_slice(base: Base, ebgp: Ebgp) -> None:
 
     as3 = base.createAutonomousSystem(3)
     as3.createNetwork("net0")
+    as3.setIbgpMode("route-reflector")
     as3.createBgpCluster(AS3_CLUSTER_ID)
     as3.createRouter("rr", routingBackend="frr").joinNetwork("net0").joinNetwork("ix103").joinBgpCluster(AS3_CLUSTER_ID).makeRouteReflector()
     as3.createRouter("client", routingBackend="frr").joinNetwork("net0").joinBgpCluster(AS3_CLUSTER_ID)
@@ -166,6 +185,7 @@ def build_emulator() -> Emulator:
     web = WebService()
 
     build_route_server_slice(emu, base, ebgp, web)
+    build_frr_route_server_slice(emu, base, ebgp, web)
     build_mixed_backend_slice(emu, base, ebgp, web)
     build_frr_route_reflector_slice(base, ebgp)
     build_exabgp_slice(base, exabgp, emu)

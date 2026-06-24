@@ -126,12 +126,14 @@ def build_mini_internet(emu: Emulator, base: Base, ebgp: Ebgp, hosts_per_as: int
 
     # AS12 demonstrates a single Route Reflector and one client.
     as12 = base.getAutonomousSystem(12)
+    as12.setIbgpMode("route-reflector")
     as12.createBgpCluster(AS12_CLUSTER_ID)
     as12.getRouter("r101").joinBgpCluster(AS12_CLUSTER_ID).makeRouteReflector()
     as12.getRouter("r104").joinBgpCluster(AS12_CLUSTER_ID)
 
     # AS3 demonstrates two RR clusters plus an RR-to-RR mesh.
     as3 = base.getAutonomousSystem(3)
+    as3.setIbgpMode("route-reflector")
     as3.createBgpCluster(AS3_WEST_CLUSTER_ID)
     as3.createBgpCluster(AS3_EAST_CLUSTER_ID)
     as3.getRouter("r100").joinBgpCluster(AS3_WEST_CLUSTER_ID).makeRouteReflector()

@@ -4,17 +4,48 @@ from .Printable import Printable
 from .Network import Network
 from .AddressAssignmentConstraint import AddressAssignmentConstraint
 from .enums import NetworkType, NodeRole
-from .Node import Node, Router
+from .Node import Node, Router, ROUTER_BGP_ROLE_EDGE
 from .Scope import ScopeTier, Scope
 from .Emulator import Emulator
 from .Configurable import Configurable
 from .Customizable import Customizable
 from .Node import promote_to_real_world_router
 from ipaddress import IPv4Network
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 import requests
 
 RIS_PREFIXLIST_URL = 'https://stat.ripe.net/data/announced-prefixes/data.json'
+
+IBGP_MODE_FULL_MESH = "full-mesh"
+IBGP_MODE_ROUTE_REFLECTOR = "route-reflector"
+IBGP_MODE_DISABLED = "disabled"
+
+IBGP_MODES = {
+    IBGP_MODE_FULL_MESH,
+    IBGP_MODE_ROUTE_REFLECTOR,
+    IBGP_MODE_DISABLED,
+}
+
+BGP_SCOPE_ALL_ROUTERS = "all-routers"
+BGP_SCOPE_EDGE_ONLY = "edge-only"
+BGP_SCOPES = {BGP_SCOPE_ALL_ROUTERS, BGP_SCOPE_EDGE_ONLY}
+
+CORE_FORWARDING_PLAIN_IP = "plain-ip"
+CORE_FORWARDING_MPLS = "mpls"
+CORE_FORWARDING_SR = "sr"
+CORE_FORWARDING_TUNNEL = "tunnel"
+CORE_FORWARDING_REDISTRIBUTE = "redistribute"
+CORE_FORWARDING_MODES = {
+    CORE_FORWARDING_PLAIN_IP,
+    CORE_FORWARDING_MPLS,
+    CORE_FORWARDING_SR,
+    CORE_FORWARDING_TUNNEL,
+    CORE_FORWARDING_REDISTRIBUTE,
+}
+
+OSPF_MODE_LEGACY = "legacy"
+OSPF_MODE_ROUTER_TRANSIT_ONLY = "router-transit-only"
+OSPF_MODES = {OSPF_MODE_LEGACY, OSPF_MODE_ROUTER_TRANSIT_ONLY}
 
 class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
     """!
@@ -30,6 +61,12 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
     __nets: Dict[str, Network]
     __name_servers: List[str]
     __clusters: Dict[str, Tuple[Set[str], Set[str]]]
+    __ibgp_mode: str
+    __ibgp_mode_explicit: bool
+    __bgp_scope: str
+    __core_forwarding: str
+    __ospf_mode: str
+    __ospf_mode_explicit: bool
 
     def __init__(self, asn: int, subnetTemplate: str = "10.{}.0.0/16"):
         """!
@@ -46,6 +83,132 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
         self.__subnets = None if asn > 255 else list(IPv4Network(subnetTemplate.format(asn)).subnets(new_prefix = 24))
         self.__name_servers = []
         self.__clusters = {}
+        self.__ibgp_mode = IBGP_MODE_FULL_MESH
+        self.__ibgp_mode_explicit = False
+        self.__bgp_scope = BGP_SCOPE_ALL_ROUTERS
+        self.__core_forwarding = CORE_FORWARDING_PLAIN_IP
+        self.__ospf_mode = OSPF_MODE_LEGACY
+        self.__ospf_mode_explicit = False
+
+    def setIbgpMode(self, mode: str) -> AutonomousSystem:
+        """!
+        @brief Set the AS-level iBGP route propagation mode.
+
+        The default is full-mesh when unset. This setting records AS
+        intent; the Ibgp layer still renders concrete BGP sessions.
+
+        @param mode full-mesh, route-reflector, or disabled.
+
+        @returns self, for chaining API calls.
+        """
+        value = self._normalizeIbgpMode(mode)
+        assert value in IBGP_MODES, "unsupported iBGP mode: {}. valid values: {}".format(
+            mode, sorted(IBGP_MODES)
+        )
+        self.__ibgp_mode = value
+        self.__ibgp_mode_explicit = True
+        return self
+
+    def _normalizeIbgpMode(self, mode: str) -> str:
+        value = str(mode or IBGP_MODE_FULL_MESH).strip().lower()
+        return value
+
+    def getIbgpMode(self) -> str:
+        """!
+        @brief Get the AS-level iBGP route propagation mode.
+        """
+        return self.__ibgp_mode
+
+    def hasIbgpMode(self) -> bool:
+        """!
+        @brief Return whether an iBGP mode was explicitly set on this AS.
+        """
+        return self.__ibgp_mode_explicit
+
+    def setBgpScope(self, scope: str) -> AutonomousSystem:
+        """!
+        @brief Set which routers participate in BGP/iBGP inside this AS.
+
+        @param scope all-routers or edge-only.
+
+        @returns self, for chaining API calls.
+        """
+        value = str(scope or BGP_SCOPE_ALL_ROUTERS).strip().lower()
+        assert value in BGP_SCOPES, "unsupported BGP scope: {}. valid values: {}".format(
+            scope, sorted(BGP_SCOPES)
+        )
+        self.__bgp_scope = value
+        return self
+
+    def getBgpScope(self) -> str:
+        """!
+        @brief Get the AS-level BGP participation scope.
+        """
+        return self.__bgp_scope
+
+    def setCoreForwarding(self, mode: str) -> AutonomousSystem:
+        """!
+        @brief Set the forwarding mechanism expected for a BGP-free core.
+
+        @param mode plain-ip, mpls, sr, tunnel, or redistribute.
+
+        @returns self, for chaining API calls.
+        """
+        value = str(mode or CORE_FORWARDING_PLAIN_IP).strip().lower()
+        assert value in CORE_FORWARDING_MODES, "unsupported core forwarding mode: {}. valid values: {}".format(
+            mode, sorted(CORE_FORWARDING_MODES)
+        )
+        self.__core_forwarding = value
+        return self
+
+    def getCoreForwarding(self) -> str:
+        """!
+        @brief Get the AS-level core forwarding mode.
+        """
+        return self.__core_forwarding
+
+    def setIbgpDesign(
+        self,
+        mode: str = IBGP_MODE_FULL_MESH,
+        scope: str = BGP_SCOPE_ALL_ROUTERS,
+        core_forwarding: str = CORE_FORWARDING_PLAIN_IP,
+    ) -> AutonomousSystem:
+        """!
+        @brief Set iBGP mode, BGP scope, and core forwarding together.
+        """
+        self.setIbgpMode(mode)
+        self.setBgpScope(scope)
+        self.setCoreForwarding(core_forwarding)
+        return self
+
+    def setOspfMode(self, mode: str) -> AutonomousSystem:
+        """!
+        @brief Set the AS-level OSPF interface classification mode.
+
+        The default is legacy when unset. Ospf records interface intent and
+        Routing renders backend-specific BIRD/FRR configuration.
+
+        @param mode legacy or router-transit-only.
+
+        @returns self, for chaining API calls.
+        """
+        value = str(mode or OSPF_MODE_LEGACY).strip().lower()
+        assert value in OSPF_MODES, "unsupported OSPF mode: {}".format(mode)
+        self.__ospf_mode = value
+        self.__ospf_mode_explicit = True
+        return self
+
+    def getOspfMode(self) -> str:
+        """!
+        @brief Get the AS-level OSPF interface classification mode.
+        """
+        return self.__ospf_mode
+
+    def hasOspfMode(self) -> bool:
+        """!
+        @brief Return whether an OSPF mode was explicitly set on this AS.
+        """
+        return self.__ospf_mode_explicit
 
     def createBgpCluster(self, address: str) -> AutonomousSystem:
         """!
@@ -58,31 +221,79 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
 
         @returns self, for chaining API calls.
         """
+        self.__ensureRouteReflectorModeAllowed("createBgpCluster")
+        if not self.__ibgp_mode_explicit:
+            self.__ibgp_mode = IBGP_MODE_ROUTE_REFLECTOR
+            self.__ibgp_mode_explicit = True
         if address not in self.__clusters:
             self.__clusters[address] = (set(), set())
 
         return self
 
+    def __ensureRouteReflectorModeAllowed(self, api_name: str) -> None:
+        if self.__ibgp_mode_explicit and self.__ibgp_mode != IBGP_MODE_ROUTE_REFLECTOR:
+            raise AssertionError(
+                "AS{} cannot call {} while ibgp_mode is {}".format(
+                    self.__asn, api_name, self.__ibgp_mode
+                )
+            )
+
+    def __hasRouteReflectorRouterConfig(self) -> bool:
+        for router in self.__routers.values():
+            if router.getBgpClusterId() is not None or router.isRouteReflector():
+                return True
+        return False
+
+    def __hasRouteReflectorConfig(self) -> bool:
+        return len(self.__clusters) > 0 or self.__hasRouteReflectorRouterConfig()
+
+    def __defaultBgpClusterId(self) -> str:
+        if self.__asn <= 255:
+            base = "10.{}.0".format(self.__asn)
+        else:
+            base = "10.{}.{}".format((self.__asn // 256) % 256, self.__asn % 256)
+
+        for suffix in range(1, 255):
+            candidate = "{}.{}".format(base, suffix)
+            if candidate not in self.__clusters:
+                return candidate
+
+        raise AssertionError("AS{} cannot allocate a default BGP cluster ID".format(self.__asn))
+
+    def __getIbgpParticipantRouters(self) -> List[Router]:
+        routers = list(self.__routers.values())
+        if self.__bgp_scope == BGP_SCOPE_ALL_ROUTERS:
+            return routers
+
+        participants = [
+            router for router in routers
+            if (
+                (hasattr(router, "getBgpRole") and router.getBgpRole() == ROUTER_BGP_ROLE_EDGE)
+                or router.isBorderRouter()
+            )
+        ]
+        assert len(participants) > 0, (
+            "AS{} has bgp_scope=edge-only but no edge routers were found; "
+            "mark routers with setBgpRole('edge') or connect them to IXes".format(self.__asn)
+        )
+        return participants
+
+    def getIbgpParticipants(self) -> Set[str]:
+        """!
+        @brief Get router names participating in the AS iBGP design.
+        """
+        return {router.getName() for router in self.__getIbgpParticipantRouters()}
+
     def _validate_cluster_integrity(self, data: Dict[str, Tuple[Set[str], Set[str]]]):
         """!
         @brief Validate Route Reflector cluster membership.
 
-        A single cluster without any RR is treated as the legacy full-mesh iBGP
-        topology. Multi-cluster topologies, or any topology containing an RR,
-        must satisfy the RR/client contract.
-
         @param data mapping from cluster ID to RR names and client names.
         """
-        if len(data) == 1:
-            _, (rrs, _) = list(data.items())[0]
-            if len(rrs) == 0:
-                return
-
         for cid, (rr_set, client_set) in data.items():
             assert len(rr_set) > 0, (
                 "[Topology Error] AS{} cluster '{}' is invalid: missing Route "
-                "Reflector. In a multi-cluster or RR topology, every cluster "
-                "must have an RR.".format(self.__asn, cid)
+                "Reflector.".format(self.__asn, cid)
             )
             assert len(client_set) > 0, (
                 "[Topology Error] AS{} cluster '{}' is invalid: missing clients. "
@@ -91,7 +302,92 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
                 )
             )
 
-    def _aggregateBgpClusters(self) -> Dict[str, Tuple[Set[str], Set[str]]]:
+    def completeIbgpSetup(self) -> AutonomousSystem:
+        """!
+        @brief Complete and validate the AS-level iBGP design.
+
+        The AS owns iBGP intent. The Ibgp layer only renders the completed
+        design into router configuration.
+        """
+        mode = self.getIbgpMode()
+        has_rr_config = self.__hasRouteReflectorConfig()
+
+        if mode == IBGP_MODE_FULL_MESH:
+            if self.hasIbgpMode() and has_rr_config:
+                raise AssertionError(
+                    "AS{} has route-reflector cluster/router configuration but ibgp_mode is full-mesh".format(
+                        self.__asn
+                    )
+                )
+            if not self.hasIbgpMode() and has_rr_config:
+                self.__ibgp_mode = IBGP_MODE_ROUTE_REFLECTOR
+                mode = IBGP_MODE_ROUTE_REFLECTOR
+
+        if mode == IBGP_MODE_DISABLED:
+            return self
+
+        participants = self.__getIbgpParticipantRouters()
+        if mode == IBGP_MODE_FULL_MESH:
+            return self
+
+        assert mode == IBGP_MODE_ROUTE_REFLECTOR, "unsupported iBGP mode: {}".format(mode)
+
+        explicit_clusters = len(self.__clusters) > 0
+        advanced_multi_cluster = len(self.__clusters) > 1
+
+        if not explicit_clusters:
+            self.createBgpCluster(self.__defaultBgpClusterId())
+
+        if advanced_multi_cluster:
+            self.__completeAdvancedRouteReflectorSetup(participants)
+        else:
+            self.__completeDefaultRouteReflectorSetup(participants)
+
+        return self
+
+    def __completeDefaultRouteReflectorSetup(self, participants: List[Router]) -> None:
+        assert len(participants) > 0, "AS{} route-reflector mode requires at least one router".format(self.__asn)
+        cluster_id = sorted(self.__clusters.keys())[0]
+
+        for router in participants:
+            if router.getBgpClusterId() is None:
+                router.joinBgpCluster(cluster_id)
+            assert router.getBgpClusterId() == cluster_id, (
+                "AS{} router {} joined unknown or non-default cluster {}".format(
+                    self.__asn, router.getName(), router.getBgpClusterId()
+                )
+            )
+
+        rrs = [router for router in participants if router.isRouteReflector()]
+        if not rrs:
+            sorted(participants, key=lambda router: router.getName())[0].makeRouteReflector()
+
+        self._aggregateBgpClusters(validate=True)
+
+    def __completeAdvancedRouteReflectorSetup(self, participants: List[Router]) -> None:
+        cluster_ids = set(self.__clusters.keys())
+        participant_names = {router.getName() for router in participants}
+
+        for router in participants:
+            cluster_id = router.getBgpClusterId()
+            assert cluster_id is not None, (
+                "Router {} in AS{} is missing a cluster ID".format(router.getName(), self.__asn)
+            )
+            assert cluster_id in cluster_ids, (
+                "Router {} in AS{} joined unknown cluster {}".format(
+                    router.getName(), self.__asn, cluster_id
+                )
+            )
+
+        data = self._aggregateBgpClusters(validate=False)
+        data = {
+            cid: (rrs & participant_names, clients & participant_names)
+            for cid, (rrs, clients) in data.items()
+        }
+        self._validate_cluster_integrity(data)
+        self.__clusters = data
+
+    def _aggregateBgpClusters(self, validate: bool = True) -> Dict[str, Tuple[Set[str], Set[str]]]:
         """!
         @brief Build Route Reflector cluster membership from AS/router state.
 
@@ -105,9 +401,8 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
             cid: (set(rrs), set(clients))
             for cid, (rrs, clients) in self.__clusters.items()
         }
-        default_cluster_id = "10.0.0.0"
 
-        for router in self.__routers.values():
+        for router in self.__getIbgpParticipantRouters():
             r_cid = router.getBgpClusterId()
             is_rr = router.isRouteReflector()
             r_name = router.getName()
@@ -118,16 +413,18 @@ class AutonomousSystem(Printable, Graphable, Configurable, Customizable):
                 )
                 target_cid = r_cid
             else:
-                if default_cluster_id not in merged_data:
-                    merged_data[default_cluster_id] = (set(), set())
-                target_cid = default_cluster_id
+                assert len(merged_data) == 1, (
+                    "Router {} in AS{} is missing a cluster ID".format(r_name, self.__asn)
+                )
+                target_cid = next(iter(merged_data.keys()))
 
             if is_rr:
                 merged_data[target_cid][0].add(r_name)
             else:
                 merged_data[target_cid][1].add(r_name)
 
-        self._validate_cluster_integrity(merged_data)
+        if validate:
+            self._validate_cluster_integrity(merged_data)
         self.__clusters = merged_data
         return self.__clusters
 

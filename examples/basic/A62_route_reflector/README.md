@@ -114,6 +114,7 @@ marking the RR router:
 
 ```python
 as12 = base.getAutonomousSystem(12)
+as12.setIbgpMode("route-reflector")
 as12.createBgpCluster("10.12.0.1")
 as12.getRouter("r101").joinBgpCluster("10.12.0.1").makeRouteReflector()
 as12.getRouter("r104").joinBgpCluster("10.12.0.1")

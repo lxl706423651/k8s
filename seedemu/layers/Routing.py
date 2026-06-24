@@ -4,7 +4,6 @@ from seedemu.core import (ScopedRegistry, Node, Interface, Network, Emulator,
 from seedemu.core.enums import NetworkType
 from typing import Dict, List, Set, Tuple
 from ipaddress import IPv4Network
-import random
 from ._bgp_metadata import (
     BGP_EXPORT_LOCAL_AND_CUSTOMER,
     BGP_BACKEND_BIRD,
@@ -12,6 +11,7 @@ from ._bgp_metadata import (
     get_bgp_backend,
     get_bgp_sessions,
     get_ospf_interface_intents,
+    get_ospf_timers,
     has_bgp_connected_export,
     ensure_bird_bgp_base,
     render_frr_community,
@@ -31,43 +31,17 @@ RoutingFileTemplates["rnode_bird_direct_interface"] = """
     interface "{interfaceName}";
 """
 
-RoutingFileTemplates["kernel1"] = """
-protocol kernel {{
-    merge paths on;
-    persist;
-    scan time {interval};
-    ipv4 {{
-        import none;
-        # Core modification here: add a filter
-        export filter {{
-            # Allow direct routes to be installed into the kernel (ensure basic connectivity)
-            if source = RTS_DEVICE then accept;
-            # Allow OSPF routes to be installed into the kernel (ensure iBGP Loopback reachability)
-            if source = RTS_OSPF then accept;
-            # Reject all other routes (including BGP routes) from being installed into the kernel!
-            reject;
-        }};
-    }};
-}}
-"""
-
-RoutingFileTemplates["kernel2"] = """
-protocol kernel {{
-    merge paths on;
-    persist;
-    scan time {interval};
-    ipv4 {{
-        import none;
-        export all;
-    }};
-}}
-"""
-
-
 RoutingFileTemplates["rnode_bird"] = """\
 router id {routerId};
 ipv4 table t_direct;
 protocol device {{
+}}
+protocol kernel {{
+    ipv4 {{
+        import all;
+        export all;
+    }};
+    learn;
 }}
 """
 
@@ -85,13 +59,14 @@ RoutingFileTemplates['bird_ospf_body'] = """
         import all;
         export all;
     }};
+    tick {tick};
     area 0 {{
 {interfaces}
     }};
 """
 
 RoutingFileTemplates['bird_ospf_interface'] = """\
-        interface "{interfaceName}" {{ hello 1; dead count 2; }};
+        interface "{interfaceName}" {{ hello {hello}; dead {dead}; }};
 """
 
 RoutingFileTemplates['bird_ospf_stub_interface'] = """\
@@ -163,8 +138,8 @@ route-map {name} permit 10
 FrrFileTemplates["ospf_interface_active"] = """\
 interface {interface}
  ip ospf area 0
- ip ospf hello-interval 1
- ip ospf dead-interval 2
+ ip ospf hello-interval {hello}
+ ip ospf dead-interval {dead}
 !
 """
 
@@ -249,22 +224,22 @@ class Routing(Layer):
 
     def _configure_rs(self, rs_node: Node):
         backend = get_bgp_backend(rs_node)
-        if backend == BGP_BACKEND_FRR:
-            raise NotImplementedError("FRR route-server nodes are not supported yet; use BIRD route servers")
-        rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
-        rs_node.appendStartCommand('bird -d', True)
-        self._log("Bootstrapping bird.conf for RS {}...".format(rs_node.getName()))
-
         rs_ifaces = rs_node.getInterfaces()
         assert len(rs_ifaces) == 1, "rs node {} has != 1 interfaces".format(rs_node.getName())
-
         rs_iface = rs_ifaces[0]
 
         assert issubclass(rs_node.__class__, Router)
         rs_node.setBorderRouter(True)
-        rs_node.setFile("/etc/bird/bird.conf", RoutingFileTemplates["rs_bird"].format(
-            routerId = rs_iface.getAddress()
-        ))
+        if backend == BGP_BACKEND_BIRD:
+            rs_node.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
+            rs_node.appendStartCommand('bird -d', True)
+            self._log("Bootstrapping bird.conf for RS {}...".format(rs_node.getName()))
+            rs_node.setFile("/etc/bird/bird.conf", RoutingFileTemplates["rs_bird"].format(
+                routerId = rs_iface.getAddress()
+            ))
+        else:
+            self._log("Bootstrapping frr.conf for RS {}...".format(rs_node.getName()))
+            self._configure_frr_router(rs_node)
 
     def _configure_bird_router(self, rnode: Router):
         ifaces = ''
@@ -279,8 +254,8 @@ class Routing(Layer):
         rnode.setFile("/etc/bird/bird.conf",
             RoutingFileTemplates["rnode_bird"].format(
               routerId = rnode.getLoopbackAddress()))
-        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird ')
-        #rnode.appendStartCommand('bird', True)
+        rnode.appendStartCommand('[ ! -d /run/bird ] && mkdir /run/bird')
+        rnode.appendStartCommand('bird -d', True)
         if has_localnet:
             rnode.addProtocol('direct', 'local_nets',
                               RoutingFileTemplates['rnode_bird_direct'].format(interfaces = ifaces))
@@ -290,31 +265,27 @@ class Routing(Layer):
         rnode.appendStartCommand("chmod +x /frr_start")
         rnode.appendStartCommand("/frr_start")
 
-    def _install_bird_kernel_conf(self, rnode: Router):
-        """Install the staged BIRD kernel protocol file used by phased starts."""
-        content = '\ninclude "/etc/bird/conf/*.conf";\n'
-        rnode.appendFile('/etc/bird/bird.conf', content)
-        interval = 60000 + random.randint(0, 12000)
-        rnode.setFile(
-            "/etc/bird/conf/kernel.conf",
-            RoutingFileTemplates["kernel1"].format(interval=interval),
-        )
-
     def _render_bird_ospf(self, rnode: Router):
         intents = get_ospf_interface_intents(rnode)
         if not intents["active"] and not intents["passive"]:
             return
 
+        timers = get_ospf_timers(rnode)
         ospf_interfaces = ''
         for name in intents["passive"]:
             ospf_interfaces += RoutingFileTemplates['bird_ospf_stub_interface'].format(interfaceName=name)
         for name in intents["active"]:
-            ospf_interfaces += RoutingFileTemplates['bird_ospf_interface'].format(interfaceName=name)
+            ospf_interfaces += RoutingFileTemplates['bird_ospf_interface'].format(
+                interfaceName=name,
+                hello=timers["hello"],
+                dead=timers["dead"],
+            )
 
         if ospf_interfaces != '':
             rnode.addTable('t_ospf')
             rnode.addProtocol('ospf', 'ospf1', RoutingFileTemplates['bird_ospf_body'].format(
-                interfaces=ospf_interfaces
+                interfaces=ospf_interfaces,
+                tick=timers["tick"],
             ))
             rnode.addTablePipe('t_ospf')
 
@@ -386,14 +357,17 @@ class Routing(Layer):
                 customer_comm="{}:1:0".format(router.getAsn()),
             )
         )
-        connected_body, has_connected = self._render_frr_connected_export(router)
+        if has_bgp_connected_export(router):
+            connected_body, has_connected = self._render_frr_connected_export(router)
+        else:
+            connected_body, has_connected = "", False
         body.append(connected_body)
         route_maps, map_names = self._render_frr_route_maps(router.getAsn(), sessions)
         body.append(route_maps)
 
         bgp: List[str] = [
             "router bgp {}".format(router.getAsn()),
-            " bgp router-id {}".format(router.getLoopbackAddress()),
+            " bgp router-id {}".format(self._get_frr_router_id(router)),
             " no bgp ebgp-requires-policy",
             " no bgp default ipv4-unicast",
         ]
@@ -414,6 +388,13 @@ class Routing(Layer):
             bgp.append(" neighbor {} remote-as {}".format(session["peer_address"], session["peer_asn"]))
             bgp.append(" neighbor {} update-source {}".format(session["peer_address"], session["local_address"]))
             bgp.append(" neighbor {} description {}".format(session["peer_address"], session["name"]))
+            bgp.append(
+                " neighbor {} timers {} {}".format(
+                    session["peer_address"],
+                    session["keepalive_time"],
+                    session["hold_time"],
+                )
+            )
             if session["passive"]:
                 bgp.append(" neighbor {} passive".format(session["peer_address"]))
         bgp.append(" !")
@@ -426,6 +407,8 @@ class Routing(Layer):
             bgp.append("  neighbor {} activate".format(session["peer_address"]))
             if session["next_hop_self"]:
                 bgp.append("  neighbor {} next-hop-self".format(session["peer_address"]))
+            if session["route_server_client"]:
+                bgp.append("  neighbor {} route-server-client".format(session["peer_address"]))
             if session["route_reflector_client"]:
                 bgp.append("  neighbor {} route-reflector-client".format(session["peer_address"]))
             if maps.get("import"):
@@ -437,16 +420,31 @@ class Routing(Layer):
         body.append("\n".join(bgp) + "\n")
         return "".join(body)
 
+    def _get_frr_router_id(self, router: Router) -> str:
+        loopback = router.getLoopbackAddress()
+        if loopback is not None:
+            return str(loopback)
+        ifaces = router.getInterfaces()
+        assert len(ifaces) > 0, "router node {}/{} has no interfaces".format(router.getAsn(), router.getName())
+        return str(ifaces[0].getAddress())
+
     def _render_frr_ospf(self, router: Router) -> str:
         intents = get_ospf_interface_intents(router)
         if not intents["active"] and not intents["passive"]:
             return ""
 
+        timers = get_ospf_timers(router)
         body: List[str] = []
         for name in intents["passive"]:
             body.append(FrrFileTemplates["ospf_interface_passive"].format(interface=name))
         for name in intents["active"]:
-            body.append(FrrFileTemplates["ospf_interface_active"].format(interface=name))
+            body.append(
+                FrrFileTemplates["ospf_interface_active"].format(
+                    interface=name,
+                    hello=timers["hello"],
+                    dead=timers["dead"],
+                )
+            )
         body.append(FrrFileTemplates["ospf_router"].format(router_id=router.getLoopbackAddress()))
         return "".join(body)
 
@@ -466,7 +464,11 @@ class Routing(Layer):
         for ((scope, type, name), obj) in reg.getAll().items():
             if type == 'rs':
                 rs_node: Node = obj
-                self._installBird(rs_node)
+                backend = get_bgp_backend(rs_node)
+                if backend == BGP_BACKEND_BIRD:
+                    self._installBird(rs_node)
+                else:
+                    self._installFrr(rs_node)
                 self._configure_rs(rs_node)
             if type == 'rnode':
                 rnode: Router = obj
@@ -533,14 +535,17 @@ class Routing(Layer):
                 assert issubclass(obj.__class__, Router), 'routing: render: adding new RS/Router after routing layer configured is not currently supported.'
 
             if type == 'rs':
-                self._install_bird_kernel_conf(obj)
-                self._render_bird_control_plane(obj)
+                rs_node: Router = obj
+                backend = get_bgp_backend(rs_node)
+                if backend == BGP_BACKEND_BIRD:
+                    self._render_bird_control_plane(rs_node)
+                else:
+                    self._render_frr_control_plane(rs_node)
 
             if type == 'rnode':
                 rnode: Router = obj
                 backend = get_bgp_backend(rnode)
                 if backend == BGP_BACKEND_BIRD:
-                    self._install_bird_kernel_conf(rnode)
                     self._render_bird_control_plane(rnode)
                 else:
                     self._render_frr_control_plane(rnode)

@@ -1,11 +1,18 @@
 from __future__ import annotations
+from .Base import Base
 from .Ospf import Ospf
 from .Ibgp import Ibgp
 from seedemu.core import Node, ScopedRegistry, Graphable, Emulator, Layer, Router
 from seedemu.core.enums import NetworkType, NodeRole
 from typing import List, Tuple, Dict, Set
+from ._bgp_metadata import install_router_bgp_session
 
 MplsFileTemplates: Dict[str, str] = {}
+
+MPLS_PRESERVED_IBGP_MODES = {"route-reflector"}
+MPLS_DISABLED_IBGP_MODES = {"disabled"}
+MPLS_CORE_FORWARDING = "mpls"
+MPLS_EDGE_BGP_SCOPE = "edge-only"
 
 MplsFileTemplates['frr_start_script'] = """\
 #!/bin/bash
@@ -39,18 +46,6 @@ interface {interface}
  ip ospf area 0
  ip ospf dead-interval minimal hello-multiplier 2
 """
-
-MplsFileTemplates['bird_ibgp_peer'] = '''
-    ipv4 {{
-        table t_bgp;
-        import all;
-        export all;
-        igp table master4;
-    }};
-    local {localAddress} as {asn};
-    neighbor {peerAddress} as {asn};
-'''
-
 
 class Mpls(Layer, Graphable):
     """!
@@ -151,16 +146,58 @@ class Mpls(Layer, Graphable):
         """
         return self.__enabled
 
+    def __syncAsLevelEnabled(self, emulator: Emulator) -> Set[int]:
+        reg = emulator.getRegistry()
+        if reg.has('seedemu', 'layer', 'Base'):
+            base: Base = reg.get('seedemu', 'layer', 'Base')
+            for asn in base.getAsns():
+                asobj = base.getAutonomousSystem(asn)
+                if hasattr(asobj, "getCoreForwarding") and asobj.getCoreForwarding() == MPLS_CORE_FORWARDING:
+                    self.__enabled.add(asn)
+        return set(self.__enabled)
+
+    def __getAsObject(self, emulator: Emulator, asn: int):
+        reg = emulator.getRegistry()
+        if reg.has('seedemu', 'layer', 'Base'):
+            base: Base = reg.get('seedemu', 'layer', 'Base')
+            return base.getAutonomousSystem(asn)
+        return None
+
+    def __getExplicitIbgpMode(self, emulator: Emulator, asn: int):
+        asobj = self.__getAsObject(emulator, asn)
+        if asobj is not None:
+            if hasattr(asobj, "hasIbgpMode") and asobj.hasIbgpMode():
+                return asobj.getIbgpMode()
+        reg = emulator.getRegistry()
+        if reg.has('seedemu', 'layer', 'Ibgp'):
+            ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
+            if asn in ibgp.getMaskedAsns():
+                return "disabled"
+        return None
+
+    def __preserveExistingIbgp(self, emulator: Emulator, asn: int) -> bool:
+        asobj = self.__getAsObject(emulator, asn)
+        if asobj is not None:
+            if asobj.getIbgpMode() in MPLS_PRESERVED_IBGP_MODES:
+                return True
+            if asobj.getIbgpMode() == "full-mesh" and asobj.getBgpScope() == MPLS_EDGE_BGP_SCOPE:
+                return True
+        return self.__getExplicitIbgpMode(emulator, asn) in MPLS_PRESERVED_IBGP_MODES
+
+    def __installMplsIbgp(self, emulator: Emulator, asn: int) -> bool:
+        mode = self.__getExplicitIbgpMode(emulator, asn)
+        return mode not in MPLS_PRESERVED_IBGP_MODES and mode not in MPLS_DISABLED_IBGP_MODES
+
     def __maskExistingControlPlaneLayers(self, emulator: Emulator) -> None:
         """Mask OSPF/iBGP before those layers record non-MPLS intent."""
         reg = emulator.getRegistry()
-        for asn in self.__enabled:
+        for asn in self.__syncAsLevelEnabled(emulator):
             if reg.has('seedemu', 'layer', 'Ospf'):
                 self._log('Ospf layer exists, masking as{}'.format(asn))
                 ospf: Ospf = reg.get('seedemu', 'layer', 'Ospf')
                 ospf.maskAsn(asn)
 
-            if reg.has('seedemu', 'layer', 'Ibgp'):
+            if reg.has('seedemu', 'layer', 'Ibgp') and not self.__preserveExistingIbgp(emulator, asn):
                 self._log('Ibgp layer exists, masking as{}'.format(asn))
                 ibgp: Ibgp = reg.get('seedemu', 'layer', 'Ibgp')
                 ibgp.maskAsn(asn)
@@ -191,6 +228,17 @@ class Mpls(Layer, Graphable):
             else: nodes.append(node)
 
         return (enodes, nodes)
+
+    def __addAdditionalEdges(self, scope: ScopedRegistry, asn: int, enodes: List[Node]) -> List[Node]:
+        names = {node.getName() for node in enodes}
+        for (asn_, nodename) in self.__additional_edges:
+            if asn_ != asn:
+                continue
+            if scope.has('rnode', nodename) and nodename not in names:
+                node = scope.get('rnode', nodename)
+                enodes.append(node)
+                names.add(nodename)
+        return enodes
 
     def __setUpLdpOspf(self, node: Router):
         """!
@@ -242,41 +290,56 @@ class Mpls(Layer, Graphable):
             for remote in nodes:
                 if local == remote: continue
 
-                local.addTable('t_bgp')
-                local.addTablePipe('t_bgp')
-                local.addTablePipe('t_direct', 't_bgp')
-                local.addProtocol('bgp', 'ibgp{}'.format(n), MplsFileTemplates['bird_ibgp_peer'].format(
-                    localAddress = local.getLoopbackAddress(),
-                    peerAddress = remote.getLoopbackAddress(),
-                    asn = local.getAsn()
-                ))
+                install_router_bgp_session(
+                    local,
+                    {
+                        "name": "mpls_ibgp{}".format(n),
+                        "kind": "ibgp",
+                        "local_address": str(local.getLoopbackAddress()),
+                        "local_asn": local.getAsn(),
+                        "peer_address": str(remote.getLoopbackAddress()),
+                        "peer_asn": local.getAsn(),
+                        "export_policy": "all",
+                        "next_hop_self": False,
+                        "igp_table": "master4",
+                    },
+                )
 
                 n += 1
 
     def configure(self, emulator: Emulator):
         super().configure(emulator)
+        enabled = self.__syncAsLevelEnabled(emulator)
+        install_mpls_ibgp = {
+            asn: self.__installMplsIbgp(emulator, asn)
+            for asn in enabled
+        }
         self.__maskExistingControlPlaneLayers(emulator)
+        reg = emulator.getRegistry()
+        for asn in enabled:
+            scope = ScopedRegistry(str(asn), reg)
+            (enodes, _) = self.__getEdgeNodes(scope)
+            enodes = self.__addAdditionalEdges(scope, asn, enodes)
+            if install_mpls_ibgp[asn]:
+                self.__setUpIbgpMesh(enodes)
 
     def render(self, emulator: Emulator):
         reg = emulator.getRegistry()
+        enabled = self.__syncAsLevelEnabled(emulator)
         self.__maskExistingControlPlaneLayers(emulator)
-        for asn in self.__enabled:
+        for asn in enabled:
             scope = ScopedRegistry(str(asn), reg)
             (enodes, nodes) = self.__getEdgeNodes(scope)
-
-            for (asn_, nodename) in self.__additional_edges:
-                if asn_ != asn: continue
-                if scope.has('rnode', nodename):
-                    enodes.append(scope.get('rnode', nodename))
+            enodes = self.__addAdditionalEdges(scope, asn, enodes)
 
             for n in enodes: self.__setUpLdpOspf(n)
             for n in nodes: self.__setUpLdpOspf(n)
-            self.__setUpIbgpMesh(enodes)
 
     def _doCreateGraphs(self, emulator: Emulator):
         base = emulator.getRegistry().get('seedemu', 'layer', 'Base')
+        enabled = self.__syncAsLevelEnabled(emulator)
         for asn in base.getAsns():
-            if asn not in self.__enabled: continue
+            if asn not in enabled: continue
             asobj = base.getAutonomousSystem(asn)
             asobj.createGraphs(emulator)
             l2graph = asobj.getGraph('AS{}: Layer 2 Connections'.format(asn))

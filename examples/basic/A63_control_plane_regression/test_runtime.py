@@ -45,6 +45,9 @@ def main() -> int:
     rs100 = test.require_service(100, "ix100", "IX100 BIRD route server is generated")
     as150_router = test.require_service(150, "router0")
     as151_router = test.require_service(151, "router0")
+    rs107 = test.require_service(107, "ix107", "IX107 FRR route server is generated")
+    as157_router = test.require_service(157, "router0")
+    as158_router = test.require_service(158, "router0")
     as2_r1 = test.require_service(2, "r1")
     as2_r2 = test.require_service(2, "r2")
     as152_router = test.require_service(152, "router0")
@@ -81,6 +84,24 @@ def main() -> int:
 
     if as151_router:
         test.exec_check("AS151 learns AS150 route through route server", as151_router, "birdc show route | grep -q '10.150.0.0/24'", retries=15)
+
+    if rs107:
+        require_backend(test, rs107, "frr")
+        test.exec_check("IX107 route server starts FRR bgpd", rs107, "pgrep -x bgpd >/dev/null")
+        test.exec_check("IX107 route server does not start BIRD", rs107, "! pgrep -x bird >/dev/null")
+        test.exec_check("IX107 route server renders AS157 as RS client", rs107, "grep -q 'neighbor 10.107.0.157 route-server-client' /etc/frr/frr.conf")
+        test.exec_check("IX107 route server renders AS158 as RS client", rs107, "grep -q 'neighbor 10.107.0.158 route-server-client' /etc/frr/frr.conf")
+        test.exec_check("IX107 route server sees AS157 BGP session", rs107, "vtysh -c 'show ip bgp summary' | grep -q '10.107.0.157'", retries=15)
+        test.exec_check("IX107 route server sees AS158 BGP session", rs107, "vtysh -c 'show ip bgp summary' | grep -q '10.107.0.158'", retries=15)
+
+    if as157_router:
+        require_backend(test, as157_router, "bird")
+        test.exec_check("AS157 route-server session is established", as157_router, "birdc show protocols | grep -q 'p_rs107.*Established'", retries=15)
+
+    if as158_router:
+        require_backend(test, as158_router, "bird")
+        test.exec_check("AS158 route-server session is established", as158_router, "birdc show protocols | grep -q 'p_rs107.*Established'", retries=15)
+        test.exec_check("AS158 learns AS157 route through FRR route server", as158_router, "birdc show route | grep -q '10.157.0.0/24'", retries=15)
 
     if as2_r1:
         require_backend(test, as2_r1, "bird")
