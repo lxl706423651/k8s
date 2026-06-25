@@ -62,13 +62,13 @@ def build_emulator() -> Emulator:
     # Create four routers and link them in a linear structure:
     # ix100 <--> r1 <--> r2 <--> r3 <--> r4 <--> ix101
     # r1 and r4 are BGP routers because they are connected to Internet exchanges.
-    as2.createRouter("r1").joinNetwork("net0").joinNetwork("ix100")
-    as2.createRouter("r2").joinNetwork("net0").joinNetwork("net1")
-    as2.createRouter("r3").joinNetwork("net1").joinNetwork("net2")
-    as2.createRouter("r4").joinNetwork("net2").joinNetwork("ix101")
+    as2.createRouter("r1", routingBackend="frr").joinNetwork("net0").joinNetwork("ix100")
+    as2.createRouter("r2", routingBackend="frr").joinNetwork("net0").joinNetwork("net1")
+    as2.createRouter("r3", routingBackend="frr").joinNetwork("net1").joinNetwork("net2")
+    as2.createRouter("r4", routingBackend="frr").joinNetwork("net2").joinNetwork("ix101")
 
     # Enable MPLS in the transit AS.
-    mpls.enableOn(2)
+    as2.setCoreForwarding("mpls")
 
     ###############################################################################
     # Create and set up the stub AS (AS151)

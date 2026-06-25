@@ -44,11 +44,11 @@ def make_as2_mpls_transit(base: Base):
     as2 = base.createAutonomousSystem(2)
     border_routers = {}
     for ix in [100, 101, 102, 105]:
-        border_routers[ix] = as2.createRouter("r{}".format(ix))
+        border_routers[ix] = as2.createRouter("r{}".format(ix), routingBackend="frr")
         border_routers[ix].joinNetwork("ix{}".format(ix))
 
     for left, right in [(100, 101), (101, 102), (100, 105)]:
-        core = as2.createRouter("core_{}_{}".format(left, right))
+        core = as2.createRouter("core_{}_{}".format(left, right), routingBackend="frr")
         left_net = "net_{}_core_{}_{}".format(left, left, right)
         right_net = "net_core_{}_{}_{}".format(left, right, right)
         as2.createNetwork(left_net)
@@ -108,7 +108,7 @@ def build_emulator(hosts_per_as=2) -> Emulator:
 
     # AS2 keeps the same IX presence and peerings as B00, but its internal
     # routing is configured by the MPLS layer instead of regular OSPF/iBGP.
-    mpls.enableOn(2)
+    base.getAutonomousSystem(2).setCoreForwarding("mpls")
 
     ###############################################################################
     # Create single-homed stub ASes.

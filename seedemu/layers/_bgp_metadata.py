@@ -12,6 +12,7 @@ BGP_CONNECTED_EXPORT_ATTR = "__bgp_connected_export"
 BGP_CONNECTED_EXPORT_RENDERED_ATTR = "__bgp_connected_export_rendered"
 BGP_BOOTSTRAPPED_ATTR = "__bgp_bootstrapped"
 OSPF_INTERFACE_INTENTS_ATTR = "__ospf_interface_intents"
+MPLS_LDP_INTENT_ATTR = "__mpls_ldp_intent"
 
 DEFAULT_OSPF_TICK = 1
 DEFAULT_OSPF_HELLO = 1
@@ -465,6 +466,31 @@ def get_ospf_interface_intents(node: Router) -> Dict[str, List[str]]:
     }
 
 
+def set_mpls_ldp_intent(
+    node: Router,
+    interfaces: Iterable[str],
+    *,
+    platform_labels: int = 1048575,
+) -> None:
+    node.setAttribute(
+        MPLS_LDP_INTENT_ATTR,
+        {
+            "interfaces": sorted({str(name) for name in interfaces}),
+            "platform_labels": int(platform_labels),
+        },
+    )
+
+
+def get_mpls_ldp_intent(node: Router) -> Dict[str, Any]:
+    raw = node.getAttribute(MPLS_LDP_INTENT_ATTR, {}) or {}
+    return {
+        "interfaces": [str(name) for name in list(raw.get("interfaces", []) or [])],
+        "platform_labels": int(raw.get("platform_labels", 1048575)),
+    }
+
+
+def has_mpls_ldp_intent(node: Router) -> bool:
+    return bool(get_mpls_ldp_intent(node)["interfaces"])
 def get_ospf_timers(node: Router) -> Dict[str, int]:
     raw = node.getAttribute(OSPF_INTERFACE_INTENTS_ATTR, {}) or {}
     timers = raw.get("timers", {}) if isinstance(raw, dict) else {}
@@ -473,3 +499,30 @@ def get_ospf_timers(node: Router) -> Dict[str, int]:
         timers.get("hello", DEFAULT_OSPF_HELLO),
         timers.get("dead", DEFAULT_OSPF_DEAD),
     )
+
+
+def set_mpls_ldp_intent(
+    node: Router,
+    interfaces: Iterable[str],
+    *,
+    platform_labels: int = 1048575,
+) -> None:
+    node.setAttribute(
+        MPLS_LDP_INTENT_ATTR,
+        {
+            "interfaces": sorted({str(name) for name in interfaces}),
+            "platform_labels": int(platform_labels),
+        },
+    )
+
+
+def get_mpls_ldp_intent(node: Router) -> Dict[str, Any]:
+    raw = node.getAttribute(MPLS_LDP_INTENT_ATTR, {}) or {}
+    return {
+        "interfaces": [str(name) for name in list(raw.get("interfaces", []) or [])],
+        "platform_labels": int(raw.get("platform_labels", 1048575)),
+    }
+
+
+def has_mpls_ldp_intent(node: Router) -> bool:
+    return bool(get_mpls_ldp_intent(node)["interfaces"])
