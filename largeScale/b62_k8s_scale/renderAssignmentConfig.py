@@ -6,7 +6,7 @@ Inputs:
   cluster addressing.
 
 Outputs:
-- configKvmOvn.yaml for k8sTools.py build.
+- configKvm.yaml for k8sTools.py build.
 - resourcePlan.yaml/json with the computed VM resource distribution.
 
 Side effects:
@@ -312,7 +312,7 @@ def createKvmNodes(assignment: dict[str, Any], plan: dict[str, Any], worker_coun
 def createGeneratedPaths(assignment: dict[str, Any], run_dir: Path) -> dict[str, Path]:
     """Return generated file paths for this assignment."""
     return {
-        "config_kvm_ovn": SCRIPT_DIR / "configKvmOvn.yaml",
+        "config_kvm": SCRIPT_DIR / "configKvm.yaml",
         "config_k3s": SCRIPT_DIR / "configK3s.yaml",
         "kubeconfig": SCRIPT_DIR / "kubeconfig.yaml",
         "inventory": SCRIPT_DIR / "cluster.inventory.yaml",
@@ -323,7 +323,7 @@ def createGeneratedPaths(assignment: dict[str, Any], run_dir: Path) -> dict[str,
 
 
 def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, Path], plan: dict[str, Any]) -> dict[str, Any]:
-    """Create the kvmOvn YAML consumed by k8sTools.py build."""
+    """Create the neutral KVM YAML consumed by k8sTools.py build."""
     worker_count = int(getNested(assignment, "experiment.workerCount"))
     validateK3sPodCidrCapacity(assignment, worker_count)
     cluster_name = f"{getNested(assignment, 'kvm.clusterNamePrefix')}-w{worker_count}"
@@ -391,7 +391,7 @@ def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, 
     ovn = dict(assignment.get("ovn") if isinstance(assignment.get("ovn"), dict) else {})
     ovn["helmCacheDir"] = str(persistent_helm_cache)
     config = {
-        "kind": "kvmOvn",
+        "kind": "kvm",
         "clusterName": cluster_name,
         "nodes": createKvmNodes(assignment, plan, worker_count),
         "kvm": {
@@ -466,10 +466,10 @@ def prepareConfig(args: argparse.Namespace) -> None:
     kvm_config = createKvmConfig(assignment, run_dir, paths, plan)
 
     run_dir.mkdir(parents=True, exist_ok=True)
-    writeYaml(paths["config_kvm_ovn"], kvm_config)
+    writeYaml(paths["config_kvm"], kvm_config)
     writeYaml(paths["resource_plan_yaml"], plan)
     writeJson(paths["resource_plan_json"], plan)
-    print(f"rendered {paths['config_kvm_ovn']}")
+    print(f"rendered {paths['config_kvm']}")
     print(f"resource_plan={paths['resource_plan_yaml']}")
     print(f"run_dir={run_dir}")
 

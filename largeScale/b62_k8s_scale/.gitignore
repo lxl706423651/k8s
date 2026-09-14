@@ -7,9 +7,12 @@
 # Generated cluster/runtime state. Keep local copies for the active cluster,
 # but do not publish them.
 /configK3s.yaml
-/configKvmOvn.yaml
+/configKvm.yaml
 /kubeconfig.yaml
 /cluster.inventory.yaml
+/configK3sMultiHostKvmMacvlan.yaml
+/kubeconfigMultiHostKvmMacvlan.yaml
+/clusterMultiHostKvmMacvlan.inventory.yaml
 /resourcePlan.yaml
 /resourcePlan.json
 

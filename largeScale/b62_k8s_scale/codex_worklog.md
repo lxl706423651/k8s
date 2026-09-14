@@ -392,3 +392,783 @@
   - 没有运行真实 KVM/K3s/deploy 实验；本次只做文件整理、README 更新和静态检查。
 - Notes:
   - `.gitignore` 对未跟踪的 `runs/` 和 `base_image/` 生效。对历史上已经被 Git 跟踪的生成文件，仍需在提交前用 `git rm --cached <file>` 取消跟踪，工作区文件本身不会被删除。
+
+## 2026-06-24 09:40 - Down 9955 Namespace And Clear Cluster
+
+- User intent: 将当前 9955 规模实验的 namespace down 掉，并清除当前 B62 K3s/KVM cluster。
+- Scope:
+  - Runtime resources for `/home/lxl/k8s/largeScale/b62_k8s_scale/runs/macvlan_vlan_9955_20260623_225237_w63`
+  - Namespace `seedemu-b62-macvlan-vlan-9955-w63-225237`
+  - B62 libvirt VMs and networks for `w63`
+- Changes:
+  - 删除 9955 规模实验 namespace 内的 workload、NAD、events，并等待 namespace 删除完成。
+  - 执行 cluster destroy，清理 K3s、64 个 B62 VM、w63 libvirt 网络和生成的 kubeconfig/inventory。
+  - 未处理 `bird-rtnl-dev`，因为它不是本轮 B62 cluster 的节点。
+- Commands:
+  - `kubectl get ns/pods/nodes`: 清理前确认 namespace 存在、9955 个 Pod Running、64 个节点 Ready。
+  - `./clean.sh runs/macvlan_vlan_9955_20260623_225237_w63`: 删除 namespace 和相关 Kube-OVN 资源；`clean.log` 显示 namespace fully deleted。
+  - `./destroyCluster.sh runs/macvlan_vlan_9955_20260623_225237_w63`: 清理 K3s/KVM cluster；`destroy-cluster.log` 显示 cleanup verification passed。
+  - `virsh -c qemu:///system list --all | rg 'seedemu-b62|bird-rtnl-dev'`: 最终只剩 `bird-rtnl-dev` running，无 `seedemu-b62-*` VM。
+  - `virsh -c qemu:///system net-list --all | rg 'seedemu-b62|virbrb62'`: 最终无 B62 libvirt network。
+- Validation:
+  - `clean.sh` 退出码 `0`，删除 9955 deployments、8077 replicasets、9343 NADs、8491 directly listed pods、9996 events，并确认 namespace 删除完成。
+  - `destroyCluster.sh` 退出码 `0`，确认 B62 libvirt domains/networks 不再存在，`kubeconfig.yaml` 和 `cluster.inventory.yaml` 被移除。
+- Notes:
+  - 工作目录中仍存在 `configK3s.yaml` 这个生成配置文件，但当前 cluster 已销毁；该文件已被 `.gitignore` 忽略，不代表仍有活跃集群。
+  - 删除大规模 namespace 期间宿主机 load 曾短暂升高，这是大量 Kubernetes 对象删除时的预期压力。
+
+## 2026-06-24 15:11 - Expand Network Mode Selection Notes
+
+- User intent: 将关于 `OVN+OVS`、`macvlan+VLAN`、`bridge+VLAN` 的使用建议写入 `0623conclusion.md`，并结合当前 SeedEMU/K8s 源码和仿真器语义，说明不同实验场景下应该选择哪种模式，尤其是 SDN 相关实验的边界。
+- Scope:
+  - `largeScale/b62_k8s_scale/0623conclusion.md`
+  - Source/design references from `seedemu/core`, `seedemu/layers`, `seedemu/compiler/kubernetes.py`, and `seedemu/k8sTools/resources`
+- Changes:
+  - 将原来的简短“推荐选择”扩展为“面向仿真器语义的模式选择”。
+  - 补充 SeedEMU 网络语义依据：`Local`、`InternetExchange`、`CrossConnect` 都是仿真二层广播域，BIRD/OSPF/BGP 依赖容器内真实接口、ARP 和路由表。
+  - 增加按实验目标选择网络模式的表格，区分大规模路由实验、二层隔离证据、抓包、`tc` 故障注入、SDN fabric/OVN 控制面实验、无 underlay VLAN 的跨物理机场景。
+  - 补充三种模式下 `tc` 的可用性和操作点差异：Pod 内接口、host veth、Linux bridge、VLAN parent、OVS/OVN port。
+  - 明确 SDN 实验边界：当前 `OVN+OVS` 可用于 SDN fabric/Kube-OVN/OVS 控制面实验，但不能自动代表 SeedEMU AS 内部被 SDN controller 控制；后者需要新增 switch/controller/flow table/control channel 的编译和运行时映射。
+- Commands:
+  - `sed -n ... 0623conclusion.md`: 阅读原文档结构和现有实验结论。
+  - `sed -n ... seedemu/compiler/kubernetes.py`: 核对 CNI type、VLAN-backed NAD、Kube-OVN NAD 生成逻辑。
+  - `sed -n ... seedemu/k8sTools/resources/running/manageRunningStage.py`: 核对 VLAN parent 与 bridge 创建逻辑。
+  - `rg ... seedemu/core seedemu/layers`: 查证 `NetworkType`、`joinNetwork()`、IX、OSPF、eBGP 与网络类型的关系。
+  - `sed -n ... seedemu/k8sTools/resources/running/manageK8sManifest.py` 和 `installKubeOvnFabric.py`: 查证 Kube-OVN 是 non-primary CNI，只服务 SeedEMU secondary interfaces。
+  - `rg ... 0623conclusion.md`: 检查新增章节关键词和位置；第一次检查时反引号中的 `tc` 被 shell 展开，触发了一次无参数 `tc` 帮助输出，没有修改系统状态，随后用单引号重跑成功。
+  - `git -C /home/lxl/k8s diff -- largeScale/b62_k8s_scale/0623conclusion.md`: 检查实际文档 diff。
+- Validation:
+  - 文档新增章节已出现在 `0623conclusion.md` 第 238 行附近，包含 `tc`、SDN 边界和更具体的使用建议。
+  - 本次只修改 Markdown 文档，没有运行真实 KVM/K3s/deploy 实验。
+- Notes:
+  - 结论强调：`OVN+OVS` 可以做 SDN fabric baseline 和控制面压力实验；如果要做真正的 SeedEMU 内部 SDN controller 实验，还需要扩展仿真器模型和 compiler 映射。
+
+## 2026-06-25 14:30 - Add Large-Scale K8s Design Summary
+
+- User intent: 总结大规模 K8s design，重点说明 `compile`、`build`、`deploy`、`start-bird`、`verify-bird`、`start-kernel`、`verify-kernel` 各阶段的逻辑与设计思路，并说明 `macvlan+VLAN`、`bridge+VLAN`、`OVN+OVS` 三种模式并存及默认选择。
+- Scope:
+  - `largeScale/b62_k8s_scale/README.md`
+  - Source references from `runFullExperiment.py`, stage shell scripts, `verifyStartBird.py`, `verifyFibRoutes.py`, and `assignment.yaml`
+- Changes:
+  - 在 README 中新增 `Large-Scale K8s Design` 章节，说明 Kubernetes 只是运行时底座，SeedEMU 网络仍由容器内 Linux 接口、ARP、RIB/FIB、BIRD/OSPF/BGP 表达。
+  - 增加 `Network Backend Model`：说明三种 backend 并存，当前默认 `assignment.yaml` 为 `macvlan+VLAN`；`bridge+VLAN` 用于可观测和故障注入；`OVN+OVS` 用于 SDN fabric/OVN 控制面实验。
+  - 增加 `Stage Design`：分别总结 compile 的 by-AS hard placement、build 的远端构建/fast archive/per-node preload、deploy 的 VLAN parent 准备和 OVN node-stream 限流、start-bird 的 node-local `crictl`/`nsenter`、verify-bird 的 10-AS 采样和协议健康检查、start-kernel 的 kernel.conf 写入/reload、verify-kernel 的 FIB route count 检查。
+  - 同步 README 的 complete flow、manual stage commands 和 artifacts，补上当前默认阶段 `reconvergence`。
+  - 将 “Build only the VM/K3s/Kube-OVN cluster” 改为 “Build only the VM/K3s cluster”，避免默认 macvlan+VLAN 下产生误导。
+- Commands:
+  - `sed -n ... README.md`, `runExperiment.sh`, `runFullExperiment.py`, stage scripts: 阅读当前 workflow 和阶段实现。
+  - `sed -n ... assignment.yaml`: 确认当前默认网络配置是 `macvlan+VLAN`。
+  - `sed -n ... verifyStartBird.py`, `verifyFibRoutes.py` and `rg ...`: 核对 verify 目标选择和 pass condition。
+  - `rg ... README.md`: 检查新增章节和关键术语。
+  - `git -C /home/lxl/k8s diff -- largeScale/b62_k8s_scale/README.md`: 检查 README diff，并发现/删除重复的 `skipKubeOvnGatewayCheck` 说明段落。
+- Validation:
+  - 本次只修改 Markdown 文档，没有运行 KVM/K3s/deploy 实验。
+  - README 现在明确记录当前默认 backend 为 `macvlan+VLAN`，并保留 `bridge+VLAN` 与 `OVN+OVS` 的设计定位。
+- Notes:
+  - 参数级细节仍以各 stage script 顶部常量和 `assignment.yaml` 为准；README 新增内容只描述 high-level design。
+
+## 2026-06-25 15:04 - Create Standalone K8s Design Document
+
+- User intent: 将刚刚总结的大规模 K8s design 单独写成一个 Markdown 文档。
+- Scope:
+  - `largeScale/b62_k8s_scale/largeScaleK8sDesign.md`
+  - `largeScale/b62_k8s_scale/README.md`
+  - `largeScale/b62_k8s_scale/codex_worklog.md`
+- Changes:
+  - 新增 `largeScaleK8sDesign.md`，用中文单独说明大规模 K8s 设计。
+  - 文档覆盖总体思路、三种网络后端、默认 `macvlan+VLAN`、`compile`、`build`、`deploy`、`wait-ready`、`start-bird`、`verify-bird`、`start-kernel`、`verify-kernel` 和整体设计取舍。
+  - 在 README 的 documentation/file role 表格中加入 `largeScaleK8sDesign.md`。
+- Commands:
+  - `sed -n ... README.md`: 读取刚刚写入 README 的 design 段落和文档列表位置。
+  - `date '+%F %H:%M'`: 记录 worklog 时间。
+- Validation:
+  - 本次只修改 Markdown 文档，没有运行 KVM/K3s/deploy 实验。
+  - 新文档为独立说明，不依赖生成目录或运行态文件。
+- Notes:
+  - README 仍保留简要 high-level design，新文档作为更完整的中文设计说明。
+
+## 2026-06-26 06:27 - Document Reconvergence Design
+
+- User intent: 参考 `/home/lxl/k8s/lxl/09_reconvegence_12node.py` 中 reconvergence 的思路，并把该思路补充到 `largeScaleK8sDesign.md`。
+- Scope:
+  - `largeScale/b62_k8s_scale/largeScaleK8sDesign.md`
+  - Reference scripts: `/home/lxl/k8s/lxl/09_reconvegence_12node.py` and `/home/lxl/k8s/lxl/09_reconvegence.py`
+- Changes:
+  - 在 `largeScaleK8sDesign.md` 中新增 `Reconvergence 阶段`。
+  - 说明 12-node wrapper 实际委托 legacy `09_reconvegence.py`，其核心设计是固定 chaos targets、固定 verify targets、baseline route count、`birdc down` 故障注入、load gate、route count 减少/增加作为收敛判据。
+  - 明确 `birdc down` 是 daemon 级故障模型；如果实验语义要求只做 `kernel.conf + birdc configure`，应采用 protocol/config 级故障，而不是关闭整个 BIRD daemon。
+  - 明确 start-kernel 的正常语义仍然是写 `/etc/bird/conf/kernel.conf` 后执行 `birdc configure` / `birdc 'reload kernel'`，reconvergence recovery 不能破坏该 include/kernel protocol 语义。
+- Commands:
+  - `sed -n ... /home/lxl/k8s/lxl/09_reconvegence_12node.py`: 确认 12-node 脚本是 wrapper。
+  - `sed -n ... /home/lxl/k8s/lxl/09_reconvegence.py`: 阅读实际 reconvergence 实现。
+  - `sed -n ... largeScaleK8sDesign.md`: 确认文档结构和插入位置。
+  - `rg -n "Reconvergence 阶段|参考脚本的核心思路|daemon failure reconvergence|protocol/config reconvergence" largeScaleK8sDesign.md`: 验证新增章节关键词。
+- Validation:
+  - 本次只修改 Markdown 文档，没有修改 reconvergence Python 脚本，也没有主动停止后台 VM sweep。
+  - 后台 sweep 在检查时仍在运行，已推进到 48VM compile；该运行状态不作为本次文档修改的验证结论。
+- Notes:
+  - 当前文档建议后续区分两类 reconvergence：daemon failure reconvergence 使用 `birdc down` 并按 start-bird 约束恢复；protocol/config reconvergence 不关闭 BIRD daemon，只通过 protocol/config 变更和 `birdc configure` 触发收敛。
+
+## 2026-06-26 06:33 - Stop Sweep, Clean Cluster, Fix Reconvergence Recovery
+
+- User intent: 停止正在运行的 multi-VM sweep，清除当前 Cluster 及相关配置，并修复 reconvergence 代码；后续由用户手动重新启动全流程。
+- Scope:
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+  - Current run directory: `runs/macvlan_vlan_vm_sweep_0625_fixed_20260625_235530_4954/20260625_235530_4954_vm48_w47`
+  - Generated cluster files: `kubeconfig.yaml`, `cluster.inventory.yaml`, `configK3s.yaml`
+- Changes:
+  - 终止 `runMultiVmMacvlanVlanSweep.py`、当前 `runFullExperiment.py` 和 48VM `compile.sh` 进程。
+  - 对 48VM 当前 run dir 执行 `clean.sh` 和 `destroyCluster.sh`，删除 namespace、K3s、B62 KVM VMs、B62 libvirt networks 和 `/data/lxl/k8sTools/b62/w47/disks`。
+  - 删除 stale `configK3s.yaml`；`destroyCluster.sh` 已删除 `kubeconfig.yaml` 和 `cluster.inventory.yaml`。
+  - 修复 `measureReconvergence.py` 的 `sendBirdUp()`：恢复阶段先复用 start-bird 的 `bird.conf` / `kernel.conf` include 去重规则；如果 BIRD daemon 已停，则清理 pid/socket、停止残留进程、重新启动 BIRD，并等待 `birdc show status`；如果 BIRD 仍可响应，则只执行 `birdc configure`。
+- Commands:
+  - `ps -eo ... | rg ...`: 确认 sweep、runFullExperiment、compile 进程。
+  - `kill -TERM 987997 924188 502653`: 停止当前 sweep 和 48VM compile。
+  - `./clean.sh <vm48 run dir>`: 清理当前 namespace；结果显示 namespace 已不存在并确认 matching resources deleted。
+  - `./destroyCluster.sh <vm48 run dir>`: 销毁 K3s/KVM；结果显示 cleanup verification passed，B62 domains/networks 已清理。
+  - `python3 -m py_compile measureReconvergence.py`: Python 语法检查通过。
+  - `virsh -c qemu:///system list --all | rg 'seedemu-b62|bird-rtnl-dev'`: 确认无 B62 domain，仅 `bird-rtnl-dev` 仍 running。
+  - `virsh -c qemu:///system net-list --all | rg 'seedemu-b62|virbrb62'`: 确认无 B62 libvirt network。
+  - `rm -f configK3s.yaml`: 删除 stale generated cluster config。
+- Validation:
+  - 未发现残留 B62 sweep/runFullExperiment/stage 进程。
+  - 未发现 B62 libvirt domain 或 network。
+  - `kubeconfig.yaml`、`cluster.inventory.yaml`、`configK3s.yaml` 均已不存在。
+  - `measureReconvergence.py` 通过 `py_compile`。
+- Notes:
+  - `bird-rtnl-dev` VM 不是本次 B62 cluster 的一部分，按用户当前请求未清理。
+  - 本次没有重新运行全流程；修复后等待用户手动启动。
+
+## 2026-06-26 06:45 - Add Reconvergence Protocol Health Checks
+
+- User intent:
+  - Ensure reconvergence monitor pods also record whether BIRD protocols are healthy.
+  - Explain the duplicate `kernel.conf` include / `Kernel syncer already attached` failure mode.
+- Scope:
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+- Changes:
+  - Added `birdc show protocols` and `birdc show route count` checks for the fixed verify pods used by reconvergence.
+  - Added `reconvergence_protocol_checks.json`, containing baseline, failure, and recovery protocol snapshots.
+  - Baseline and recovery protocol failures now fail the reconvergence stage.
+  - Failure-stage protocol health is recorded but not treated as a hard failure because injected `birdc down` can legitimately make some peer sessions non-Established.
+- Commands:
+  - `rg -n "show protocols|protocol_check|Established|Passive|Active|birdc" ...`: found existing protocol-health logic.
+  - `sed -n ... verifyStartBird.py`: reused the existing BIRD protocol parsing and failure rules.
+  - `python3 -m py_compile /home/lxl/k8s/largeScale/b62_k8s_scale/measureReconvergence.py`: static validation.
+- Validation:
+  - `measureReconvergence.py` passed `py_compile`.
+
+## 2026-06-26 06:54 - Remove Automatic kernel.conf Include Fallback
+
+- User intent:
+  - Clarify why the scripts were willing to append `include "/etc/bird/conf/kernel.conf";` when all generated `bird.conf` files should already contain that include.
+- Scope:
+  - `largeScale/b62_k8s_scale/start_bird_node_local.py`
+  - `largeScale/b62_k8s_scale/start_bird_kernel_node_local.py`
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+- Changes:
+  - Removed automatic fallback behavior that appended `include "/etc/bird/conf/kernel.conf";`.
+  - Start-bird, start-kernel, and reconvergence recovery now only validate include state.
+  - If both wildcard include and explicit `kernel.conf` include are present, the stage reports duplicate include instead of silently mutating `bird.conf`.
+  - If neither wildcard include nor explicit `kernel.conf` include is present while `kernel.conf` exists, the stage reports missing include instead of silently modifying `bird.conf`.
+- Validation:
+  - `rg ...`: confirmed no remaining automatic append pattern in the three scripts.
+  - `python3 -m py_compile measureReconvergence.py start_bird_node_local.py start_bird_kernel_node_local.py`
+  - `git diff --check` on the modified scripts.
+
+## 2026-06-26 07:02 - Require Wildcard BIRD Config Include
+
+- User intent:
+  - Clarify that `include "/etc/bird/conf/kernel.conf";` is unnecessary because generated `bird.conf` files already use `include "/etc/bird/conf/*.conf";`.
+- Scope:
+  - `largeScale/b62_k8s_scale/start_bird_node_local.py`
+  - `largeScale/b62_k8s_scale/start_bird_kernel_node_local.py`
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+- Changes:
+  - Tightened start-bird, start-kernel, and reconvergence recovery validation to require the wildcard include.
+  - Treat explicit `include "/etc/bird/conf/kernel.conf";` as an unexpected configuration, because wildcard include already loads `kernel.conf`.
+  - Treat missing wildcard include as an error instead of accepting explicit-only include.
+- Commands:
+  - `rg ...`: verified no automatic explicit `kernel.conf` include append remains.
+  - `python3 -m py_compile measureReconvergence.py start_bird_node_local.py start_bird_kernel_node_local.py`: Python syntax validation passed.
+  - `git diff --check ...`: whitespace validation passed.
+- Validation:
+  - Static validation passed; no runtime experiment was started.
+
+## 2026-06-26 07:08 - Remove Explicit kernel.conf Include Check
+
+- User intent:
+  - Do not add checks for explicit `include "/etc/bird/conf/kernel.conf";`; rely on the code not generating that line.
+- Scope:
+  - `largeScale/b62_k8s_scale/start_bird_node_local.py`
+  - `largeScale/b62_k8s_scale/start_bird_kernel_node_local.py`
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+- Changes:
+  - Removed `has_kernel` / unexpected explicit `kernel.conf` include checks from start-bird, start-kernel, and reconvergence recovery.
+  - Kept the wildcard include prerequisite check because generated BIRD config is expected to load `/etc/bird/conf/*.conf`.
+  - Confirmed the scripts do not append explicit `include "/etc/bird/conf/kernel.conf";`.
+- Commands:
+  - `rg ...`: confirmed no remaining `has_kernel`, unexpected explicit include check, or explicit include append pattern in the three scripts.
+  - `python3 -m py_compile measureReconvergence.py start_bird_node_local.py start_bird_kernel_node_local.py`: syntax validation passed.
+  - `git diff --check ...`: whitespace validation passed.
+- Validation:
+  - Static validation passed; no runtime experiment was started.
+
+## 2026-06-26 09:19 - Remove BIRD Include Checks and Record 6VM Baseline
+
+- User intent:
+  - Do not add any check for `include "/etc/bird/conf/kernel.conf";`; the fix should be that local scripts never generate that line.
+  - Preserve the latest 6VM baseline result and cleanup status.
+- Scope:
+  - `largeScale/b62_k8s_scale/start_bird_node_local.py`
+  - `largeScale/b62_k8s_scale/start_bird_kernel_node_local.py`
+  - `largeScale/b62_k8s_scale/measureReconvergence.py`
+  - `largeScale/b62_k8s_scale/0625multiVM.md`
+  - `runs/20260626_065919_4954_vm6_w5_baseline/summary.json`
+- Changes:
+  - Removed the remaining wildcard include checks from start-bird, start-kernel, and reconvergence recovery.
+  - Confirmed these scripts no longer generate or check explicit `include "/etc/bird/conf/kernel.conf";`.
+  - Added the 2026-06-26 6VM baseline retest result to `0625multiVM.md`.
+  - Added `durationSeconds: 7282.37` to the baseline `summary.json`.
+- Commands:
+  - `rg -n "kernel\\.conf|include ..."`: located the remaining include-check blocks.
+  - `python3 -m py_compile measureReconvergence.py start_bird_node_local.py start_bird_kernel_node_local.py`: Python syntax validation passed.
+  - `rg -n "include \"/etc/bird/conf/kernel.conf\"|include \"/etc/bird/conf/*.conf\"|missing_wildcard|missing wildcard|has_glob"` on the three scripts: confirmed no include checks or explicit include generation remain.
+  - `git diff --check` on the modified scripts: whitespace validation passed.
+- Validation:
+  - No cluster rebuild, namespace deployment, or VM operation was started for this code cleanup.
+  - Earlier 6VM baseline run failed at `start-bird` after 4319s; B62 VMs/networks were cleaned by `destroyCluster.sh`.
+- Notes:
+  - The conditional 12/18/24/36/48 VM sweep was not started because the 6VM full flow did not pass.
+
+## 2026-06-26 11:40 - Rerun 6VM Baseline and Add Start-BIRD Load Gate
+
+- User intent:
+  - Continue the active objective: run the 6VM full experiment under `assignment.yaml`; only run the 6/12/18/24/36/48 VM sweep if 6VM passes.
+- Scope:
+  - `largeScale/b62_k8s_scale/start_bird.sh`
+  - `largeScale/b62_k8s_scale/0625multiVM.md`
+  - `runs/20260626_092309_4954_vm6_w5_retry_include_free/summary.json`
+  - `runs/20260626_102539_4954_vm6_w5_pre_start_load_gate/summary.json`
+- Changes:
+  - Added a start-bird pre-start host load gate in `start_bird.sh`: wait for host `load1 < 80` before invoking node-local SSH/nsenter startup.
+  - Recorded two 6VM reruns in `0625multiVM.md`.
+  - Added top-level `durationSeconds` and `failureReason` to the two rerun summaries.
+- Commands:
+  - `python3 runFullExperiment.py --assignment assignment.yaml --run-dir runs/20260626_092309_4954_vm6_w5_retry_include_free`: deploy and wait-ready passed, then start-bird entered node-local startup while host load1 was above 100; new SSH sessions to all six VMs timed out during banner exchange. Run was interrupted.
+  - `bash -n start_bird.sh`: shell syntax validation passed after adding the load gate.
+  - `python3 runFullExperiment.py --assignment assignment.yaml --run-dir runs/20260626_102539_4954_vm6_w5_pre_start_load_gate`: deploy and wait-ready passed; start-bird pre-start gate waited 1141s without host load1 dropping below 80. Manual SSH checks still timed out around host load1 92. Run was interrupted.
+  - `virsh destroy/undefine` filtered to `seedemu-b62-*` domains and networks: cleaned the B62 VMs/networks after SSH management became unavailable.
+- Validation:
+  - Both reruns proved `compile`, `build`, `deploy`, and `wait-ready` can pass in 6VM macvlan+VLAN mode.
+  - 6VM did not pass full flow because start-bird could not safely begin: VM SSH management remained unavailable before BIRD was started.
+  - Post-cleanup verification found no B62 libvirt domains, no B62 libvirt networks, no B62 run/start-bird processes, and no generated `kubeconfig.yaml`, `cluster.inventory.yaml`, or `configK3s.yaml`.
+- Notes:
+  - The 12/18/24/36/48 VM sweep was not started because the user-defined precondition, “6VM full flow is OK,” was not satisfied.
+
+## 2026-06-26 18:55 - Run 12/18/24/36/48 VM macvlan+VLAN Sweep
+
+- User intent:
+  - Do not add checks for `include "/etc/bird/conf/kernel.conf";`; rely on the scripts not generating that explicit include.
+  - Continue the 4954-scale macvlan+VLAN multi-VM full-flow experiment for 12/18/24/36/48 VM and record the results.
+- Scope:
+  - `largeScale/b62_k8s_scale/0625multiVM.md`
+  - `largeScale/b62_k8s_scale/codex_worklog.md`
+  - `runs/macvlan_vlan_vm_sweep_0626_12plus_retry_20260626_124002_4954/`
+- Changes:
+  - Added the 12/18/24/36/48 VM full-flow results and key observations to `0625multiVM.md`.
+  - Recorded this worklog entry with the experiment commands, cleanup actions, validation, and remaining state.
+- Commands:
+  - `python3 runMultiVmMacvlanVlanSweep.py --vm-counts 12 18 24 36 48 --topology-size 4954 --stop-on-failure --sweep-dir runs/macvlan_vlan_vm_sweep_0626_12plus_20260626_123734_4954`: first attempt failed at 12VM build because a stale disk image existed while the corresponding libvirt VM was not defined.
+  - `./destroyCluster.sh runs/macvlan_vlan_vm_sweep_0626_12plus_20260626_123734_4954/destroy_after_disk_conflict`: cleaned the partial stale 12VM state.
+  - `rm -rf /data/lxl/k8sTools/b62/w17/disks /data/lxl/k8sTools/b62/w23/disks /data/lxl/k8sTools/b62/w35/disks`: removed stale generated disk directories before retrying the sweep.
+  - `python3 runMultiVmMacvlanVlanSweep.py --vm-counts 12 18 24 36 48 --topology-size 4954 --stop-on-failure --sweep-dir runs/macvlan_vlan_vm_sweep_0626_12plus_retry_20260626_124002_4954`: completed the full sweep successfully.
+  - `rg -n 'include "/etc/bird/conf/kernel\.conf"|kernel\.conf.*include|include.*kernel\.conf' ...`: confirmed the checked b62 scripts do not generate or check the explicit `kernel.conf` include line.
+- Validation:
+  - Sweep status: `PASS`; total sweep wall time: `22204.48s`.
+  - 12VM: `PASS`, total `3480.80s`, deploy `1290.87s`, start-bird `89.99s`, start-kernel `158.16s`, reconvergence `33.42s`.
+  - 18VM: `PASS`, total `3894.90s`, deploy `1311.43s`, start-bird `51.79s`, start-kernel `107.98s`, reconvergence `31.21s`.
+  - 24VM: `PASS`, total `4271.21s`, deploy `1350.04s`, start-bird `108.26s`, start-kernel `82.09s`, reconvergence `41.82s`.
+  - 36VM: `PASS`, total `5245.21s`, deploy `1298.35s`, start-bird `74.87s`, start-kernel `57.29s`, reconvergence `31.61s`.
+  - 48VM: `PASS`, total `5312.33s`, deploy `1292.42s`, start-bird `72.98s`, start-kernel `45.09s`, reconvergence `32.29s`.
+  - `verify-after-start-bird`, `verify-after-fib-write`, and `reconvergence` all passed in every VM-count run.
+- Notes:
+  - The successful sweep leaves the final 48VM cluster available for manual inspection because the full-flow runner does not automatically destroy a successful final cluster.
+  - During deploy, host load had short high peaks, but `pending`, `creating`, and per-node `creating_by_node` did not accumulate long term; this did not reproduce the OVN+OVS CNI ADD long-tail failure.
+  - In the checked run logs, `start-bird` was idempotent: containers already had BIRD running, so the stage skipped already-running BIRD instances and then verified protocol health.
+
+## 2026-06-27 15:25 - Add Reconciled Timing Columns to 0625multiVM
+
+- User intent:
+  - The 0625 multi-VM summary table should expose `build-cluster`, `compile`, and `build` time directly.
+  - `total(s)` and `workload stages(s)` should be explainable from the measured stage timings, so the table does not hide where non-deploy time is spent.
+- Scope:
+  - `largeScale/b62_k8s_scale/runMultiVmMacvlanVlanSweep.py`
+  - `largeScale/b62_k8s_scale/0625multiVM.md`
+- Changes:
+  - Added `measured stages(s)`, `infra stages(s)`, and `untracked overhead(s)` to the summary table.
+  - Added direct columns for `build-cluster(s)`, `compile(s)`, `build(s)`, and `wait-ready(s)`.
+  - Regenerated `0625multiVM.md` from the existing completed sweep summary; no VM, cluster, or workload command was run.
+  - Updated the report explanation so the accounting is explicit: `total(s) ~= measured stages(s) + untracked overhead(s)` and `measured stages(s) = infra stages(s) + workload stages(s)`.
+- Commands:
+  - `python3 -m py_compile runMultiVmMacvlanVlanSweep.py`: syntax validation passed.
+  - `python3 - <<'PY' ... sweep.updateReport(...)`: regenerated `0625multiVM.md` from `runs/macvlan_vlan_vm_sweep_0626_12plus_retry_20260626_124002_4954/macvlan_vlan_vm_sweep_summary.json`.
+  - `python3 - <<'PY' ... column count check`: verified the Markdown summary table has a consistent 19-column shape.
+  - `python3 - <<'PY' ... overhead check`: verified each run's `total(s) - measured stages(s)` is about 0.6s, so the reported timing now reconciles.
+  - `git diff --check -- largeScale/b62_k8s_scale/runMultiVmMacvlanVlanSweep.py largeScale/b62_k8s_scale/0625multiVM.md`: whitespace validation passed.
+- Validation:
+  - The updated report now shows where the previously unexplained time went: most of it is in `infra stages(s)`, especially `build-cluster(s)`, plus `compile/build/wait-ready`.
+  - No experiment was rerun; all timing data still comes from the previously completed PASS sweep.
+
+## 2026-07-27 23:12 - Multi-Host macvlan+VLAN 4954 Full Flow
+
+- User intent:
+  - Use one minimal `configMultiHostKvmMacvlan.yaml` to build a multi-host,
+    multi-VM K3s cluster for a strictly VLAN-isolated macvlan SeedEMU data
+    plane.
+  - Remove misleading infrastructure names such as `kvmOvn`.
+  - Provide one full-flow script and manual stage commands.
+  - Run the complete 4954 workflow, including static placement, ping/iperf3,
+    BIRD/FIB, and reconvergence evidence.
+- Confirmation:
+  - The user explicitly approved destructive cluster operations on local
+    hypervisor `10.202.236.88` and remote hypervisor `10.202.191.39`.
+  - The user explicitly approved the full BIRD/FIB/reconvergence flow.
+- Main scope:
+  - `configMultiHostKvmMacvlan.yaml`
+  - `runMultiHostMacvlanExperiment.sh`, `runFullExperiment.py`
+  - `validateCrossHostWorkload.py`, `validateMultiHostK3s.py`
+  - `fastSeedemuImageArchive.py`
+  - `seedemu/k8sTools/` neutral kinds and multi-host fabric setup
+  - `seedemu/compiler/kubernetes.py`
+  - `0727k8sExperimentDesgin.md`, `README.md`
+- Changes:
+  - Added neutral canonical infrastructure kinds `kvm`, `physical`, and
+    `multiHostKvm`; old OVN-suffixed values remain warning-producing aliases.
+  - Added two cross-hypervisor VLAN trunks using dedicated VM `ens3/ens4`,
+    unnumbered host bridges, and flood-mode VXLAN.
+  - Added pre-K3s same-VLAN connectivity, 1400-byte DF packet, and
+    different-VLAN isolation gates.
+  - Added `fabric.mtu: 1400`; compiler-generated macvlan/ipvlan/bridge NADs
+    now carry the configured secondary-interface MTU.
+  - Added deterministic non-IX cross-hypervisor router-pair selection. The
+    selected pair is fixed before checking iperf3, so missing software fails
+    instead of changing the sample.
+  - Added all-NAD MTU validation, one runtime secondary-interface MTU sample
+    per K3s node, bidirectional warmup, ping, 1400-byte DF ping, and TCP
+    iperf3.
+  - Fixed fast archive handling of effective pre-COPY Dockerfile `RUN`
+    instructions by building shared software-layer variants. Unsupported
+    post-COPY `RUN` now fails fast.
+  - Added automatic static placement statistics to `summary.json` after
+    compile.
+- Primary command:
+  - `./runMultiHostMacvlanExperiment.sh runs/4954_20260727_202729_multihost_macvlan_vlan`
+- Failure and recovery record:
+  - The first deploy process failed after its active shell script was edited
+    in place. The failed stage remains in `summary.json`; a clean process
+    resumed deploy and submitted all 4954 Deployments.
+  - The first dynamic scan found that the fast archive had omitted router
+    Dockerfile `RUN apt-get ... iperf3`; the archive implementation and images
+    were rebuilt.
+  - Small ping passed while iperf3 connected but transferred zero bytes.
+    Root cause was a 1500-byte secondary MTU plus VLAN/fabric-VXLAN overhead
+    on a 1500-byte underlay. All 4763 NADs were updated to 1400.
+  - Restarting only the probe pair left 4952 old-MTU Pods. Partial BGP
+    sessions continued to flap, so all workload Pods were deleted and
+    recreated from the repaired NADs and images.
+  - Multus reported pre-rename interface `net1`; runtime interface lookup now
+    resolves by selected secondary IP and correctly finds `ix10`.
+- Final experiment result:
+  - Run: `runs/4954_20260727_202729_multihost_macvlan_vlan`
+  - Status: `PASS`; finished `2026-07-27T23:03:52+0800`.
+  - Cluster: 2 hypervisors, 30 VMs, 280 vCPU, 589 GiB RAM, 80 GiB/VM.
+  - Live state: 30/30 nodes Ready and schedulable; 4954/4954 workload Pods
+    Running/Ready; no failed Pod.
+  - Static placement: 1086 AS groups, 30 nodes, 4954 Pods, 165..166 Pods per
+    node, master=166 Pods.
+  - Secondary MTU: 4763/4763 NADs at 1400; 30/30 node runtime samples at 1400.
+  - Fixed pair: AS1269 r10 on worker1 and AS1273 r10 on worker24 over
+    `net-ix-ix10`.
+  - Ping average: 0.411/0.421 ms, 0% loss.
+  - 1400-byte DF ping average: 0.936/0.552 ms, 0% loss.
+  - TCP iperf3: 882.53/894.09 Mbps over one five-second stream per direction.
+  - Reconvergence: failure 0.83s, recovery 14.84s, total stage 34.70s;
+    recovery protocol health 4/4.
+- Validation commands:
+  - `python3 -m unittest tests.seed_k8s_multihost_macvlan_test tests.seed_k8s_fast_archive_test tests.kubernetes_by_as_hard_test.KubernetesByAsHardCompilerTest.test_by_as_hard_uses_bridge_for_internal_links_and_macvlan_for_ix -v`: 9 tests passed.
+  - `python3 -m py_compile ...`: all changed Python entrypoints passed.
+  - `bash -n ...`: all changed B62 shell entrypoints passed.
+  - `manageMultiHostKvmConfig.py --config configMultiHostKvmMacvlan.yaml validate`:
+    validated 2 hypervisors, 30 VMs, and 2 fabric trunks.
+  - `git diff --check` and trailing-whitespace scan on scoped files: passed.
+  - Live `kubectl` verification: 30/30 nodes and 4954/4954 Pods Ready.
+- Remaining state:
+  - The successful cluster and namespace
+    `seedemu-b62-mvlan-vlan-4954` are intentionally left running for
+    inspection.
+  - This run validates correctness but is not a placement comparison: it has
+    one placement, one deterministic pair, and no repeated baseline trials.
+
+## 2026-07-28 11:35 - Parent VLAN Inventory, Cluster Destroy, and Single-Host Config
+
+- User intent:
+  - Report the approximate parent VLAN count and VID ranges in every VM.
+  - Clean the 4954 namespace and destroy all 30 B62 VMs and multi-host fabric.
+  - Add a single-hypervisor, 30-VM macvlan+VLAN configuration with the same
+    resource and network parameters as the multi-host configuration.
+  - Document both complete execution flows and every major called file in
+    `0728ExperimentDesign.md`.
+- Confirmation:
+  - The user explicitly requested namespace deletion and VM destruction.
+  - The requested target was the active B62 multi-host cluster only; unrelated
+    local domains and libvirt networks were preserved.
+- Runtime evidence:
+  - `runs/4954_20260728_105853_cleanup_destroy/`
+  - `vlan_parent_inventory_before_destroy.json/.csv`
+  - `cleanup_summary.json`
+  - `clean.log`, `destroy-cluster.log`, `destroy-remote-recovery.log`
+  - `destroy-final-hypervisor-verification.log`
+  - `destroy-final-management-ip-verification.log`
+  - `final_destroy_verification.json`
+- Parent VLAN result:
+  - 30/30 VMs were reachable and inspected before destroy.
+  - Each VM had two physical data-plane parents, `ens3` and `ens4`.
+  - Total VLAN parent subinterfaces: 6834; per VM min/max 215/254, mean
+    227.8, median 227.
+  - `ens3.<VID>` instances: 4094 total; `ens4.<VID>` instances: 2740 total.
+  - Per-VM counts, sparse min/max VID ranges, and exact VLAN ID arrays are
+    preserved in the JSON/CSV evidence.
+- Cleanup and destroy commands:
+  - Ran `./clean.sh runs/4954_20260728_105853_cleanup_destroy` with the explicit
+    multi-host configK3s, kubeconfig, and inventory environment.
+  - Clean removed 4954 Deployments, 3916 ReplicaSets, 4255 Pods, 4763 NADs,
+    and 4967 Events. The namespace was confirmed absent after 18 seconds.
+  - Ran `python3 k8sTools.py destroy -d
+    configK3sMultiHostKvmMacvlan.yaml`.
+  - Local 24-VM cleanup passed. Remote host-local cleanup returned 141 while
+    processing worker28; two domains and three libvirt networks remained.
+  - Verified the residual worker28/29 disks were under the recorded
+    `/home/seed/k8sTools/b62-multihost/idc/disks` guard, then removed those
+    domains, networks, VXLAN/bridge links, routes, and the remote work dir.
+  - Copied the generated configK3s into the timestamped evidence directory
+    before removing the stale generated cluster output.
+- Destroy fix:
+  - Changed the protected disk lookup in
+    `seedemu/k8sTools/resources/setup/kvm/destroyKvmVms.py` from an early-exit
+    awk pipeline to a full-input awk reduction. This prevents upstream
+    `virsh domblklist` from receiving SIGPIPE under `set -o pipefail`.
+- Single-host implementation:
+  - Added `configSingleHostKvmMacvlan.yaml`: one master plus 29 workers,
+    280 vCPU, 589 GiB memory, 80 GiB/VM, dedicated `10.81.0.0/24`
+    management network, and two `ens3/ens4` VLAN trunks.
+  - Added `kvm/prepareKvmNetworks.py` and wired it into
+    `runner.py::_buildKvm()` so a standalone `kind: kvm` build defines its
+    management NAT and unnumbered L2 trunk networks from YAML.
+  - Added compact KVM resource-plan accounting and skipped the explicit-node
+    DHCP preprocessing stage when `master/workers` generates the node list.
+  - Added `runSingleHostMacvlanExperiment.sh`.
+  - Extended `validateCrossHostWorkload.py` with deterministic
+    `--pair-scope cross-node`; single-host full flow now records
+    cross-node ping/DF-ping/iperf3, while multi-host retains cross-/24
+    selection.
+- Documentation:
+  - Added `configSingleHostKvmMacvlan.md`.
+  - Added `0728ExperimentDesign.md` with all 30 per-VM parent counts, cleanup
+    evidence, architecture comparison, automatic/manual commands, stage file
+    call chain, static placement outputs, and dynamic measurement behavior.
+  - Updated `README.md`, `0727k8sExperimentDesgin.md`, and the k8sTools setup
+    resource README to reflect the destroyed cluster and the new single-host
+    entrypoint.
+- Validation commands:
+  - `python3 -m unittest -v tests.seed_k8s_singlehost_macvlan_test
+    tests.seed_k8s_multihost_macvlan_test`: 9 tests passed.
+  - `python3 -m py_compile ...`: new/modified Python entrypoints passed.
+  - `bash -n runSingleHostMacvlanExperiment.sh
+    runMultiHostMacvlanExperiment.sh`: passed.
+  - `shellcheck runSingleHostMacvlanExperiment.sh`: passed when available.
+  - YAML validation confirmed both explicit configs use canonical kinds,
+    macvlan+VLAN, and `ens3/ens4` trunks.
+  - Offline KVM helper rendering produced 30 nodes from
+    `seed-k3s-master/10.81.0.10` through
+    `seed-k3s-worker29/10.81.0.39`, two extra networks, a 30-node configK3s,
+    and a 30-node kvmState.
+  - `git diff --check` and trailing-whitespace validation passed for the
+    scoped files.
+  - Final local/remote verification found zero target domains, target
+    networks, target VXLAN/bridge links, or experiment work directories.
+  - A parallel SSH probe found 0/30 VM management IPs reachable after destroy.
+- Remaining state:
+  - The B62 4954 namespace and multi-host K3s VM cluster are destroyed.
+  - No single-host VM or libvirt network was created during this task; the
+    single-host deliverable was validated offline so the requested clean host
+    state remains intact.
+
+## 2026-08-09 18:25 - B62 3083/6-VM Full-Flow K8S Benchmark
+
+- User intent:
+  - Run the same complete logical stages as the native runtime, including
+    BIRD verification, kernel export, all-AS FIB verification, deterministic
+    workload validation, and reconvergence.
+  - Compare stage time and host/QEMU CPU, memory, disk, network, throughput,
+    and convergence under an identical VM resource contract.
+- Implementation:
+  - Added common five-second `performanceMetrics.py` sampling to every stage
+    in `runFullExperiment.py`.
+  - Made BIRD/FIB verification gates assignment-driven; the benchmark waits
+    for load1 below 50, samples fixed 10 AS representatives after BIRD, and
+    checks all 312 router AS representatives after kernel export.
+  - Added deterministic six-chaos/four-observer reconvergence targets and
+    timing settings to `assignmentBenchmark3083.yaml`.
+  - Fixed assignment-generated KVM runs to include
+    `validate-cross-node-workload`, and documented the benchmark fields and
+    performance artifacts.
+  - Used exactly six 48-vCPU/96-GiB/100-GiB VMs, totaling 288 vCPU and
+    576 GiB, matching the native run.
+- Formal command:
+  - `python3 runFullExperiment.py --assignment assignmentBenchmark3083.yaml
+    --run-dir runs/benchmark_3083_20260809_160300_k8s_vm6`
+- Formal result:
+  - Status PASS; 3083/3083 Pods Running/Ready; placement
+    514/514/514/514/514/513.
+  - Stage seconds: build-cluster 382.53, compile 128.73, build 289.38,
+    deploy 1196.08, wait-ready 2.03, start-bird 32.44, start-kernel 190.82,
+    all-AS FIB verify 19.45, workload 27.85, reconvergence 22.06.
+  - Explicit start-bird found all 3083 BIRD processes already started by the
+    Pod entrypoint and skipped them; this lifecycle attribution is documented
+    in the cross-runtime report.
+  - Fixed IX10 AS1269/AS1271 pair passed bidirectional ping and five-second
+    TCP at 10546.69/10150.33 Mbit/s with zero retransmits.
+  - Reconvergence PASS: failure 0.70s, recovery 9.41s, total 21.70s; fixed
+    observer protocol health passed.
+- Cleanup:
+  - Ran `python3 k8sTools.py destroy -d configK3s.yaml --keep-temp` after all
+    result artifacts were durable.
+  - K3s uninstall completed on all six nodes, then exact
+    `seedemu-benchmark-*-w5` domains and `seedemu-benchmark-net-w5` were
+    removed; cleanup verification passed.
+  - Unrelated `bird-rtnl-dev` and B63 networks were preserved.
+- Validation:
+  - Modified Python entrypoints passed `py_compile`; modified shell scripts
+    passed `bash -n`; assignment rendering confirmed 288 vCPU/576 GiB;
+    native-side comparator reported PASS for both completed run directories.
+- Evidence:
+  - `runs/benchmark_3083_20260809_160300_k8s_vm6/summary.json`
+  - `performance_metrics.csv`, `performance_summary.json`,
+    `cross_node_workload_summary.json`, `reconvergence_summary.json`
+  - Cross-runtime report:
+    `/home/lxl/multihost/runs/comparison_3083_20260809/`
+
+## 2026-08-10 16:20 - Canonical output_4954 Six-VM Full-Flow Benchmark
+
+- User intent:
+  - Rerun native and K8S from the same
+    `/home/lxl/seed-emulator/topology/output_4954` source.
+  - Use this B62 directory's `start_bird.sh` and
+    `start_bird_kernel.sh` for both runtimes with the same parameters.
+  - Do not force a BIRD/kernel-export initial-state check before start;
+    retain the mandatory post-BIRD protocol and post-kernel all-AS FIB gates.
+- Implementation:
+  - Added `assignmentBenchmark4954.yaml` with six 48-vCPU/96-GiB/100-GB
+    VMs and the fixed reconvergence targets.
+  - Added `adaptCanonicalOutput.py`; K8S compilation consumes all 4954
+    canonical nodes and only adds the Kubernetes address-replacement hook.
+  - Added Docker dispatch to both shared B62 shell entrypoints through
+    `runDockerBirdStage.py`, keeping the same concurrency, delay, batch,
+    cooldown, load, and timeout parameters as the K8S backend.
+  - Made kernel reload strict and BIRD-version-safe by resolving the actual
+    Kernel protocol name from `birdc show protocols`; added
+    `runFullExperiment.py --resume-from start-kernel` for auditable recovery.
+- Canonical evidence:
+  - Compose SHA-256:
+    `85ad7340d23401e7c23ab4623d97921684336a15075f8a1b26aea7c1f84edbf2`.
+  - Runtime node count: 4954/4954.
+  - BIRD/kernel aggregate SHA-256:
+    `32757bd31fc92c53ca0552807e7d16a48ce0ebcfe559452d7cea17a479c5b2d5` /
+    `08e7f572929b0464ed92ba3cf950c9a8698700a8bbc958a1aa3cbb8fc8615c25`.
+- Formal run:
+  - `runs/4954_20260810_124801_w5_canonical_retry1`, final status PASS.
+  - The first strict `start-kernel` attempt correctly failed 4954/4954
+    because the old command used the BIRD keyword `kernel` while the actual
+    unnamed protocol was `kernel1`. The failed attempt remains in
+    `summary.json`; after the dynamic-name fix, the run resumed from
+    `start-kernel` and passed 4954/4954.
+  - Successful stage seconds: compile 671.01, build 382.25, deploy 2285.28,
+    start-bird 182.49, BIRD verify 39.54, start-kernel 682.71, FIB verify
+    44.36, workload 31.13, reconvergence 80.19.
+  - BIRD fixed samples passed 10/10 on the second poll; all 674 router-AS
+    FIB representatives passed 674/674.
+  - The deterministic IX10 AS1269/AS1270 pair passed bidirectional ping and
+    5-second TCP at 9212.071/8876.397 Mbit/s with 1/1 retransmits.
+  - Reconvergence PASS: fault convergence 2.91 seconds, recovery convergence
+    58.95 seconds, total 79.81 seconds.
+- Cleanup:
+  - The official destroy reached its 900-second node cleanup timeout on two
+    VMs but continued host cleanup. Six residual exact benchmark domains were
+    then destroyed and undefined by name, and benchmark networks were
+    removed. No unrelated domain was touched.
+- Validation:
+  - Changed Python entrypoints passed `py_compile`; B62 shell entrypoints
+    passed `bash -n`; assignment YAML parsed; scoped `git diff --check` and
+    trailing-whitespace checks passed.
+  - The comparator explicitly marks two non-identical substage boundaries:
+    native `wait-ready` includes container start/structural/fabric checks,
+    while K8S starts Pods mainly in `deploy`; native workload validation runs
+    20 routed pings plus 10 L2-isolation probes, while K8S uses one fixed pair.
+    The report therefore provides grouped lifecycle timing and a total that
+    excludes the unequal-breadth workload validation stage.
+  - Cross-runtime comparator status PASS:
+    `/home/lxl/multihost/runs/comparison_4954_20260810_161714_native_vs_k8s/`.
+## 2026-09-14 - GiB Memory And Single-Host 1078 / 6-VM Validation
+
+- User intent: support GB-scale memory directly in cluster YAML, run the full
+  single-host wrapper at 1078 scale / 6 VMs, perform clean and destroy, and
+  explain the subsequent 48-VM / 4954 configuration.
+- Scope: resource-unit conversion shared by native API and copied setup,
+  single/multi-host input YAML, B62 resource summary and wrapper, focused
+  tests and documentation. Existing unrelated changes were preserved.
+- Configuration: memoryGiB (memoryGb alias) converts to integral MiB; old
+  memoryMb/memory_mb remains supported, conflicting/invalid values fail.
+  Single-host preset: 48 vCPU/96 GiB master and 5 x 50 vCPU/100 GiB workers,
+  80 GiB disk each. Multi-host retains existing resources, changing units only.
+- Evidence directory: runs/1078_20260914_144851_singlehost_6vm/. The pre-edit
+  input_before snapshot preserves the user's 47-worker/6-vCPU configuration.
+- Validation: direct execution of the single-host (7 tests) and multi-host
+  (5 tests) test files passed, using PYTHONPATH for repository/B62 imports.
+  Python compilation and wrapper bash syntax checks passed. Earlier unittest
+  discovery unexpectedly invoked unrelated package load_tests suites, which
+  failed on a Docker SDK http+docker incompatibility; those are not counted as
+  successful validation. Scoped tests were then run directly.
+- Runtime: started runSingleHostMacvlanExperiment.sh with the explicit evidence
+  directory, console.log and per-stage logs. Initial host inspection found no
+  running libvirt VM; bird-rtnl-dev was shut off. Existing Docker workloads and
+  default/B63 trunk networks are unrelated and must remain untouched.
+- Progress: initial build is preparing bootstrap images. Missing local tags
+  were loaded from the existing image-cache tarballs; completion and cleanup
+  results will be recorded below once verified.
+
+### Runtime Outcome And Follow-Up Validation
+
+- Main evidence: `runs/1078_20260914_145500_singlehost_6vm/` and its
+  `experimentResult.md`. The earlier directory retains the image preparation
+  timeout before VM creation and original user input snapshots.
+- Commands: `docker load -i` imported the existing Multus, local-path,
+  CoreDNS and metrics-server archives; the wrapper was run against the main
+  directory, then repeated with `--resume-from start-kernel` after fixing
+  topology-specific reconvergence target selection.
+- Full-run result remains FAIL, not silently upgraded: build through
+  dataplane passed; first reconvergence attempt failed before fault injection
+  due to missing hardcoded targets; resumed reconvergence failed because its
+  immediate protocol health check preceded BGP session recovery.
+- Manual read-only recovery check passed all 14 fault/observer routers at
+  15:22:44 UTC+8. Post-recovery `verifyFibRoutes.py --sample-as-count 0`
+  passed 82/82 AS representatives at load1 < 50. All 1078 Pods remained Ready.
+- Scoped runtime fixes: wait-ready now requires the full expected Pod count;
+  reconvergence defaults use numeric ASN/router ordering without Pod hashes
+  or VM placement. Explicit target lists remain strict. No automatic recovery
+  wait or weakened protocol check was introduced.
+- Validation commands: direct single-host (9 tests), multi-host (5), runner
+  stage contract (3), named inventory unittest module (1): 18 tests passed.
+  Python `py_compile`, shell `bash -n`, and scoped `git diff --check` passed.
+  The pre-existing global whitespace issue in `0623conclusion.md` was left
+  untouched. No unrelated worktree changes, host Docker workloads, or B63
+  networks were reverted or removed.
+- Configuration guidance: 48 VMs = master + 47 workers. Documented example
+  uses master 48 vCPU/96 GiB and workers 5 vCPU/10.5 GiB each, total 283 vCPU/
+  589.5 GiB; assignment must also select 4954 and workerCount 47. This larger
+  configuration was not started in this task.
+- Cleanup is being recorded independently in `cleanup_summary.json` and
+  `cleanup-orchestrator.log`, preserving the failed experiment status.
+- Final cleanup result: PASS. `runStage` invoked `clean.sh <run-dir>` with
+  the explicit single-host context (253.55 seconds), then
+  `python3 k8sTools.py destroy -d configK3sSingleHostKvmMacvlan.yaml --keep-temp`
+  (23.51 seconds). Namespace absence was checked before destroy. At 15:28:46
+  UTC+8, independent virsh/filesystem checks found no experiment domains,
+  VM disks/cloud-init, dedicated networks or bridges. The unrelated domain
+  bird-rtnl-dev remained shut off; default/B63 networks and 137 host Docker
+  workloads remained. Logs/caches/temp debug data were intentionally retained.
+- Remaining issue: the one-shot recovery health gate should be redesigned
+  to distinguish initial route change from protocol recovery; the automated
+  experiment is still FAIL despite successful independent recovery checks.
+
+## 2026-09-14 15:41 - Single-YAML Single-Host Entry
+
+- User intent: maintain only configSingleHostKvmMacvlan.yaml for VM resources
+  and topology/experiment settings; stop requiring edits to assignment.yaml.
+- Scope: runSingleHostMacvlanExperiment.sh, runFullExperiment.py, lib.sh,
+  the single-host input/guide, B62 README, B62B63RunGuide.md and focused tests.
+- Changes: added --config single-input mode; copied effective placement and
+  deploy settings into the user YAML. Derive workerCount from workers.count,
+  default namespace/name from topologySize, and canonical output from topologyDir.
+  Reject a duplicated experiment.workerCount and mixed old/new CLI inputs.
+  Preserve the current 6-VM/1078 preset; no 48-VM launch or preset switch.
+- Snapshots: automatically write run-local cluster-input.yaml and assignment.yaml
+  with resolved paths. Standalone stages read saved runtime paths without B62
+  exports; resume reads the old run even if its original input is removed.
+  Existing run summaries cannot be overwritten by new single-config runs.
+  Legacy assignment and explicit dual-input/multi-host entrypoints remain.
+- Commands and validation:
+  - `bash runSingleHostMacvlanExperiment.sh --prepare-only`: passed twice;
+    latest evidence is runs/1078_20260914_154121_singlehost_macvlan_vlan/.
+    Status PREPARED, 6 VMs, 298 vCPU, 596 GiB; no cluster operations.
+  - Direct `python3 tests/seed_k8s_singlehost_macvlan_test.py`: 15 tests passed.
+    Covers single-input independence, 48-VM resource derivation, invalid fields,
+    wrapper prepare-only, standalone stage context, frozen resume, and legacy
+    input compatibility. Full execution/resume lifecycle commands are mocked;
+    test output saying experiment passed is not a live experiment result.
+  - Direct multihost tests: 5 passed; runner stage contract tests: 3 passed;
+    named `python3 -m unittest seed_k8s_cluster_inventory_test -v`: 1 passed.
+    PYTHONPATH included repository/B62 (and tests for the named module).
+  - `python3 -m py_compile` for changed runner/test passed; separate `bash -n`
+    checks for wrapper and lib.sh passed; scoped `git diff --check` passed.
+  - `virsh list --all --name`: only the unrelated bird-rtnl-dev remains.
+- Notes: no build/deploy/clean/destroy or dataplane experiment was run for this
+  configuration refactor. The known reconvergence timing problem is unchanged.
+  Older experiment artifacts and unrelated dirty worktree changes were retained.
+  Repository assignment.yaml is still used by legacy entrypoints, not unused.
+
+## 2026-09-14 17:44 - BIRD Recovery Stability And 4954 / 48-VM Resume
+
+- User intent: monitor the ten restarted BIRD routers every 5s, require two
+  unchanged rounds, timestamp the first stable sample, resume the failed 4954
+  run, then clean and destroy after verification.
+- Diagnosis: run 4954_20260914_155524_singlehost_macvlan_vlan exited FAIL at
+  17:16:42 UTC+8, recovery_protocol_health_failed. No experiment process was
+  still running. All 48 VMs remained Ready. The old gate exited on two +1 FIB
+  changes although aggregate FIB count was still -1 and all 4 protocol checks
+  were unhealthy. Original evidence copied into before-recovery-stability-fix/.
+- Changes: measureReconvergence.py tracks per-fault-router BIRD totals with
+  resettable plateaus, two unchanged comparisons, monotonic first-sample
+  timestamps, all-router/global times, protocol/load gates, bounded timeout,
+  recovery_samples.jsonl and recovery_stability.json. runFullExperiment.py
+  supports --resume-from reconvergence without rebuild/redeploy. Documentation
+  and tests updated; the user's current VM resource config was not changed.
+- Commands: live read-only precheck found 4954 Pods and identical 10/4 target
+  prefixes; all 14 monitored protocols passed, max VM load1 0.88. Executed
+  `runSingleHostMacvlanExperiment.sh <run-dir> --resume-from reconvergence`.
+  New stage PASS, 67.57s; first stable time 43.998s, confirmation 53.936s,
+  health validation 54.733s. Initial plateaus were correctly revoked when
+  routing changed. All 10 stable, all 14 protocol checks passed.
+- Validation: `python3 tests/seed_k8s_reconvergence_test.py` (with repository
+  PYTHONPATH for runner import) passed 11 tests; py_compile and scoped
+  git diff --check passed. Resume unit test mocks lifecycle operations.
+  Independent verifyStartBird.py sample-count 10 passed 10/10, load1 4.02;
+  verifyFibRoutes.py sample-as-count 0 passed 674/674, load1 0.85.
+  kubectl snapshot confirmed 4954/4954 Ready before clean.
+- Artifacts: recoveryFixResult.md, recovery-resume.console.log, new sampling
+  JSON/JSONL and post-recovery-check/ in the existing scale+timestamp run.
+  Original ping/iperf stage remained PASS; not repeated during this resume.
+- Cleanup: started clean.sh through runStage with the recorded runtime context;
+  clean/destroy completion and independent residual verification follow below.
+- Final cleanup: clean PASS in 1067.51s, finished 18:01:50 UTC+8; removed the
+  namespace after workload objects and 52651 events.k8s.io entries. Master
+  briefly reached load1 80.22 during Pod deletion, with 32840 MiB available;
+  load later fell to 28.58. This was cleanup, not recovery measurement.
+- Verified namespace absence and matching embedded 48-node destroy metadata,
+  then ran `python3 k8sTools.py destroy -d configK3sSingleHostKvmMacvlan.yaml
+  --keep-temp` through runStage. PASS in 136.56s, finished 18:04:38.
+  At 18:05:14 independent checks found no owned VM/domain, disk/cloud-init,
+  dedicated network or bridge. New concurrent b63-sh6 VMs/networks were left
+  untouched, as were old B63 networks and bird-rtnl-dev (shut off).
+  cleanup_summary.json and cleanup-verification.json are PASS; the experiment
+  summary retains original FAIL history, latest PASS, and destroyedAfterPass=true.

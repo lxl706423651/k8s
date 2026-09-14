@@ -2,7 +2,7 @@
 """Prepare libvirt DHCP reservations before b62 KVM VM creation.
 
 Inputs:
-- configKvmOvn.yaml with explicit nodes.
+- configKvm.yaml with explicit nodes.
 
 Outputs:
 - Updated libvirt network DHCP host reservations.
@@ -44,7 +44,7 @@ def run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
 
 
 def loadConfig(path: Path) -> dict[str, Any]:
-    """Load kvmOvn YAML config."""
+    """Load a neutral KVM infrastructure YAML config."""
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
         raise SystemExit(f"Invalid YAML root: {path}")

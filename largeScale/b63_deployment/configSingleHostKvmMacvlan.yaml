@@ -1,0 +1,120 @@
+# B63 input: B62 infrastructure/runtime schema plus placement algorithm settings.
+# Separate VM names, networks and disks; generated cluster state stays inside each run.
+kind: kvm
+clusterName: seedemu-b63-sh6
+experiment:
+  topologySize: 1078
+  topologyDir: ~/seed-emulator/topology
+  name: b63-sh6-1078
+  namespace: seedemu-b63-sh6-1078
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+defaults:
+  masterName: b63-sh6-master
+  workerNamePrefix: b63-sh6-worker
+  ipPrefix: 10.83.0
+  masterIpStart: 10
+  workerIpStart: 11
+  macPrefix: 52:54:00:63:83
+  masterMacStart: 16
+  workerMacStart: 17
+master:
+  vcpus: 16
+  memoryGiB: 24
+  diskGb: 80
+workers:
+  count: 5
+  vcpus: 8
+  memoryGiB: 24
+  diskGb: 80
+kvm:
+  prepareImageCache: false
+  network: seedemu-b63-sh6
+  networkBridge: virbrb63sh6
+  networkCidr: 10.83.0.0/24
+  networkGateway: 10.83.0.1
+  dhcpStart: 10.83.0.10
+  dhcpEnd: 10.83.0.239
+  storageDir: /data/lxl/k8sTools/b63-sh6
+  diskDir: /data/lxl/k8sTools/b63-sh6/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-sh6/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  legacyBaseImagePath: ../b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
+  extraNetworks:
+  - name: seedemu-b63-sh6-fabric0
+    bridge: brb63s6f0
+    model: virtio
+    trunk: trunk0
+    masterInterface: ens3
+  - name: seedemu-b63-sh6-fabric1
+    bridge: brb63s6f1
+    model: virtio
+    trunk: trunk1
+    masterInterface: ens4
+  allowExisting: false
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - name: trunk0
+    masterInterface: ens3
+    vlanStart: 1
+    vlanEnd: 4094
+  - name: trunk1
+    masterInterface: ens4
+    vlanStart: 1
+    vlanEnd: 4094
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+registry:
+  port: 5063
+seedemu:
+  hostImageCacheDir: ../b62_k8s_scale/base_image/image-cache
+  imageCacheDirs:
+  - ../b62_k8s_scale/base_image/image-cache
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.64.0.0/12
+  serviceCidr: 10.84.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+tuning:
+  userMaxNetNamespaces: 65536
+placement:
+  excludeControlPlane: false
+  nodePodReserve: 20
+  algorithm: optimized
+  fastGreedyScore: true
+  selectedOnly: true
+  improvementPasses: 0
+  injectResourceRequests: false
+deploy:
+  batchSize: 80
+  batchSleepSeconds: 0
+  subnetBatchSize: 100
+  subnetBatchSleepSeconds: 0
+  monitorInterval: 20
+  monitorEnabled: false
+  staticApplyMode: batch
+  controllerApplyMode: batch
+  warmupBatches: 12
+  warmupBatchSize: 1
+  postControllerApplySettleSeconds: 5
+  pressureCheckSeconds: 5
+  stabilizeTimeoutSeconds: 36000
+  maxPendingPods: 160
+  maxCreatingPods: 160
+  maxCreatingPodsPerNode: 40
+  maxNotReadyPods: 160
+  maxFailedPods: 10
+  requireAllNodesReady: true
+  waitKubeOvnSubnets: false
+  nodeStreamObserveTimeoutSeconds: 120
+  nodeStreamMaxActivePerNode: 4

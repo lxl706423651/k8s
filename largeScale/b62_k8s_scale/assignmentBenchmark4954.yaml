@@ -1,0 +1,141 @@
+# Fair 4954-node, six-VM K8S benchmark using the canonical output_4954 images.
+experiment:
+  name: b62-benchmark-macvlan-vlan-4954
+  topologySize: 4954
+  workerCount: 5
+  namespace: seedemu-benchmark-4954
+  sourceRoot: ../..
+  topologyDir: ~/seed-emulator/topology
+  canonicalOutputDir: ~/seed-emulator/topology/output_4954
+
+resources:
+  totalVcpus: 288
+  totalMemoryGiB: 576
+  diskGb: 100
+  master:
+    vcpus: 48
+    memoryGiB: 96
+    diskGb: 100
+
+kvm:
+  clusterNamePrefix: seedemu-benchmark4954
+  networkPrefix: seedemu-benchmark4954-net
+  bridgePrefix: virbrb95
+  networkCidr: 192.168.126.0/24
+  networkGateway: 192.168.126.1
+  dhcpStart: 192.168.126.2
+  dhcpEnd: 192.168.126.254
+  ipPrefix: 192.168.126
+  master:
+    namePrefix: seedemu-benchmark4954-master
+    ipStart: 130
+    macPrefix: "52:54:00:95:20"
+    macStart: 130
+  workers:
+    namePrefix: seedemu-benchmark4954-worker
+    ipStart: 131
+    macPrefix: "52:54:00:95:20"
+    macStart: 131
+  ssh:
+    user: ubuntu
+    key: ~/.ssh/id_ed25519
+  baseImagePath: base_image/jammy-server-cloudimg-amd64.img
+  legacyBaseImagePath: base_image/jammy-server-cloudimg-amd64.img
+
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.48.0.0/12
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: host-gw
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+
+registry:
+  port: 5000
+
+seedemu:
+  offline: false
+  hostImageCacheDir: base_image/image-cache
+  imageCacheDirs:
+    - base_image/image-cache
+
+networking:
+  backend: macvlan
+  cniType: macvlan
+  cniMasterInterface: ens2
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  macvlanVlanMode: true
+  macvlanVlanIdStart: 1
+  # 4,763 isolated L2 domains require the two-trunk layout from B62's
+  # established 4,954-node design; one 4,094-VLAN trunk is insufficient.
+  vlanTrunks:
+    - name: trunk0
+      masterInterface: ens2
+      vlanStart: 1
+      vlanEnd: 4094
+    - name: trunk1
+      masterInterface: ens3
+      vlanStart: 1
+      vlanEnd: 4094
+      networkPrefix: seedemu-benchmark4954-fabric1
+      bridgePrefix: virbrb95f1
+
+placement:
+  excludeControlPlane: false
+  nodePodReserve: 20
+
+deploy:
+  batchSize: 40
+  batchSleepSeconds: 0
+  subnetBatchSize: 100
+  subnetBatchSleepSeconds: 0
+  monitorInterval: 20
+  monitorEnabled: false
+  staticApplyMode: batch
+  controllerApplyMode: batch
+  warmupBatches: 12
+  warmupBatchSize: 1
+  postControllerApplySettleSeconds: 5
+  pressureCheckSeconds: 5
+  stabilizeTimeoutSeconds: 36000
+  maxPendingPods: 80
+  maxCreatingPods: 80
+  maxCreatingPodsPerNode: 20
+  maxNotReadyPods: 80
+  maxFailedPods: 10
+  requireAllNodesReady: true
+  waitKubeOvnSubnets: false
+  kubeOvnSubnetTimeoutSeconds: 36000
+  postSubnetCooldownSeconds: 0
+  nodeStreamObserveTimeoutSeconds: 120
+  nodeStreamMaxActivePerNode: 4
+  skipKubeOvnGatewayCheck: false
+
+verification:
+  loadThreshold: 50
+  loadCheckIntervalSeconds: 30
+  loadMaxWaitSeconds: 36000
+  protocolWaitSeconds: 1800
+  protocolCheckIntervalSeconds: 30
+  fibSampleAsCount: 0
+
+reconvergence:
+  loadThreshold: 50
+  loadCheckIntervalSeconds: 5
+  routeCheckIntervalSeconds: 2
+  phaseTimeoutSeconds: 1800
+  chaosTargetPrefixes:
+    - as1277brd-r219-1.219.4.253
+    - as1304brd-r40-1.40.5.24
+    - as1841brd-r17-1.17.7.49
+    - as1700brd-r13-1.13.6.164
+    - as1797brd-r12-1.12.7.5
+    - as1531brd-r7-1.7.5.251
+  verifyTargetPrefixes:
+    - as1277brd-r2-1.2.4.253
+    - as1531brd-r12-1.12.5.251
+    - as1304brd-r12-1.12.5.24
+    - as1841brd-r206-1.206.7.49

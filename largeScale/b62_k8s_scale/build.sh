@@ -42,7 +42,10 @@ ensure_kubeconfig
 begin_stage_logging "build"
 
 OUTPUT_DIR="${EXPERIMENT_DIR}/output"
-REMOTE_WORK_DIR="/tmp/seedemu-build"
+# Keep controller archives separate when multiple examples build concurrently.
+BUILD_STAGE_DIR="$(mktemp -d "${EXPERIMENT_DIR}/.build-XXXXXX")"
+trap 'rm -rf "${BUILD_STAGE_DIR}"' EXIT
+REMOTE_WORK_DIR="/tmp/seedemu-build-${SEED_NAMESPACE}"
 REGISTRY_ENSURE_SCRIPT="${TEST_DIR}/ensure_master_registry.sh"
 FAST_ARCHIVE_SCRIPT="${TEST_DIR}/fastSeedemuImageArchive.py"
 NODE_IMAGE_DIR="${EXPERIMENT_DIR}/node_image_refs"
@@ -126,21 +129,21 @@ if ! ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
     fi
 fi
 
-tar -C "${OUTPUT_DIR}" -czf /tmp/compiled.tar.gz .
-tar -C "${NODE_IMAGE_VALIDATE_DIR}" -czf /tmp/node_image_refs.tar.gz .
+tar -C "${OUTPUT_DIR}" -czf "${BUILD_STAGE_DIR}/compiled.tar.gz" .
+tar -C "${NODE_IMAGE_VALIDATE_DIR}" -czf "${BUILD_STAGE_DIR}/node_image_refs.tar.gz" .
 
 echo "Uploading to master..."
 ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
     "sudo -n rm -rf '${REMOTE_WORK_DIR}' && mkdir -p '${REMOTE_WORK_DIR}' && sudo -n chown '${SEED_K3S_USER}:${SEED_K3S_USER}' '${REMOTE_WORK_DIR}'"
-scp -q "${SSH_OPTS[@]}" /tmp/compiled.tar.gz "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
-scp -q "${SSH_OPTS[@]}" /tmp/node_image_refs.tar.gz "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
+scp -q "${SSH_OPTS[@]}" "${BUILD_STAGE_DIR}/compiled.tar.gz" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
+scp -q "${SSH_OPTS[@]}" "${BUILD_STAGE_DIR}/node_image_refs.tar.gz" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
 if [ "${SEED_FAST_IMAGE_ARCHIVE:-0}" = "1" ]; then
     require_file "${FAST_ARCHIVE_SCRIPT}"
     scp -q "${SSH_OPTS[@]}" "${FAST_ARCHIVE_SCRIPT}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_WORK_DIR}/"
 fi
 
 REMOTE_SCRIPT="${REMOTE_WORK_DIR}/build_remote.sh"
-cat > /tmp/build_remote.sh <<'REMOTE_EOF'
+cat > "${BUILD_STAGE_DIR}/build_remote.sh" <<'REMOTE_EOF'
 #!/bin/bash
 set -euo pipefail
 REMOTE_WORK_DIR="$1"
@@ -173,7 +176,7 @@ export SEED_REGISTRY_PUSH_TIMEOUT_SECONDS="${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS}
 export SEED_BUILD_SKIP_EXISTING="${SEED_BUILD_SKIP_EXISTING}"
 export SEED_FAST_IMAGE_ARCHIVE="${SEED_FAST_IMAGE_ARCHIVE}"
 if command -v curl >/dev/null 2>&1; then
-  curl -m 5 -fsS http://127.0.0.1:5000/v2/ >/dev/null
+  curl -m 5 -fsS "http://${SEED_REGISTRY_LOCAL_ENDPOINT:-${SEED_REGISTRY}}/v2/" >/dev/null
 fi
 
 install_buildx_wrapper() {
@@ -258,7 +261,7 @@ else
 fi
 REMOTE_EOF
 
-scp -q "${SSH_OPTS[@]}" /tmp/build_remote.sh "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_SCRIPT}"
+scp -q "${SSH_OPTS[@]}" "${BUILD_STAGE_DIR}/build_remote.sh" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_SCRIPT}"
 printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q' \
     "${REMOTE_SCRIPT}" \
     "${REMOTE_WORK_DIR}" \
@@ -277,7 +280,7 @@ printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q'
     "${SEED_FAST_ARCHIVE_BASE_IMAGE:-}"
 ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" "${REMOTE_CMD}"
 echo "[build] remote build stage finished"
-rm -f /tmp/build_remote.sh
+rm -f "${BUILD_STAGE_DIR}/build_remote.sh"
 
 ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" \
     "cat ${REMOTE_WORK_DIR}/build.log" > "${EXPERIMENT_DIR}/build_remote.log" 2>/dev/null || true

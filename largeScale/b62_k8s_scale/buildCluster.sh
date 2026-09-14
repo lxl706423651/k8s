@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build the B62 KVM/K3s/Kube-OVN cluster from assignment.yaml.
+# Build the B62 single-host KVM/K3s cluster from assignment.yaml.
 #
 # Inputs: assignment.yaml, renderAssignmentConfig.py, prepareLibvirtDhcp.py,
 #         and k8sTools.py.
-# Outputs: configKvmOvn.yaml, configK3s.yaml, kubeconfig.yaml, and
+# Outputs: configKvm.yaml, configK3s.yaml, kubeconfig.yaml, and
 #          cluster.inventory.yaml.
-# Side effects: creates or updates KVM VMs, installs K3s, installs Kube-OVN,
-#               and configures the in-cluster registry.
+# Side effects: creates or updates KVM VMs, installs K3s and the configured
+#               optional fabric, and configures the in-cluster registry.
 # Context: run from this directory on the KVM host.
 set -Eeuo pipefail
 
@@ -15,7 +15,7 @@ ASSIGNMENT_FILE="${2:-${SCRIPT_DIR}/assignment.yaml}"
 RUN_DIR="${1:-${SCRIPT_DIR}/runs/build_cluster_$(date +%Y%m%d_%H%M%S)}"
 LOG_FILE="${RUN_DIR}/build-cluster.log"
 NODE_READY_TIMEOUT_SECONDS=1800
-CONFIG_KVM_OVN="${SCRIPT_DIR}/configKvmOvn.yaml"
+CONFIG_KVM="${SCRIPT_DIR}/configKvm.yaml"
 CONFIG_K3S="${SCRIPT_DIR}/configK3s.yaml"
 KUBECONFIG_OUT="${SCRIPT_DIR}/kubeconfig.yaml"
 INVENTORY_OUT="${SCRIPT_DIR}/cluster.inventory.yaml"
@@ -87,10 +87,10 @@ echo "===== build-cluster started $(date --iso-8601=seconds) ====="
 assert_no_conflicting_cleanup
 python3 "${SCRIPT_DIR}/renderAssignmentConfig.py" --assignment "${ASSIGNMENT_FILE}" --run-dir "${RUN_DIR}" prepare
 
-sudo -n python3 "${SCRIPT_DIR}/prepareLibvirtDhcp.py" "${CONFIG_KVM_OVN}"
+sudo -n python3 "${SCRIPT_DIR}/prepareLibvirtDhcp.py" "${CONFIG_KVM}"
 
 run_tracked python3 "${SCRIPT_DIR}/k8sTools.py" build \
-    --input "${CONFIG_KVM_OVN}" \
+    --input "${CONFIG_KVM}" \
     --config-k3s "${CONFIG_K3S}" \
     --kubeconfig "${KUBECONFIG_OUT}" \
     --inventory "${INVENTORY_OUT}" \

@@ -9,8 +9,9 @@ Outputs:
   kubeconfig.yaml during build.
 
 Side effects:
-- build/destroy create or remove KVM VMs, K3s, Kube-OVN, registry state, and
-  related libvirt disks according to the input YAML.
+- build/destroy create or remove KVM VMs, K3s, the configured optional
+  network fabric, registry state, and related libvirt disks according to the
+  input YAML.
 
 Execution context:
 - Run from largeScale/b62_k8s_scale or any directory inside this repo.

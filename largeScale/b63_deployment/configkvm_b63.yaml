@@ -6,29 +6,85 @@ nodes:
     role: master
     ip: 192.168.122.230
     mac: 52:54:00:63:30:01
-    vcpus: 8
-    memory_mb: 8192
+    vcpus: 25
+    memory_mb: 51200
     disk_gb: 80
   - name: seedemu-b63-placement-worker1
     role: worker
     ip: 192.168.122.231
     mac: 52:54:00:63:30:02
-    vcpus: 6
-    memory_mb: 10240
+    vcpus: 25
+    memory_mb: 51200
     disk_gb: 80
   - name: seedemu-b63-placement-worker2
     role: worker
     ip: 192.168.122.232
     mac: 52:54:00:63:30:03
-    vcpus: 8
-    memory_mb: 12288
+    vcpus: 25
+    memory_mb: 51200
     disk_gb: 80
   - name: seedemu-b63-placement-worker3
     role: worker
     ip: 192.168.122.233
     mac: 52:54:00:63:30:04
-    vcpus: 4
-    memory_mb: 8192
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker4
+    role: worker
+    ip: 192.168.122.234
+    mac: 52:54:00:63:30:05
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker5
+    role: worker
+    ip: 192.168.122.235
+    mac: 52:54:00:63:30:06
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker6
+    role: worker
+    ip: 192.168.122.236
+    mac: 52:54:00:63:30:07
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker7
+    role: worker
+    ip: 192.168.122.237
+    mac: 52:54:00:63:30:08
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker8
+    role: worker
+    ip: 192.168.122.238
+    mac: 52:54:00:63:30:09
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker9
+    role: worker
+    ip: 192.168.122.239
+    mac: 52:54:00:63:30:0a
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker10
+    role: worker
+    ip: 192.168.122.240
+    mac: 52:54:00:63:30:0b
+    vcpus: 25
+    memory_mb: 51200
+    disk_gb: 80
+  - name: seedemu-b63-placement-worker11
+    role: worker
+    ip: 192.168.122.241
+    mac: 52:54:00:63:30:0c
+    vcpus: 25
+    memory_mb: 51200
     disk_gb: 80
 
 kvm:
@@ -40,13 +96,17 @@ ssh:
   key: ~/.ssh/id_ed25519
 
 fabric:
-  type: ovn
+  type: macvlan-vlan
+
+cni:
+  defaultMasterInterface: ens2
 
 registry:
   port: 5063
 
 k3s:
   maxPods: 4000
+  nodeCidrMaskSizeIpv4: 22
 
 tuning:
   userMaxNetNamespaces: 65536

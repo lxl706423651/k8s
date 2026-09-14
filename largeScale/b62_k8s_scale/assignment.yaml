@@ -2,10 +2,10 @@
 # worker count, VM resources, and cluster addressing. Stage tuning parameters
 # are fixed directly in the corresponding stage scripts.
 experiment:
-  name: b62-macvlan-vlan-4954
-  topologySize: 4954
+  name: b62-macvlan-vlan-1078
+  topologySize: 1078
   workerCount: 5
-  namespace: seedemu-b62-mvlan-vlan-4954
+  namespace: seedemu-b62-mvlan-vlan-1078
   sourceRoot: ../..
   topologyDir: ~/seed-emulator/topology
 

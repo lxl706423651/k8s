@@ -225,8 +225,15 @@ elif ! grep -F 'include "/etc/bird/conf/kernel.conf";' /etc/bird/bird.conf >/dev
     printf '\ninclude "/etc/bird/conf/kernel.conf";\n' >> /etc/bird/bird.conf
 fi
 
-timeout "${BIRDC_TIMEOUT_SECONDS}" birdc configure >/tmp/seedemu-birdc-configure.log 2>&1 &&
-    timeout "${BIRDC_TIMEOUT_SECONDS}" birdc 'reload kernel' >/tmp/seedemu-birdc-reload-kernel.log 2>&1 || true
+timeout "${BIRDC_TIMEOUT_SECONDS}" birdc configure >/tmp/seedemu-birdc-configure.log 2>&1
+timeout "${BIRDC_TIMEOUT_SECONDS}" birdc show protocols >/tmp/seedemu-birdc-show-protocols.log 2>&1
+kernel_protocol="$(awk '$2 == "Kernel" { print $1; exit }' /tmp/seedemu-birdc-show-protocols.log)"
+if [ -z "${kernel_protocol}" ]; then
+    echo "unable to resolve configured Kernel protocol name" >&2
+    cat /tmp/seedemu-birdc-show-protocols.log >&2
+    exit 1
+fi
+timeout "${BIRDC_TIMEOUT_SECONDS}" birdc "reload ${kernel_protocol}" >/tmp/seedemu-birdc-reload-kernel.log 2>&1
 EOS
 chmod +x "${KERNEL_SCRIPT}"
 

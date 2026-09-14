@@ -6,7 +6,10 @@ and kubeconfig. The stage records baseline `ip route` counts on deterministic
 verify pods, sends `birdc down` to configured chaos pods, waits for VM load to
 settle, and treats the failure side as converged once at least one verify pod
 has fewer Linux FIB routes. It then restarts BIRD on the chaos pods and treats
-recovery as converged once at least one verify pod has more Linux FIB routes.
+recovery by polling BIRD total routes on all restarted chaos pods every five
+seconds. Two unchanged comparisons confirm each stable plateau; convergence
+is timestamped at its first sample, not the later confirmation. All monitored
+protocols must also recover before this stage passes.
 
 Outputs are reconvergence.log, reconvergence_targets.json, and
 reconvergence_summary.json in the run directory.
@@ -15,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -27,25 +31,8 @@ from typing import Any
 import yaml
 
 
-DEFAULT_CHAOS_TARGETS = [
-    "as1277brd-r219-1.219.4.253",
-    "as1304brd-r40-1.40.5.24",
-    "as1841brd-r17-1.17.7.49",
-    "as1488brd-r12-1.12.5.208",
-    "as1485brd-r18-1.18.5.205",
-    "as1725brd-r21-1.21.6.189",
-    "as1113brd-ix1113-5.89.4.89",
-    "as1700brd-r13-1.13.6.164",
-    "as1797brd-r12-1.12.7.5",
-    "as1531brd-r7-1.7.5.251",
-]
-
-DEFAULT_VERIFY_TARGETS = [
-    "as1277brd-r2-1.2.4.253",
-    "as1531brd-r12-1.12.5.251",
-    "as1304brd-r12-1.12.5.24",
-    "as1841brd-r206-1.206.7.49",
-]
+OUTPUT_MARKER = "__SEEDEMU_RECONVERGENCE_ROUTE_COUNT__"
+BAD_INFO_RE = re.compile(r"(error|fail|unreachable|no route|refused|timeout|inactive)", re.IGNORECASE)
 
 
 @dataclass
@@ -62,6 +49,36 @@ class PodInfo:
     node: str
     status: str
     role: str
+
+
+@dataclass
+class RouteStability:
+    """Track a restarted BIRD's positive route plateau from its empty RIB."""
+    lastCount: int | None = 0
+    growthSeen: bool = False
+    stableSinceSeconds: float | None = None
+    unchangedRounds: int = 0
+    confirmedAtSeconds: float | None = None
+
+    def update(self, count: int | None, elapsed: float) -> None:
+        """Consume a valid BIRD count at elapsed seconds since recovery began."""
+        if count is None or count <= 0:
+            self.lastCount = None
+            self.stableSinceSeconds = None
+            self.unchangedRounds = 0
+            self.confirmedAtSeconds = None
+            return
+        # Each new daemon starts from an empty RIB, even if its first poll is late.
+        self.growthSeen = self.growthSeen or count > (self.lastCount or 0)
+        if count == self.lastCount and self.stableSinceSeconds is not None:
+            self.unchangedRounds += 1
+        else:
+            self.stableSinceSeconds = elapsed
+            self.unchangedRounds = 0
+            self.confirmedAtSeconds = None
+        self.lastCount = count
+        if self.growthSeen and self.unchangedRounds >= 2 and self.confirmedAtSeconds is None:
+            self.confirmedAtSeconds = elapsed
 
 
 def nowUtc() -> str:
@@ -248,6 +265,32 @@ def findPrefixedPod(prefix: str, pods: list[PodInfo]) -> PodInfo | None:
     return None
 
 
+def selectDefaultTargets(pods: list[PodInfo]) -> tuple[list[str], list[str]]:
+    """Select stable logical router prefixes from pods, independent of placement/hash.
+
+    Use the first ten numeric ASNs with at least two running routers. Fail the
+    highest router ID in each; observe the lowest in the first four ASNs.
+    """
+    groups: dict[int, dict[str, int]] = {}
+    pattern = re.compile(r"^(as(\d+)brd-r(\d+)-(?:\d+\.){3}\d+)-")
+    for pod in pods:
+        match = pattern.match(pod.name)
+        if pod.status == "Running" and match:
+            groups.setdefault(int(match[2]), {})[match[1]] = int(match[3])
+    chaos: list[str] = []
+    verify: list[str] = []
+    for asn in sorted(groups):
+        routers = sorted(groups[asn], key=lambda prefix: (groups[asn][prefix], prefix))
+        if len(routers) < 2:
+            continue
+        chaos.append(routers[-1])
+        if len(verify) < 4:
+            verify.append(routers[0])
+        if len(chaos) == 10:
+            break
+    return chaos, verify
+
+
 def routeCount(kubeconfig: str, namespace: str, pod: str, timeout: int) -> tuple[int | None, str]:
     """Return `ip route | wc -l` for one pod."""
     result = kubectlExec(kubeconfig, namespace, pod, "ip route | wc -l", timeout)
@@ -258,6 +301,138 @@ def routeCount(kubeconfig: str, namespace: str, pod: str, timeout: int) -> tuple
         return int((result.stdout or "").strip().split()[0]), raw
     except (IndexError, ValueError) as exc:
         return None, f"{exc}: {raw}"
+
+
+def parseProtocolRows(output: str) -> list[dict[str, str]]:
+    """Parse `birdc show protocols` rows into dictionaries."""
+    rows: list[dict[str, str]] = []
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("BIRD ") or stripped.startswith("Name "):
+            continue
+        parts = stripped.split(None, 5)
+        if len(parts) < 4:
+            continue
+        rows.append(
+            {
+                "name": parts[0],
+                "proto": parts[1],
+                "table": parts[2],
+                "state": parts[3],
+                "since": parts[4] if len(parts) >= 5 else "",
+                "info": parts[5] if len(parts) >= 6 else "",
+                "line": stripped,
+            }
+        )
+    return rows
+
+
+def splitBirdOutput(output: str) -> tuple[str, str]:
+    """Split combined protocol and route-count command output."""
+    if OUTPUT_MARKER not in output:
+        return output, ""
+    return output.split(OUTPUT_MARKER, 1)
+
+
+def parseBirdRouteCount(output: str) -> tuple[int | None, int | None]:
+    """Parse total route and network counts from `birdc show route count`."""
+    match = re.search(r"Total:\s+(\d+)\s+of\s+\d+\s+routes\s+for\s+(\d+)\s+networks", output, re.IGNORECASE)
+    if not match:
+        return None, None
+    return int(match.group(1)), int(match.group(2))
+
+
+def assessProtocols(rows: list[dict[str, str]], route_output: str) -> tuple[list[dict[str, Any]], dict[str, int | None]]:
+    """Return protocol failures and BIRD route metrics for one monitored pod."""
+    failures: list[dict[str, Any]] = []
+    bgp_count = 0
+    established_bgp = 0
+    for row in rows:
+        proto = row["proto"].upper()
+        state = row["state"].lower()
+        info = row.get("info", "")
+        if proto == "BGP" or row["name"].lower().startswith(("bgp", "ebgp", "ibgp")):
+            bgp_count += 1
+            if state == "up" and "established" in info.lower():
+                established_bgp += 1
+                continue
+            failures.append({**row, "reason": "bgp_not_established"})
+            continue
+        if state != "up" or BAD_INFO_RE.search(info):
+            failures.append({**row, "reason": "protocol_not_up"})
+    routes, networks = parseBirdRouteCount(route_output)
+    if bgp_count == 0:
+        failures.append({"name": "<none>", "proto": "BGP", "state": "missing", "info": "no BGP protocols found"})
+    if routes is None or networks is None or routes <= 0 or networks <= 0:
+        failures.append({"name": "<routes>", "proto": "Route", "state": "invalid", "info": route_output.strip()})
+    return failures, {
+        "routes": routes,
+        "networks": networks,
+        "bgpProtocols": bgp_count,
+        "establishedBgpProtocols": established_bgp,
+    }
+
+
+def protocolHealth(kubeconfig: str, namespace: str, pod: PodInfo, timeout: int) -> dict[str, Any]:
+    """Check `birdc show protocols` and BIRD route-count health for one monitored pod."""
+    command = (
+        "birdc show protocols; rc1=$?; "
+        f"printf '\\n{OUTPUT_MARKER}\\n'; "
+        "birdc show route count; rc2=$?; "
+        'if [ "$rc1" -ne 0 ]; then exit "$rc1"; fi; exit "$rc2"'
+    )
+    result = kubectlExec(kubeconfig, namespace, pod.name, command, timeout)
+    protocols_output, route_output = splitBirdOutput(result.stdout)
+    rows = parseProtocolRows(protocols_output)
+    failures, metrics = assessProtocols(rows, route_output)
+    passed = result.returncode == 0 and not failures
+    payload: dict[str, Any] = {
+        "pod": pod.name,
+        "node": pod.node,
+        "role": pod.role,
+        "passed": passed,
+        "returnCode": result.returncode,
+        "metrics": metrics,
+        "protocolCount": len(rows),
+        "sampledAtMonotonic": time.monotonic(),
+    }
+    if not passed:
+        payload["failureReason"] = "protocol_check_failed" if result.returncode == 0 else "birdc_command_failed"
+        payload["stderr"] = (result.stderr or "").strip()
+        payload["failedProtocols"] = failures[:50]
+        payload["protocolsRaw"] = protocols_output.strip()
+        payload["routeCountRaw"] = route_output.strip()
+    return payload
+
+
+def collectProtocolHealth(
+    kubeconfig: str,
+    namespace: str,
+    pods: list[PodInfo],
+    exec_timeout: int,
+) -> dict[str, dict[str, Any]]:
+    """Collect BIRD protocol-health checks from monitored pods in parallel."""
+    checks: dict[str, dict[str, Any]] = {}
+    with ThreadPoolExecutor(max_workers=min(16, max(1, len(pods)))) as pool:
+        futures = {
+            pool.submit(protocolHealth, kubeconfig, namespace, pod, exec_timeout): pod
+            for pod in pods
+        }
+        for future in as_completed(futures):
+            pod = futures[future]
+            checks[pod.name] = future.result()
+    return dict(sorted(checks.items()))
+
+
+def summarizeProtocolHealth(checks: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Summarize per-pod protocol checks for the main reconvergence summary."""
+    failed = [item for item in checks.values() if not item.get("passed")]
+    return {
+        "checkedPods": len(checks),
+        "passedPods": len(checks) - len(failed),
+        "failedPods": len(failed),
+        "failedPodNames": [str(item.get("pod")) for item in failed],
+    }
 
 
 def collectRouteCounts(
@@ -327,14 +502,69 @@ def sendBirdUp(kubeconfig: str, namespace: str, pod: PodInfo, timeout: int) -> s
     """Start or reconfigure BIRD in one chaos pod after fault injection."""
     shell_cmd = r"""
 set -eu
-if pgrep -x bird >/dev/null 2>&1; then
-    timeout 10 birdc configure >/dev/null 2>&1 || true
-else
+normalize_bird_config() {
+    mkdir -p /etc/bird/conf /run/bird
+}
+
+cleanup_bird_runtime() {
     rm -f /run/bird/bird.ctl /run/bird/bird.pid /var/run/bird.ctl /var/run/bird.pid \
           /run/bird/*.ctl /run/bird/*.pid /var/run/bird/*.ctl /var/run/bird/*.pid 2>/dev/null || true
-    bird >/tmp/seedemu-bird-recovery.log 2>&1 || (bird -d >/tmp/seedemu-bird-recovery.log 2>&1 & sleep 1)
+}
+
+stop_bird_if_present() {
+    if ! pgrep -x bird >/dev/null 2>&1; then
+        return 0
+    fi
+    pkill -TERM -x bird >/dev/null 2>&1 || true
+    i=0
+    while [ "$i" -lt 10 ]; do
+        if ! pgrep -x bird >/dev/null 2>&1; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    pkill -KILL -x bird >/dev/null 2>&1 || true
+    i=0
+    while [ "$i" -lt 5 ]; do
+        if ! pgrep -x bird >/dev/null 2>&1; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+}
+
+start_bird_again() {
+    normalize_bird_config
+    stop_bird_if_present
+    cleanup_bird_runtime
+    bird >/tmp/seedemu-bird-recovery.log 2>&1 || {
+        cat /tmp/seedemu-bird-recovery.log >&2 2>/dev/null || true
+        return 1
+    }
+    i=0
+    while [ "$i" -lt 15 ]; do
+        if timeout 5 birdc show status >/dev/null 2>&1; then
+            timeout 10 birdc configure >/dev/null 2>&1 || true
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    cat /tmp/seedemu-bird-recovery.log >&2 2>/dev/null || true
+    return 1
+}
+
+if pgrep -x bird >/dev/null 2>&1; then
+    if timeout 10 birdc show status >/dev/null 2>&1; then
+        normalize_bird_config
+        timeout 10 birdc configure >/dev/null 2>&1 || true
+        timeout 10 birdc show status >/dev/null
+        exit 0
+    fi
 fi
-timeout 10 birdc show status >/dev/null
+start_bird_again
 """
     return kubectlExec(kubeconfig, namespace, pod.name, shell_cmd, timeout)
 
@@ -407,6 +637,79 @@ def waitForRouteChange(
         time.sleep(max(1, route_check_interval_seconds))
 
 
+def waitForBirdRecovery(
+    *, chaos_pods: list[PodInfo], verify_pods: list[PodInfo],
+    nodes: dict[str, InventoryNode], kubeconfig: str, namespace: str,
+    load_threshold: float, timeout_seconds: int, exec_timeout: int,
+    started: float, artifact_dir: Path,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Poll restarted BIRD totals every 5s until all plateaus and protocols recover.
+
+    started is monotonic time immediately before the first restart command.
+    chaos_pods define the timed sample; verify_pods are additional health gates.
+    Persist every sample and timeout state in artifact_dir. Slow API calls may
+    stretch the interval; actual per-pod sample times are always recorded.
+    """
+    states = {pod.name: RouteStability() for pod in chaos_pods}
+    if not states:
+        raise RuntimeError("No restarted BIRD pods to monitor")
+    monitored = list({pod.name: pod for pod in chaos_pods + verify_pods}.values())
+    sample_path = artifact_dir / "recovery_samples.jsonl"
+    state_path = artifact_dir / "recovery_stability.json"
+    sample_path.write_text("", encoding="utf-8")
+    attempts = 0
+    payload: dict[str, Any] = {"status": "RUNNING"}
+    while True:
+        round_start = time.monotonic()
+        remaining = timeout_seconds - (round_start - started)
+        if remaining <= 0:
+            payload["status"] = "TIMEOUT"
+            writeJson(state_path, payload)
+            raise TimeoutError(f"BIRD recovery did not stabilize within {timeout_seconds}s; see {state_path}")
+        checks = collectProtocolHealth(kubeconfig, namespace, monitored, min(exec_timeout, max(1, int(remaining))))
+        attempts += 1
+        for name, state in states.items():
+            check = checks.get(name, {})
+            count = (check.get("metrics") or {}).get("routes") if check.get("returnCode") == 0 else None
+            elapsed = check.get("sampledAtMonotonic", time.monotonic()) - started
+            state.update(count, round(elapsed, 3))
+        loads = collectNodeLoads(nodes)
+        load_ok = bool(loads) and all(
+            item.get("load1") is not None and float(item["load1"]) < load_threshold
+            for item in loads.values())
+        stable = sum(state.confirmedAtSeconds is not None for state in states.values())
+        health = summarizeProtocolHealth(checks)
+        elapsed = time.monotonic() - started
+        passed = (stable == len(states) and health["failedPods"] == 0
+                  and len(checks) == len(monitored) and load_ok and elapsed < timeout_seconds)
+        payload = {
+            "status": "PASS" if passed else "RUNNING",
+            "metric": "BIRD total routes (birdc show route count)",
+            "pollIntervalSeconds": 5, "requiredUnchangedRounds": 2,
+            "timeOrigin": "before first restart command", "initialRouteCount": 0,
+            "attempt": attempts, "elapsedSeconds": round(elapsed, 3),
+            "stablePods": stable, "totalPods": len(states),
+            "pods": {name: asdict(state) for name, state in states.items()},
+            "protocolHealth": health, "loadGatePassed": load_ok,
+        }
+        if passed:
+            payload["recoveryConvergenceSeconds"] = max(state.stableSinceSeconds for state in states.values())
+            payload["stabilityConfirmedSeconds"] = max(state.confirmedAtSeconds for state in states.values())
+            payload["validationCompletedSeconds"] = round(elapsed, 3)
+        if elapsed >= timeout_seconds:
+            payload["status"] = "TIMEOUT"
+        writeJson(state_path, payload)
+        with sample_path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({**payload, "checks": checks, "loads": loads}, sort_keys=True) + "\n")
+        log(f"BIRD recovery attempt={attempts} elapsed={elapsed:.2f}s stable={stable}/{len(states)} "
+            f"healthy={health['passedPods']}/{len(monitored)} load_ok={load_ok}")
+        if passed:
+            return payload, checks, loads
+        if elapsed >= timeout_seconds:
+            raise TimeoutError(f"BIRD recovery timed out; see {state_path}")
+        time.sleep(min(max(0, 5 - (time.monotonic() - round_start)), timeout_seconds - elapsed))
+
+
 def writeJson(path: Path, payload: dict[str, Any] | list[dict[str, Any]]) -> None:
     """Write formatted JSON."""
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
@@ -436,6 +739,8 @@ def main(argv: list[str]) -> int:
     args.artifact_dir.mkdir(parents=True, exist_ok=True)
     summary_path = args.artifact_dir / "reconvergence_summary.json"
     targets_path = args.artifact_dir / "reconvergence_targets.json"
+    protocols_path = args.artifact_dir / "reconvergence_protocol_checks.json"
+    protocol_checks: dict[str, dict[str, dict[str, Any]]] = {}
     summary: dict[str, Any] = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "namespace": args.namespace,
@@ -446,11 +751,13 @@ def main(argv: list[str]) -> int:
         "phaseTimeoutSeconds": args.phase_timeout_seconds,
     }
     started = time.time()
+    recovery_monitor_started = False
     try:
         nodes = loadInventory(args.inventory)
         pods = listSeedemuPods(args.kubeconfig, args.namespace, args.list_timeout_seconds)
-        chaos_prefixes = args.chaos_target_prefix or DEFAULT_CHAOS_TARGETS
-        verify_prefixes = args.verify_target_prefix or DEFAULT_VERIFY_TARGETS
+        default_chaos, default_verify = selectDefaultTargets(pods)
+        chaos_prefixes = args.chaos_target_prefix or default_chaos
+        verify_prefixes = args.verify_target_prefix or default_verify
         chaos_pods = [findPrefixedPod(prefix, pods) for prefix in chaos_prefixes]
         verify_pods = [findPrefixedPod(prefix, pods) for prefix in verify_prefixes]
         missing_chaos = [prefix for prefix, pod in zip(chaos_prefixes, chaos_pods) if pod is None]
@@ -458,6 +765,7 @@ def main(argv: list[str]) -> int:
         chaos = [pod for pod in chaos_pods if pod is not None]
         verify = [pod for pod in verify_pods if pod is not None]
         targets_payload = {
+            "selectionPolicy": "explicit-prefixes-or-numeric-as-router-v1",
             "chaosTargetPrefixes": chaos_prefixes,
             "verifyTargetPrefixes": verify_prefixes,
             "missingChaosTargets": missing_chaos,
@@ -482,6 +790,17 @@ def main(argv: list[str]) -> int:
         summary["baselineLoadWaitSeconds"] = baseline_load_wait
         summary["baselineLoads"] = baseline_loads
         summary["baselineRoutes"] = baseline_counts
+        baseline_protocols = collectProtocolHealth(args.kubeconfig, args.namespace, verify, args.exec_timeout_seconds)
+        protocol_checks["baseline"] = baseline_protocols
+        summary["baselineProtocolHealth"] = summarizeProtocolHealth(baseline_protocols)
+        writeJson(protocols_path, protocol_checks)
+        baseline_failed = [item for item in baseline_protocols.values() if not item.get("passed")]
+        if baseline_failed:
+            summary["status"] = "FAIL"
+            summary["failureReason"] = "baseline_protocol_health_failed"
+            summary["totalDurationSeconds"] = round(time.time() - started, 2)
+            writeJson(summary_path, summary)
+            return 1
         log("baseline route counts: " + ", ".join(f"{name}={item['routeCount']}" for name, item in baseline_counts.items()))
 
         fault_injection_seconds, fault_errors = sendCommands(
@@ -514,7 +833,13 @@ def main(argv: list[str]) -> int:
         summary["failureRoutes"] = failure_counts
         summary["failureRouteDiff"] = failure_comparison
         summary["failureLoads"] = failure_loads
+        failure_protocols = collectProtocolHealth(args.kubeconfig, args.namespace, verify, args.exec_timeout_seconds)
+        protocol_checks["failure"] = failure_protocols
+        summary["failureProtocolHealth"] = summarizeProtocolHealth(failure_protocols)
+        writeJson(protocols_path, protocol_checks)
 
+        recovery_started = time.monotonic()
+        summary["recoveryStartedAt"] = datetime.now(timezone.utc).isoformat()
         recovery_injection_seconds, recovery_errors = sendCommands(
             "bird recovery", chaos, sendBirdUp, args.kubeconfig, args.namespace, args.exec_timeout_seconds
         )
@@ -527,24 +852,29 @@ def main(argv: list[str]) -> int:
             writeJson(summary_path, summary)
             return 1
 
-        recovery_seconds, recovery_comparison, recovery_counts, recovery_loads = waitForRouteChange(
-            phase="recovery convergence",
-            direction="increase",
-            reference=failure_counts,
-            nodes=nodes,
+        recovery_monitor_started = True
+        recovery_state, recovery_protocols, recovery_loads = waitForBirdRecovery(
+            chaos_pods=chaos,
             verify_pods=verify,
+            nodes=nodes,
             kubeconfig=args.kubeconfig,
             namespace=args.namespace,
             load_threshold=args.load_threshold,
-            load_interval_seconds=args.load_check_interval_seconds,
-            route_check_interval_seconds=args.route_check_interval_seconds,
             timeout_seconds=args.phase_timeout_seconds,
             exec_timeout=args.exec_timeout_seconds,
+            started=recovery_started,
+            artifact_dir=args.artifact_dir,
         )
+        recovery_seconds = recovery_state["recoveryConvergenceSeconds"]
+        recovery_counts = collectRouteCounts(args.kubeconfig, args.namespace, verify, args.exec_timeout_seconds)
         summary["recoveryConvergenceSeconds"] = recovery_seconds
+        summary["recoveryStability"] = recovery_state
         summary["recoveryRoutes"] = recovery_counts
-        summary["recoveryRouteDiff"] = recovery_comparison
+        summary["recoveryRouteDiff"] = compareCounts(failure_counts, recovery_counts)
         summary["recoveryLoads"] = recovery_loads
+        protocol_checks["recovery"] = recovery_protocols
+        summary["recoveryProtocolHealth"] = summarizeProtocolHealth(recovery_protocols)
+        writeJson(protocols_path, protocol_checks)
         summary["status"] = "PASS"
         summary["totalDurationSeconds"] = round(time.time() - started, 2)
         writeJson(summary_path, summary)
@@ -557,6 +887,9 @@ def main(argv: list[str]) -> int:
         summary["status"] = "FAIL"
         summary["failureReason"] = type(exc).__name__
         summary["error"] = str(exc)
+        state_path = args.artifact_dir / "recovery_stability.json"
+        if recovery_monitor_started and state_path.is_file():
+            summary["recoveryStability"] = json.loads(state_path.read_text(encoding="utf-8"))
         summary["totalDurationSeconds"] = round(time.time() - started, 2)
         writeJson(summary_path, summary)
         log(f"reconvergence failed: {type(exc).__name__}: {exc}")

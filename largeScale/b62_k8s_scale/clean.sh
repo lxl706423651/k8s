@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# Clean the active B62 experiment namespace and related Kube-OVN resources.
+# Clean the active B62 experiment namespace and backend-specific resources.
 #
 # Inputs: optional experiment run directory; assignment.yaml is resolved by
 #         lib.sh to derive KUBECONFIG and SEED_NAMESPACE.
 # Outputs: clean.log and loadAverage.log in the run directory.
-# Side effects: deletes resources only in SEED_NAMESPACE, deletes cluster-scoped
-#               Kube-OVN IP/Subnet/Vpc objects whose names contain the namespace,
-#               and clears finalizers for those matching Kube-OVN objects if
-#               they remain stuck after the grace period.
+# Side effects: deletes resources only in SEED_NAMESPACE. If matching
+#               cluster-scoped Kube-OVN IP/Subnet/Vpc objects exist, it also
+#               deletes them and clears stuck finalizers.
 # Context: run from b62_k8s_scale on the K3s/KVM controller host.
 set -euo pipefail
 
@@ -32,6 +31,7 @@ begin_stage_logging "clean"
 ensure_kubeconfig
 
 NS="${SEED_NAMESPACE}"
+CLEAN_NETWORK_BACKEND="$(seed_network_backend)"
 WORK_DIR="${EXPERIMENT_DIR}/.cleanup-${NS}"
 mkdir -p "${WORK_DIR}"
 
@@ -298,7 +298,9 @@ print_test_context
 echo "CLEAN_CHECK_INTERVAL_SECONDS=${CLEAN_CHECK_INTERVAL_SECONDS}"
 echo "CLEAN_TIMEOUT_SECONDS=${CLEAN_TIMEOUT_SECONDS}"
 echo "CLEAN_EVENT_DELETE_PARALLELISM=${CLEAN_EVENT_DELETE_PARALLELISM}"
-echo "CLEAN_KUBE_OVN_DELETE_PARALLELISM=${CLEAN_KUBE_OVN_DELETE_PARALLELISM}"
+if [ "${CLEAN_NETWORK_BACKEND}" = "kube-ovn" ] || [ "${CLEAN_NETWORK_BACKEND}" = "ovn" ]; then
+    echo "CLEAN_KUBE_OVN_DELETE_PARALLELISM=${CLEAN_KUBE_OVN_DELETE_PARALLELISM}"
+fi
 
 if [ "${CLEAN_NAMESPACE}" != "true" ]; then
     echo "Skipping cleanup because CLEAN_NAMESPACE=${CLEAN_NAMESPACE}"
@@ -315,11 +317,21 @@ if namespace_exists; then
     echo "[3/4] Deleting namespace ${NS}"
     k delete namespace "${NS}" --wait=false --request-timeout="${CLEAN_DELETE_REQUEST_TIMEOUT_SECONDS}s" >/dev/null 2>&1 || true
 else
-    echo "Namespace ${NS} is already absent; checking matching cluster-scoped resources."
+    echo "Namespace ${NS} is already absent; checking backend-specific cluster-scoped resources."
 fi
 
-echo "[4/4] Deleting matching Kube-OVN cluster-scoped resources"
-delete_cluster_scoped_kube_ovn_resources
+initial_cluster_summary="$(cluster_scoped_summary)"
+initial_cluster_total="$(summary_value "${initial_cluster_summary}" cluster_total)"
+kube_ovn_cleanup_active=false
+if [ "${CLEAN_NETWORK_BACKEND}" = "kube-ovn" ] ||
+   [ "${CLEAN_NETWORK_BACKEND}" = "ovn" ] ||
+   [ "${initial_cluster_total:-0}" -gt 0 ]; then
+    kube_ovn_cleanup_active=true
+    echo "[4/4] Deleting matching Kube-OVN cluster-scoped resources"
+    delete_cluster_scoped_kube_ovn_resources
+else
+    echo "[4/4] No backend-specific cluster-scoped resources to delete"
+fi
 
 start_ts="$(date +%s)"
 deadline=$((start_ts + CLEAN_TIMEOUT_SECONDS))
@@ -339,7 +351,11 @@ while true; do
 
     if ! namespace_exists; then
         if [ "${cluster_total:-0}" = "0" ]; then
-            echo "[${elapsed}s] Namespace ${NS} and matching Kube-OVN resources fully deleted."
+            if [ "${kube_ovn_cleanup_active}" = "true" ]; then
+                echo "[${elapsed}s] Namespace ${NS} and matching Kube-OVN resources fully deleted."
+            else
+                echo "[${elapsed}s] Namespace ${NS} fully deleted."
+            fi
             exit 0
         fi
         echo "[${elapsed}s] Namespace deleted; waiting on ${cluster_summary}"

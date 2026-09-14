@@ -30,6 +30,63 @@ KERNEL_SCAN_JITTER_SECONDS=120
 KERNEL_NODE_TIMEOUT_SECONDS=36000
 KUBECTL_LIST_TIMEOUT_SECONDS=60
 
+if [[ "${1:-}" == "--runtime" ]]; then
+    RUNTIME_BACKEND="${2:-}"
+    shift 2
+    NATIVE_ARTIFACT_DIR=""
+    NATIVE_INVENTORY=""
+    NATIVE_EXPERIMENT_ID=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --artifact-dir) NATIVE_ARTIFACT_DIR="${2:-}"; shift 2 ;;
+            --inventory) NATIVE_INVENTORY="${2:-}"; shift 2 ;;
+            --experiment-id) NATIVE_EXPERIMENT_ID="${2:-}"; shift 2 ;;
+            *) echo "Unknown native start-kernel option: $1" >&2; exit 2 ;;
+        esac
+    done
+    if [[ "${RUNTIME_BACKEND}" != "docker" ]]; then
+        echo "Unsupported start-kernel runtime: ${RUNTIME_BACKEND}" >&2
+        exit 2
+    fi
+    require_file "${NATIVE_INVENTORY}"
+    [[ -n "${NATIVE_ARTIFACT_DIR}" && -n "${NATIVE_EXPERIMENT_ID}" ]] || {
+        echo "--artifact-dir and --experiment-id are required for Docker runtime" >&2
+        exit 2
+    }
+    mkdir -p "${NATIVE_ARTIFACT_DIR}"
+    echo "Switching BIRD kernel export on native Docker containers through the B62 entrypoint..."
+    echo "strategy=node-local-docker-exec"
+    echo "KERNEL_EXPORT_MODE=${KERNEL_EXPORT_MODE}"
+    echo "KERNEL_NODE_CONCURRENCY=${KERNEL_NODE_CONCURRENCY}"
+    echo "KERNEL_PARALLEL_PER_NODE=${KERNEL_PARALLEL_PER_NODE}"
+    echo "KERNEL_SWITCH_BATCH_SIZE=${KERNEL_SWITCH_BATCH_SIZE}"
+    echo "KERNEL_SWITCH_BATCH_COOLDOWN_SECONDS=${KERNEL_SWITCH_BATCH_COOLDOWN_SECONDS}"
+    echo "KERNEL_SWITCH_DELAY_SECONDS=${KERNEL_SWITCH_DELAY_SECONDS}"
+    echo "KERNEL_LOAD_THRESHOLD=${KERNEL_LOAD_THRESHOLD}"
+    echo "KERNEL_LOAD_CHECK_INTERVAL_SECONDS=${KERNEL_LOAD_CHECK_INTERVAL_SECONDS}"
+    echo "KERNEL_LOAD_MAX_WAIT_SECONDS=${KERNEL_LOAD_MAX_WAIT_SECONDS}"
+    python3 "${SCRIPT_DIR}/runDockerBirdStage.py" \
+        --stage start-kernel \
+        --artifact-dir "${NATIVE_ARTIFACT_DIR}" \
+        --inventory "${NATIVE_INVENTORY}" \
+        --experiment-id "${NATIVE_EXPERIMENT_ID}" \
+        --node-concurrency "${KERNEL_NODE_CONCURRENCY}" \
+        --action-sleep-seconds "${KERNEL_SWITCH_DELAY_SECONDS}" \
+        --switch-batch-size "${KERNEL_SWITCH_BATCH_SIZE}" \
+        --switch-batch-cooldown-seconds "${KERNEL_SWITCH_BATCH_COOLDOWN_SECONDS}" \
+        --one-timeout-seconds "${KERNEL_EXEC_TIMEOUT_SECONDS}" \
+        --node-timeout-seconds "${KERNEL_NODE_TIMEOUT_SECONDS}" \
+        --load-threshold "${KERNEL_LOAD_THRESHOLD}" \
+        --load-check-interval-seconds "${KERNEL_LOAD_CHECK_INTERVAL_SECONDS}" \
+        --load-max-wait-seconds "${KERNEL_LOAD_MAX_WAIT_SECONDS}" \
+        --birdc-timeout-seconds "${KERNEL_BIRDC_TIMEOUT_SECONDS}" \
+        --export-mode "${KERNEL_EXPORT_MODE}" \
+        --scan-base-seconds "${KERNEL_SCAN_BASE_SECONDS}" \
+        --scan-jitter-seconds "${KERNEL_SCAN_JITTER_SECONDS}"
+    echo "Start BIRD kernel completed."
+    exit 0
+fi
+
 setup_experiment_context "${1:-}"
 begin_stage_logging "start_bird_kernel"
 ensure_kubeconfig

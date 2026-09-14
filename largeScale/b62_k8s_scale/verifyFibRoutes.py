@@ -183,7 +183,7 @@ def kubectlListPods(namespace: str, kubeconfig: str, timeout: int) -> dict[str, 
 
 
 def selectTargets(namespace: str, kubeconfig: str, list_timeout: int, sample_as_count: int) -> list[FibTarget]:
-    """Select the smallest-r brd pod from each of the first N ASNs."""
+    """Select one smallest-r brd Pod per AS; zero means every router AS."""
     data = kubectlListPods(namespace, kubeconfig, list_timeout)
     best_by_asn: dict[int, FibTarget] = {}
     for item in data.get("items", []):
@@ -209,7 +209,11 @@ def selectTargets(namespace: str, kubeconfig: str, list_timeout: int, sample_as_
         current = best_by_asn.get(asn)
         if current is None or (target.routerId, target.pod) < (current.routerId, current.pod):
             best_by_asn[asn] = target
-    selected_asns = sorted(best_by_asn)[: max(1, sample_as_count)]
+    selected_asns = (
+        sorted(best_by_asn)
+        if sample_as_count == 0
+        else sorted(best_by_asn)[:sample_as_count]
+    )
     return [best_by_asn[asn] for asn in selected_asns]
 
 
@@ -346,7 +350,7 @@ def parseArgs(argv: list[str]) -> argparse.Namespace:
 def main() -> int:
     """CLI entrypoint."""
     args = parseArgs(sys.argv[1:])
-    args.sample_as_count = max(1, args.sample_as_count)
+    args.sample_as_count = max(0, args.sample_as_count)
     started = time.time()
     args.artifact_dir.mkdir(parents=True, exist_ok=True)
     targets_path = args.artifact_dir / "verify_after_fib_write_targets.json"
@@ -363,7 +367,11 @@ def main() -> int:
         "checked_containers": [],
         "failed_samples": [],
         "duration_seconds": None,
-        "strategy": "first-n-as-smallest-r-brd-kubectl-exec",
+        "strategy": (
+            "all-as-smallest-r-brd-kubectl-exec"
+            if args.sample_as_count == 0
+            else "first-n-as-smallest-r-brd-kubectl-exec"
+        ),
     }
     try:
         nodes = loadInventory(args.inventory)

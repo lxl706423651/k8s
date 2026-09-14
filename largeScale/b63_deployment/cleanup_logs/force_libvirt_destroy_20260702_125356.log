@@ -1,0 +1,390 @@
+[start] 2026-07-02T12:53:56+08:00
+[domains]
+     1	seedemu-b63-placement-master
+     2	seedemu-b63-placement-worker1
+     3	seedemu-b63-placement-worker2
+     4	seedemu-b63-placement-worker3
+     5	seedemu-b63-placement-worker4
+     6	seedemu-b63-placement-worker5
+     7	seedemu-b63-placement-worker6
+     8	seedemu-b63-placement-worker7
+     9	seedemu-b63-placement-worker8
+    10	seedemu-b63-placement-worker9
+    11	seedemu-b63-placement-worker10
+    12	seedemu-b63-placement-worker11
+    13	seedemu-b63-placement-worker12
+    14	seedemu-b63-placement-worker13
+    15	seedemu-b63-placement-worker14
+    16	seedemu-b63-placement-worker15
+    17	seedemu-b63-placement-worker16
+    18	seedemu-b63-placement-worker17
+    19	seedemu-b63-placement-worker18
+    20	seedemu-b63-placement-worker19
+    21	seedemu-b63-placement-worker20
+    22	seedemu-b63-placement-worker21
+    23	seedemu-b63-placement-worker22
+    24	seedemu-b63-placement-worker23
+    25	seedemu-b63-placement-worker24
+    26	seedemu-b63-placement-worker25
+    27	seedemu-b63-placement-worker26
+    28	seedemu-b63-placement-worker27
+    29	seedemu-b63-placement-worker28
+    30	seedemu-b63-placement-worker29
+    31	seedemu-b63-placement-worker30
+    32	seedemu-b63-placement-worker31
+    33	seedemu-b63-placement-worker32
+    34	seedemu-b63-placement-worker33
+    35	seedemu-b63-placement-worker34
+    36	seedemu-b63-placement-worker35
+    37	seedemu-b63-placement-worker36
+    38	seedemu-b63-placement-worker37
+    39	seedemu-b63-placement-worker38
+    40	seedemu-b63-placement-worker39
+    41	seedemu-b63-placement-worker40
+    42	seedemu-b63-placement-worker41
+    43	seedemu-b63-placement-worker42
+    44	seedemu-b63-placement-worker43
+    45	seedemu-b63-placement-worker44
+    46	seedemu-b63-placement-worker45
+    47	seedemu-b63-placement-worker46
+    48	seedemu-b63-placement-worker47
+[destroy-running-domains]
+destroy seedemu-b63-placement-master
+Domain 'seedemu-b63-placement-master' destroyed
+
+destroy seedemu-b63-placement-worker1
+Domain 'seedemu-b63-placement-worker1' destroyed
+
+destroy seedemu-b63-placement-worker2
+Domain 'seedemu-b63-placement-worker2' destroyed
+
+destroy seedemu-b63-placement-worker3
+Domain 'seedemu-b63-placement-worker3' destroyed
+
+destroy seedemu-b63-placement-worker4
+Domain 'seedemu-b63-placement-worker4' destroyed
+
+destroy seedemu-b63-placement-worker5
+Domain 'seedemu-b63-placement-worker5' destroyed
+
+destroy seedemu-b63-placement-worker6
+Domain 'seedemu-b63-placement-worker6' destroyed
+
+destroy seedemu-b63-placement-worker7
+Domain 'seedemu-b63-placement-worker7' destroyed
+
+destroy seedemu-b63-placement-worker8
+Domain 'seedemu-b63-placement-worker8' destroyed
+
+destroy seedemu-b63-placement-worker9
+Domain 'seedemu-b63-placement-worker9' destroyed
+
+destroy seedemu-b63-placement-worker10
+Domain 'seedemu-b63-placement-worker10' destroyed
+
+destroy seedemu-b63-placement-worker11
+Domain 'seedemu-b63-placement-worker11' destroyed
+
+destroy seedemu-b63-placement-worker12
+Domain 'seedemu-b63-placement-worker12' destroyed
+
+destroy seedemu-b63-placement-worker13
+Domain 'seedemu-b63-placement-worker13' destroyed
+
+destroy seedemu-b63-placement-worker14
+Domain 'seedemu-b63-placement-worker14' destroyed
+
+destroy seedemu-b63-placement-worker15
+Domain 'seedemu-b63-placement-worker15' destroyed
+
+destroy seedemu-b63-placement-worker16
+Domain 'seedemu-b63-placement-worker16' destroyed
+
+destroy seedemu-b63-placement-worker17
+Domain 'seedemu-b63-placement-worker17' destroyed
+
+destroy seedemu-b63-placement-worker18
+Domain 'seedemu-b63-placement-worker18' destroyed
+
+destroy seedemu-b63-placement-worker19
+Domain 'seedemu-b63-placement-worker19' destroyed
+
+destroy seedemu-b63-placement-worker20
+Domain 'seedemu-b63-placement-worker20' destroyed
+
+destroy seedemu-b63-placement-worker21
+Domain 'seedemu-b63-placement-worker21' destroyed
+
+destroy seedemu-b63-placement-worker22
+Domain 'seedemu-b63-placement-worker22' destroyed
+
+destroy seedemu-b63-placement-worker23
+Domain 'seedemu-b63-placement-worker23' destroyed
+
+destroy seedemu-b63-placement-worker24
+Domain 'seedemu-b63-placement-worker24' destroyed
+
+destroy seedemu-b63-placement-worker25
+Domain 'seedemu-b63-placement-worker25' destroyed
+
+destroy seedemu-b63-placement-worker26
+Domain 'seedemu-b63-placement-worker26' destroyed
+
+destroy seedemu-b63-placement-worker27
+Domain 'seedemu-b63-placement-worker27' destroyed
+
+destroy seedemu-b63-placement-worker28
+Domain 'seedemu-b63-placement-worker28' destroyed
+
+destroy seedemu-b63-placement-worker29
+Domain 'seedemu-b63-placement-worker29' destroyed
+
+destroy seedemu-b63-placement-worker30
+Domain 'seedemu-b63-placement-worker30' destroyed
+
+destroy seedemu-b63-placement-worker31
+Domain 'seedemu-b63-placement-worker31' destroyed
+
+destroy seedemu-b63-placement-worker32
+Domain 'seedemu-b63-placement-worker32' destroyed
+
+destroy seedemu-b63-placement-worker33
+Domain 'seedemu-b63-placement-worker33' destroyed
+
+destroy seedemu-b63-placement-worker34
+Domain 'seedemu-b63-placement-worker34' destroyed
+
+destroy seedemu-b63-placement-worker35
+Domain 'seedemu-b63-placement-worker35' destroyed
+
+destroy seedemu-b63-placement-worker36
+Domain 'seedemu-b63-placement-worker36' destroyed
+
+destroy seedemu-b63-placement-worker37
+Domain 'seedemu-b63-placement-worker37' destroyed
+
+destroy seedemu-b63-placement-worker38
+Domain 'seedemu-b63-placement-worker38' destroyed
+
+destroy seedemu-b63-placement-worker39
+Domain 'seedemu-b63-placement-worker39' destroyed
+
+destroy seedemu-b63-placement-worker40
+Domain 'seedemu-b63-placement-worker40' destroyed
+
+destroy seedemu-b63-placement-worker41
+Domain 'seedemu-b63-placement-worker41' destroyed
+
+destroy seedemu-b63-placement-worker42
+Domain 'seedemu-b63-placement-worker42' destroyed
+
+destroy seedemu-b63-placement-worker43
+Domain 'seedemu-b63-placement-worker43' destroyed
+
+destroy seedemu-b63-placement-worker44
+Domain 'seedemu-b63-placement-worker44' destroyed
+
+destroy seedemu-b63-placement-worker45
+Domain 'seedemu-b63-placement-worker45' destroyed
+
+destroy seedemu-b63-placement-worker46
+Domain 'seedemu-b63-placement-worker46' destroyed
+
+destroy seedemu-b63-placement-worker47
+Domain 'seedemu-b63-placement-worker47' destroyed
+
+[undefine-domains]
+undefine seedemu-b63-placement-master --remove-all-storage
+Domain 'seedemu-b63-placement-master' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-master.qcow2) removed.
+
+undefine seedemu-b63-placement-worker1 --remove-all-storage
+Domain 'seedemu-b63-placement-worker1' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker1.qcow2) removed.
+
+undefine seedemu-b63-placement-worker2 --remove-all-storage
+Domain 'seedemu-b63-placement-worker2' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker2.qcow2) removed.
+
+undefine seedemu-b63-placement-worker3 --remove-all-storage
+Domain 'seedemu-b63-placement-worker3' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker3.qcow2) removed.
+
+undefine seedemu-b63-placement-worker4 --remove-all-storage
+Domain 'seedemu-b63-placement-worker4' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker4.qcow2) removed.
+
+undefine seedemu-b63-placement-worker5 --remove-all-storage
+Domain 'seedemu-b63-placement-worker5' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker5.qcow2) removed.
+
+undefine seedemu-b63-placement-worker6 --remove-all-storage
+Domain 'seedemu-b63-placement-worker6' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker6.qcow2) removed.
+
+undefine seedemu-b63-placement-worker7 --remove-all-storage
+Domain 'seedemu-b63-placement-worker7' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker7.qcow2) removed.
+
+undefine seedemu-b63-placement-worker8 --remove-all-storage
+Domain 'seedemu-b63-placement-worker8' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker8.qcow2) removed.
+
+undefine seedemu-b63-placement-worker9 --remove-all-storage
+Domain 'seedemu-b63-placement-worker9' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker9.qcow2) removed.
+
+undefine seedemu-b63-placement-worker10 --remove-all-storage
+Domain 'seedemu-b63-placement-worker10' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker10.qcow2) removed.
+
+undefine seedemu-b63-placement-worker11 --remove-all-storage
+Domain 'seedemu-b63-placement-worker11' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker11.qcow2) removed.
+
+undefine seedemu-b63-placement-worker12 --remove-all-storage
+Domain 'seedemu-b63-placement-worker12' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker12.qcow2) removed.
+
+undefine seedemu-b63-placement-worker13 --remove-all-storage
+Domain 'seedemu-b63-placement-worker13' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker13.qcow2) removed.
+
+undefine seedemu-b63-placement-worker14 --remove-all-storage
+Domain 'seedemu-b63-placement-worker14' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker14.qcow2) removed.
+
+undefine seedemu-b63-placement-worker15 --remove-all-storage
+Domain 'seedemu-b63-placement-worker15' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker15.qcow2) removed.
+
+undefine seedemu-b63-placement-worker16 --remove-all-storage
+Domain 'seedemu-b63-placement-worker16' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker16.qcow2) removed.
+
+undefine seedemu-b63-placement-worker17 --remove-all-storage
+Domain 'seedemu-b63-placement-worker17' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker17.qcow2) removed.
+
+undefine seedemu-b63-placement-worker18 --remove-all-storage
+Domain 'seedemu-b63-placement-worker18' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker18.qcow2) removed.
+
+undefine seedemu-b63-placement-worker19 --remove-all-storage
+Domain 'seedemu-b63-placement-worker19' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker19.qcow2) removed.
+
+undefine seedemu-b63-placement-worker20 --remove-all-storage
+Domain 'seedemu-b63-placement-worker20' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker20.qcow2) removed.
+
+undefine seedemu-b63-placement-worker21 --remove-all-storage
+Domain 'seedemu-b63-placement-worker21' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker21.qcow2) removed.
+
+undefine seedemu-b63-placement-worker22 --remove-all-storage
+Domain 'seedemu-b63-placement-worker22' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker22.qcow2) removed.
+
+undefine seedemu-b63-placement-worker23 --remove-all-storage
+Domain 'seedemu-b63-placement-worker23' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker23.qcow2) removed.
+
+undefine seedemu-b63-placement-worker24 --remove-all-storage
+Domain 'seedemu-b63-placement-worker24' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker24.qcow2) removed.
+
+undefine seedemu-b63-placement-worker25 --remove-all-storage
+Domain 'seedemu-b63-placement-worker25' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker25.qcow2) removed.
+
+undefine seedemu-b63-placement-worker26 --remove-all-storage
+Domain 'seedemu-b63-placement-worker26' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker26.qcow2) removed.
+
+undefine seedemu-b63-placement-worker27 --remove-all-storage
+Domain 'seedemu-b63-placement-worker27' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker27.qcow2) removed.
+
+undefine seedemu-b63-placement-worker28 --remove-all-storage
+Domain 'seedemu-b63-placement-worker28' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker28.qcow2) removed.
+
+undefine seedemu-b63-placement-worker29 --remove-all-storage
+Domain 'seedemu-b63-placement-worker29' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker29.qcow2) removed.
+
+undefine seedemu-b63-placement-worker30 --remove-all-storage
+Domain 'seedemu-b63-placement-worker30' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker30.qcow2) removed.
+
+undefine seedemu-b63-placement-worker31 --remove-all-storage
+Domain 'seedemu-b63-placement-worker31' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker31.qcow2) removed.
+
+undefine seedemu-b63-placement-worker32 --remove-all-storage
+Domain 'seedemu-b63-placement-worker32' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker32.qcow2) removed.
+
+undefine seedemu-b63-placement-worker33 --remove-all-storage
+Domain 'seedemu-b63-placement-worker33' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker33.qcow2) removed.
+
+undefine seedemu-b63-placement-worker34 --remove-all-storage
+Domain 'seedemu-b63-placement-worker34' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker34.qcow2) removed.
+
+undefine seedemu-b63-placement-worker35 --remove-all-storage
+Domain 'seedemu-b63-placement-worker35' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker35.qcow2) removed.
+
+undefine seedemu-b63-placement-worker36 --remove-all-storage
+Domain 'seedemu-b63-placement-worker36' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker36.qcow2) removed.
+
+undefine seedemu-b63-placement-worker37 --remove-all-storage
+Domain 'seedemu-b63-placement-worker37' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker37.qcow2) removed.
+
+undefine seedemu-b63-placement-worker38 --remove-all-storage
+Domain 'seedemu-b63-placement-worker38' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker38.qcow2) removed.
+
+undefine seedemu-b63-placement-worker39 --remove-all-storage
+Domain 'seedemu-b63-placement-worker39' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker39.qcow2) removed.
+
+undefine seedemu-b63-placement-worker40 --remove-all-storage
+Domain 'seedemu-b63-placement-worker40' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker40.qcow2) removed.
+
+undefine seedemu-b63-placement-worker41 --remove-all-storage
+Domain 'seedemu-b63-placement-worker41' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker41.qcow2) removed.
+
+undefine seedemu-b63-placement-worker42 --remove-all-storage
+Domain 'seedemu-b63-placement-worker42' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker42.qcow2) removed.
+
+undefine seedemu-b63-placement-worker43 --remove-all-storage
+Domain 'seedemu-b63-placement-worker43' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker43.qcow2) removed.
+
+undefine seedemu-b63-placement-worker44 --remove-all-storage
+Domain 'seedemu-b63-placement-worker44' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker44.qcow2) removed.
+
+undefine seedemu-b63-placement-worker45 --remove-all-storage
+Domain 'seedemu-b63-placement-worker45' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker45.qcow2) removed.
+
+undefine seedemu-b63-placement-worker46 --remove-all-storage
+Domain 'seedemu-b63-placement-worker46' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker46.qcow2) removed.
+
+undefine seedemu-b63-placement-worker47 --remove-all-storage
+Domain 'seedemu-b63-placement-worker47' has been undefined
+Volume 'vda'(/data/lxl/k8sTools/seedemu-k8s-tools-build-6bo2h2ig-20e58b54/disks/seedemu-b63-placement-worker47.qcow2) removed.
+
+[remaining-b63-domains]
+[end] 2026-07-02T12:55:18+08:00

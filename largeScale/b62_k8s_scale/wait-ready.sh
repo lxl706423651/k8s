@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Wait for the configured topology's complete Pod set to be Running and Ready.
+# Inputs: run directory and assignment via lib.sh. Output: wait-ready.log.
+# Reads the cluster only; never creates or changes Kubernetes resources.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -111,13 +114,16 @@ while true; do
     echo "[${elapsed}s] seedemu pods: total=${seedemu_total}, running=${seedemu_running}, ready=${seedemu_ready}"
     echo "[${elapsed}s] router-like pods(r/brd/rs): total=${router_total}, running=${router_running}, ready=${router_ready}"
 
-    if [ "${total_pods}" -gt 0 ] && [ "${total_pods}" = "${running_pods}" ] && [ "${total_pods}" = "${ready_pods}" ]; then
+    if [ "${seedemu_total}" -eq "${SEED_TOPOLOGY_SIZE}" ] &&
+       [ "${total_pods}" -gt 0 ] &&
+       [ "${total_pods}" = "${running_pods}" ] &&
+       [ "${total_pods}" = "${ready_pods}" ]; then
         echo ""
         echo "All pods in namespace ${SEED_NAMESPACE} are Running and Ready."
         exit 0
     fi
 
-    echo "Not ready yet. Checking again in ${CHECK_INTERVAL}s..."
+    echo "Not ready yet (expected ${SEED_TOPOLOGY_SIZE} SeedEMU pods). Checking again in ${CHECK_INTERVAL}s..."
     echo ""
     sleep "${CHECK_INTERVAL}"
 done

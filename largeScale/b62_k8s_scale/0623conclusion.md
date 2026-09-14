@@ -235,23 +235,110 @@ bridge+VLAN 比 macvlan+VLAN 更有优势。
 要看 ARP/广播是否出现在不相关网络中。本轮不同 VLAN listener Pod 的 ARP 计数为 0，
 说明 VLAN 隔离成立。
 
-## 推荐选择
+## 面向仿真器语义的模式选择
 
-当前对仿真器最务实的选择如下：
+源码里的 SeedEMU 网络语义不是普通 Kubernetes service 网络，而是“仿真二层广播域”：
 
-1. 默认大规模性能实验：`macvlan+VLAN`  
-   它已经跑通 4954，deploy 更快、CNI 压力更低，适合作为大规模实验的高吞吐路径。
+- `NetworkType.Local` 是 AS 内部网络，OSPF 默认会在这些接口上形成邻接；
+- `NetworkType.InternetExchange` 是 IX peering LAN，eBGP/route server 依赖它；
+- `NetworkType.CrossConnect` 是两个节点之间的专用二层连接；
+- 每个节点通过 `joinNetwork()` 加入这些网络，BIRD/OSPF/BGP 看到的是容器内的真实
+  Linux 接口、地址、ARP 和路由表。
 
-2. 需要调试、论文证据、故障注入：`bridge+VLAN`  
-   它也跑通 4954，性能略慢但仍可接受。host 侧有 per-network Linux bridge，
-   可以直接列出 VLAN parent 和 Pod veth 端口成员，更适合抓包、定位、故障注入和
-   论文中的结构展示。
+因此选择 CNI 时，第一原则不是“哪种 Kubernetes 网络最先进”，而是它是否能正确承载
+SeedEMU 的二层广播域、邻接关系、ARP 行为和故障模型。三种模式都可以保留二层隔离，
+但适合的实验问题不同。
 
-3. 研究 OVN 控制面或追求 SDN 语义：`OVN+OVS`  
-   它的隔离语义最标准，但当前不适合作为 4954 规模频繁实验的主路径。若继续使用，
-   必须限制每节点 CNI 并发，增加 worker，优化 placement，并考虑拆分 OVNDB/控制面。
+| 实验目标 | 推荐模式 | 原因 |
+| --- | --- | --- |
+| 大规模 BGP/OSPF 收敛、FIB 写入、reconvergence 主实验 | `macvlan+VLAN` | 最少控制面对象，CNI ADD 路径最短，已稳定跑通 4954 和 9955 规模 |
+| 需要证明二层隔离、抓 ARP/OSPF/BGP 包、展示每个网络成员 | `bridge+VLAN` | host 侧有 per-network Linux bridge、VLAN parent、Pod veth、FDB 和端口列表 |
+| 需要对单个仿真链路、单个端口或整个二层网络做 `tc`/丢包/延迟故障注入 | 优先 `bridge+VLAN` | 可以在 host 侧明确选择 bridge、veth、VLAN parent 作为故障注入点 |
+| 只需要对单个 Pod 接口做端点级限速、延迟或丢包 | 三者都可用 | Pod 是 privileged，容器内接口可以直接使用 `tc` |
+| 研究 Kubernetes/OVN/OVS 作为虚拟网络 fabric 的性能、隔离、控制面瓶颈 | `OVN+OVS` | 每个 SeedEMU 网络映射为 Kube-OVN Subnet/logical switch，可观察 OVNDB、northd、OVS 写路径 |
+| 物理机之间没有统一二层 trunk、无法控制上游 VLAN，但仍需要跨节点二层虚拟网 | `OVN+OVS` | Kube-OVN/OVS 可通过 overlay/tunnel 承载 secondary L2 network，不依赖 underlay VLAN |
+| 需要最高可解释性、可复现实验现象和论文图示 | `bridge+VLAN` | Linux bridge 模型接近传统交换机，证据链比 macvlan 更直观 |
+| 频繁重跑大规模实验、主要关心实验吞吐 | `macvlan+VLAN` | deploy、start-bird、start-kernel 的系统压力更低 |
 
-最终建议：论文中可以把 `OVN+OVS` 作为语义完整但控制面成本高的 baseline，
-把 `macvlan+VLAN` 作为高性能方案，把 `bridge+VLAN` 作为可观测、可控制、可解释的
-方案。三者对比可以说明：我们不是简单牺牲隔离换性能，而是在保留二层隔离的前提下，
-用 VLAN-backed 设计绕开了 OVN+OVS 在大规模仿真下的控制面和 CNI ADD 长尾。
+### `tc` 与故障注入位置
+
+三种模式下，Pod 内都可以使用 `tc`，因为当前编译器给 workload 容器设置了
+`privileged: true` 和 `capabilities: ALL`。但 `tc` 的语义取决于操作点：
+
+- Pod 内接口上的 `tc`：三种模式都可用，适合模拟某个 router/brdnode 自己的接口
+  出方向延迟、丢包、限速。这个模型最接近 SeedEMU 中“节点接口属性”的语义。
+- `bridge+VLAN` host 侧 veth 上的 `tc`：适合模拟某个 Pod 接入端口的故障。host 上
+  能看到 veth 与 bridge 成员关系，便于恢复和记录证据。
+- `bridge+VLAN` host 侧 Linux bridge 上的 `tc`/抓包/FDB 观测：适合模拟或观察某个
+  仿真二层网络整体的行为，例如广播、ARP 泄漏检查、OSPF hello 是否只在本网络出现。
+- `macvlan+VLAN` host 侧：适合在 VLAN parent 上做粗粒度操作，但不适合枚举和控制
+  每个 Pod 的接入端口，因为 macvlan 子接口主要在 Pod netns 内，host root namespace
+  没有 per-network bridge port list。
+- `OVN+OVS` host 侧：可以操作 OVS port、OVN logical port、QoS/ACL 等对象，但定位链路
+  需要跨 `kubectl`、`ovn-nbctl`、`ovs-vsctl` 和 Pod netns。它适合研究 SDN fabric
+  本身，不适合作为最简单的链路故障注入路径。
+
+如果未来要把 SeedEMU 的 `Network.setDefaultLinkProperties()` 或更细粒度 link model
+系统性映射到 K8s 运行时，推荐先实现两层策略：默认在 Pod 内接口加 `tc` 保证跨模式
+一致；需要 host 侧证据或网络级故障时，在 `bridge+VLAN` 下额外支持 bridge/veth 级
+注入。
+
+### 关于 SDN 实验的边界
+
+现在的 `OVN+OVS` 可以直接支持一类 SDN 相关实验，但它的含义需要说清楚：
+
+1. 可以做的实验：把 Kube-OVN/OVS 当作承载 SeedEMU secondary networks 的 SDN fabric。
+   这类实验关注 logical switch、logical router、OVNDB、northd、kube-ovn-controller、
+   OVS add-port、ACL/QoS/policy、overlay 隧道、跨节点二层虚拟化和控制面扩展性。
+   例如：
+   - 大量 logical switch/Subnet 对 OVNDB 和 northd 的压力；
+   - 每节点 OVS 写入并发对 CNI ADD 延迟的影响；
+   - Kube-OVN ACL/QoS/policy 对仿真流量的影响；
+   - 在没有 underlay VLAN 的多物理机环境中，用 OVN overlay 提供隔离二层网络；
+   - SDN fabric 故障或控制面抖动对 BGP/OSPF 收敛的间接影响。
+
+2. 不能直接代表的实验：SeedEMU 网络内部的“AS 路由器被 SDN 控制器直接控制”。
+   当前 SeedEMU 节点仍然是 Linux router/container，控制平面主要是 BIRD/OSPF/BGP；
+   OVN+OVS 只是 Kubernetes secondary network 的承载层。也就是说，使用 OVN+OVS
+   不会自动把 AS 内 router 变成 OpenFlow switch，也不会自动把 BGP/OSPF 逻辑替换为
+   一个仿真 SDN controller。
+
+3. 如果未来要在 Seed 网络中增加真正的 SDN 语义，需要新增编译和运行时映射：
+   - 明确哪些 SeedEMU 节点是 SDN switch、哪些是 controller；
+   - 为 switch 创建可编程 datapath，例如 OVS bridge 或 OVN logical switch；
+   - 建立 controller 到 switch 的控制通道，例如 OpenFlow/OVSDB 或 OVN northbound；
+   - 定义流表生命周期、链路故障、控制器失联、重连和恢复语义；
+   - 决定 BGP/OSPF 与 SDN 控制平面的关系，是替代、叠加，还是只控制部分二层 fabric。
+
+基于这个边界，`OVN+OVS` 适合作为“SDN fabric baseline”和“控制面压力实验平台”。
+如果论文问题是“SDN 控制面如何承载大规模仿真二层网络”，OVN+OVS 是合适对象；
+如果论文问题是“互联网 AS 内部引入 SDN 控制器后，BGP/OSPF/流表如何交互”，则还需要
+扩展 SeedEMU 的网络元素和编译器，不能只依赖当前 Kube-OVN CNI。
+
+### 更具体的使用建议
+
+1. 默认大规模路由实验使用 `macvlan+VLAN`。  
+   它最符合当前主线目标：在保留二层隔离的前提下，让 4954/9955 规模尽可能稳定、
+   快速地完成 deploy、start-bird、start-kernel、FIB verify 和 reconvergence。
+
+2. 论文证据、调试和链路故障注入使用 `bridge+VLAN`。  
+   如果要展示“某个仿真网络有哪些端口”“ARP 广播有没有泄漏”“某条链路被加了
+   100ms delay 后收敛如何变化”，bridge+VLAN 更合适。它比 macvlan 慢一些，但 host
+   侧证据链完整：VLAN parent、Linux bridge、veth、FDB、抓包点都能列出来。
+
+3. SDN fabric、跨物理机无 VLAN trunk、OVN 控制面扩展性实验使用 `OVN+OVS`。  
+   它不适合作为当前 4954 规模频繁重跑的默认路径，但适合单独作为研究对象。
+   使用时必须把规模和问题定义清楚：如果研究的是 OVN/OVS 自身，应记录 logical
+   switch 数量、logical port 数量、OVNDB mutation、northd CPU、kube-ovn-controller
+   queue、OVS add-port latency 和 CNI ADD 长尾；如果研究的是 BGP/OSPF 本身，则
+   OVN+OVS 的额外控制面压力会成为干扰变量。
+
+4. 避免退回纯 macvlan 无 VLAN 的大规模主实验。  
+   纯 macvlan 虽然快，但不能可靠表达每个 SeedEMU 网络的独立二层广播域，历史实验中
+   已出现过 ARP 识别错误进而影响 BGP session 的现象。当前 VLAN-backed 方案已经证明
+   可以在保留隔离的同时获得接近 macvlan 的性能，因此不需要牺牲二层语义。
+
+最终建议：论文中可以把 `OVN+OVS` 作为 SDN fabric 语义完整但控制面成本高的 baseline，
+把 `macvlan+VLAN` 作为高吞吐大规模路由实验方案，把 `bridge+VLAN` 作为可观测、
+可控制、可解释的实验平台。三者对比可以说明：我们不是简单牺牲隔离换性能，而是在
+保留 SeedEMU 二层网络语义的前提下，根据实验问题选择不同承载层。

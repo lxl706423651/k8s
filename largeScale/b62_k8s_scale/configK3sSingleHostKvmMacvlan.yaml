@@ -1,0 +1,953 @@
+clusterName: seedemu-b62-singlehost-w5
+nodes:
+- name: seed-k3s-master
+  role: master
+  ip: 10.81.0.10
+  vcpus: 24
+  memoryMb: 36864
+  diskGb: 80
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker1
+  role: worker
+  ip: 10.81.0.11
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker2
+  role: worker
+  ip: 10.81.0.12
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker3
+  role: worker
+  ip: 10.81.0.13
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker4
+  role: worker
+  ip: 10.81.0.14
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker5
+  role: worker
+  ip: 10.81.0.15
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker6
+  role: worker
+  ip: 10.81.0.16
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker7
+  role: worker
+  ip: 10.81.0.17
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker8
+  role: worker
+  ip: 10.81.0.18
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker9
+  role: worker
+  ip: 10.81.0.19
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker10
+  role: worker
+  ip: 10.81.0.20
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker11
+  role: worker
+  ip: 10.81.0.21
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker12
+  role: worker
+  ip: 10.81.0.22
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker13
+  role: worker
+  ip: 10.81.0.23
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker14
+  role: worker
+  ip: 10.81.0.24
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker15
+  role: worker
+  ip: 10.81.0.25
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker16
+  role: worker
+  ip: 10.81.0.26
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker17
+  role: worker
+  ip: 10.81.0.27
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker18
+  role: worker
+  ip: 10.81.0.28
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker19
+  role: worker
+  ip: 10.81.0.29
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker20
+  role: worker
+  ip: 10.81.0.30
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker21
+  role: worker
+  ip: 10.81.0.31
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker22
+  role: worker
+  ip: 10.81.0.32
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker23
+  role: worker
+  ip: 10.81.0.33
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker24
+  role: worker
+  ip: 10.81.0.34
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker25
+  role: worker
+  ip: 10.81.0.35
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker26
+  role: worker
+  ip: 10.81.0.36
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker27
+  role: worker
+  ip: 10.81.0.37
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker28
+  role: worker
+  ip: 10.81.0.38
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker29
+  role: worker
+  ip: 10.81.0.39
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker30
+  role: worker
+  ip: 10.81.0.40
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker31
+  role: worker
+  ip: 10.81.0.41
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker32
+  role: worker
+  ip: 10.81.0.42
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker33
+  role: worker
+  ip: 10.81.0.43
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker34
+  role: worker
+  ip: 10.81.0.44
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker35
+  role: worker
+  ip: 10.81.0.45
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker36
+  role: worker
+  ip: 10.81.0.46
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker37
+  role: worker
+  ip: 10.81.0.47
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker38
+  role: worker
+  ip: 10.81.0.48
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker39
+  role: worker
+  ip: 10.81.0.49
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker40
+  role: worker
+  ip: 10.81.0.50
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker41
+  role: worker
+  ip: 10.81.0.51
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker42
+  role: worker
+  ip: 10.81.0.52
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker43
+  role: worker
+  ip: 10.81.0.53
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker44
+  role: worker
+  ip: 10.81.0.54
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker45
+  role: worker
+  ip: 10.81.0.55
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker46
+  role: worker
+  ip: 10.81.0.56
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+- name: seed-k3s-worker47
+  role: worker
+  ip: 10.81.0.57
+  vcpus: 6
+  memoryMb: 12288
+  diskGb: 40
+  ssh:
+    user: ubuntu
+    key: /home/lxl/.ssh/id_ed25519
+registry:
+  port: 5000
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.48.0.0/12
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - name: trunk0
+    masterInterface: ens3
+    vlanStart: 1
+    vlanEnd: 4094
+  - name: trunk1
+    masterInterface: ens4
+    vlanStart: 1
+    vlanEnd: 4094
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+tuning:
+  userMaxNetNamespaces: 65536
+seedemu:
+  hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs:
+  - /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+outputs:
+  tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+  kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
+  inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
+kind: kvm
+sourceConfig: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/4954_20260914_155524_singlehost_macvlan_vlan/cluster-input.yaml
+k8sTools:
+  destroy:
+    type: kvm
+    state:
+      clusterName: seedemu-b62-singlehost-w5
+      kvm:
+        network: seedemu-b62-singlehost-w5
+        diskDir: /data/lxl/k8sTools/b62-singlehost-w5/disks
+        cloudInitDir: /data/lxl/k8sTools/b62-singlehost-w5/cloud-init
+        extraNetworks:
+        - name: seedemu-b62-singlehost-w5-fabric0
+          bridge: brb62sh0
+          model: virtio
+          trunk: trunk0
+          masterInterface: ens3
+        - name: seedemu-b62-singlehost-w5-fabric1
+          bridge: brb62sh1
+          model: virtio
+          trunk: trunk1
+          masterInterface: ens4
+      outputs:
+        k3sConfig: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/configK3s.yaml
+        tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+        kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
+        inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
+      nodes:
+      - name: seed-k3s-master
+        role: master
+        ip: 10.81.0.10
+        mac: 52:54:00:66:10:10
+        vcpus: 24
+        memoryMb: 36864
+        diskGb: 80
+      - name: seed-k3s-worker1
+        role: worker
+        ip: 10.81.0.11
+        mac: 52:54:00:66:10:11
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker2
+        role: worker
+        ip: 10.81.0.12
+        mac: 52:54:00:66:10:12
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker3
+        role: worker
+        ip: 10.81.0.13
+        mac: 52:54:00:66:10:13
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker4
+        role: worker
+        ip: 10.81.0.14
+        mac: 52:54:00:66:10:14
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker5
+        role: worker
+        ip: 10.81.0.15
+        mac: 52:54:00:66:10:15
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker6
+        role: worker
+        ip: 10.81.0.16
+        mac: 52:54:00:66:10:16
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker7
+        role: worker
+        ip: 10.81.0.17
+        mac: 52:54:00:66:10:17
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker8
+        role: worker
+        ip: 10.81.0.18
+        mac: 52:54:00:66:10:18
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker9
+        role: worker
+        ip: 10.81.0.19
+        mac: 52:54:00:66:10:19
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker10
+        role: worker
+        ip: 10.81.0.20
+        mac: 52:54:00:66:10:1a
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker11
+        role: worker
+        ip: 10.81.0.21
+        mac: 52:54:00:66:10:1b
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker12
+        role: worker
+        ip: 10.81.0.22
+        mac: 52:54:00:66:10:1c
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker13
+        role: worker
+        ip: 10.81.0.23
+        mac: 52:54:00:66:10:1d
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker14
+        role: worker
+        ip: 10.81.0.24
+        mac: 52:54:00:66:10:1e
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker15
+        role: worker
+        ip: 10.81.0.25
+        mac: 52:54:00:66:10:1f
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker16
+        role: worker
+        ip: 10.81.0.26
+        mac: 52:54:00:66:10:20
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker17
+        role: worker
+        ip: 10.81.0.27
+        mac: 52:54:00:66:10:21
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker18
+        role: worker
+        ip: 10.81.0.28
+        mac: 52:54:00:66:10:22
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker19
+        role: worker
+        ip: 10.81.0.29
+        mac: 52:54:00:66:10:23
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker20
+        role: worker
+        ip: 10.81.0.30
+        mac: 52:54:00:66:10:24
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker21
+        role: worker
+        ip: 10.81.0.31
+        mac: 52:54:00:66:10:25
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker22
+        role: worker
+        ip: 10.81.0.32
+        mac: 52:54:00:66:10:26
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker23
+        role: worker
+        ip: 10.81.0.33
+        mac: 52:54:00:66:10:27
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker24
+        role: worker
+        ip: 10.81.0.34
+        mac: 52:54:00:66:10:28
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker25
+        role: worker
+        ip: 10.81.0.35
+        mac: 52:54:00:66:10:29
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker26
+        role: worker
+        ip: 10.81.0.36
+        mac: 52:54:00:66:10:2a
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker27
+        role: worker
+        ip: 10.81.0.37
+        mac: 52:54:00:66:10:2b
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker28
+        role: worker
+        ip: 10.81.0.38
+        mac: 52:54:00:66:10:2c
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker29
+        role: worker
+        ip: 10.81.0.39
+        mac: 52:54:00:66:10:2d
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker30
+        role: worker
+        ip: 10.81.0.40
+        mac: 52:54:00:66:10:2e
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker31
+        role: worker
+        ip: 10.81.0.41
+        mac: 52:54:00:66:10:2f
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker32
+        role: worker
+        ip: 10.81.0.42
+        mac: 52:54:00:66:10:30
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker33
+        role: worker
+        ip: 10.81.0.43
+        mac: 52:54:00:66:10:31
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker34
+        role: worker
+        ip: 10.81.0.44
+        mac: 52:54:00:66:10:32
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker35
+        role: worker
+        ip: 10.81.0.45
+        mac: 52:54:00:66:10:33
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker36
+        role: worker
+        ip: 10.81.0.46
+        mac: 52:54:00:66:10:34
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker37
+        role: worker
+        ip: 10.81.0.47
+        mac: 52:54:00:66:10:35
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker38
+        role: worker
+        ip: 10.81.0.48
+        mac: 52:54:00:66:10:36
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker39
+        role: worker
+        ip: 10.81.0.49
+        mac: 52:54:00:66:10:37
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker40
+        role: worker
+        ip: 10.81.0.50
+        mac: 52:54:00:66:10:38
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker41
+        role: worker
+        ip: 10.81.0.51
+        mac: 52:54:00:66:10:39
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker42
+        role: worker
+        ip: 10.81.0.52
+        mac: 52:54:00:66:10:3a
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker43
+        role: worker
+        ip: 10.81.0.53
+        mac: 52:54:00:66:10:3b
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker44
+        role: worker
+        ip: 10.81.0.54
+        mac: 52:54:00:66:10:3c
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker45
+        role: worker
+        ip: 10.81.0.55
+        mac: 52:54:00:66:10:3d
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker46
+        role: worker
+        ip: 10.81.0.56
+        mac: 52:54:00:66:10:3e
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+      - name: seed-k3s-worker47
+        role: worker
+        ip: 10.81.0.57
+        mac: 52:54:00:66:10:3f
+        vcpus: 6
+        memoryMb: 12288
+        diskGb: 40
+    config:
+      kind: kvm
+      clusterName: seedemu-b62-singlehost-w5
+      experiment:
+        topologySize: 4954
+        topologyDir: ~/seed-emulator/topology
+      ssh:
+        user: ubuntu
+        key: /home/lxl/.ssh/id_ed25519
+      defaults:
+        masterName: seed-k3s-master
+        workerNamePrefix: seed-k3s-worker
+        ipPrefix: 10.81.0
+        masterIpStart: 10
+        workerIpStart: 11
+        macPrefix: 52:54:00:66:10
+        masterMacStart: 16
+        workerMacStart: 17
+      master:
+        vcpus: 24
+        diskGb: 80
+        memoryMb: 36864
+      workers:
+        count: 47
+        vcpus: 6
+        diskGb: 40
+        memoryMb: 12288
+      kvm:
+        prepareImageCache: false
+        network: seedemu-b62-singlehost-w5
+        networkBridge: virbrb62sh
+        networkCidr: 10.81.0.0/24
+        networkGateway: 10.81.0.1
+        dhcpStart: 10.81.0.10
+        dhcpEnd: 10.81.0.239
+        storageDir: /data/lxl/k8sTools/b62-singlehost-w5
+        diskDir: /data/lxl/k8sTools/b62-singlehost-w5/disks
+        cloudInitDir: /data/lxl/k8sTools/b62-singlehost-w5/cloud-init
+        baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+        legacyBaseImagePath: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
+        extraNetworks:
+        - name: seedemu-b62-singlehost-w5-fabric0
+          bridge: brb62sh0
+          model: virtio
+          trunk: trunk0
+          masterInterface: ens3
+        - name: seedemu-b62-singlehost-w5-fabric1
+          bridge: brb62sh1
+          model: virtio
+          trunk: trunk1
+          masterInterface: ens4
+      fabric:
+        type: macvlan-vlan
+        mtu: 1400
+        vlanTrunks:
+        - name: trunk0
+          masterInterface: ens3
+          vlanStart: 1
+          vlanEnd: 4094
+        - name: trunk1
+          masterInterface: ens4
+          vlanStart: 1
+          vlanEnd: 4094
+      cni:
+        cniType: macvlan
+        localLinkCniType: macvlan
+        attachedCniType: macvlan
+        defaultMasterInterface: ens3
+      registry:
+        port: 5000
+      seedemu:
+        hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+        imageCacheDirs:
+        - /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+      k3s:
+        version: v1.29.15+k3s1
+        clusterCidr: 10.48.0.0/12
+        serviceCidr: 10.43.0.0/16
+        flannelBackend: vxlan
+        nodeCidrMaskSizeIpv4: 20
+        maxPods: 4000
+        kubeletRegistryQps: 100
+        kubeletRegistryBurst: 20
+      tuning:
+        userMaxNetNamespaces: 65536
+      placement:
+        excludeControlPlane: false
+        nodePodReserve: 20
+      deploy:
+        batchSize: 80
+        batchSleepSeconds: 0
+        subnetBatchSize: 100
+        subnetBatchSleepSeconds: 0
+        monitorInterval: 20
+        monitorEnabled: false
+        staticApplyMode: batch
+        controllerApplyMode: batch
+        warmupBatches: 12
+        warmupBatchSize: 1
+        postControllerApplySettleSeconds: 5
+        pressureCheckSeconds: 5
+        stabilizeTimeoutSeconds: 36000
+        maxPendingPods: 160
+        maxCreatingPods: 160
+        maxCreatingPodsPerNode: 40
+        maxNotReadyPods: 160
+        maxFailedPods: 10
+        requireAllNodesReady: true
+        waitKubeOvnSubnets: false
+        nodeStreamObserveTimeoutSeconds: 120
+        nodeStreamMaxActivePerNode: 4
+      outputs:
+        tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+        kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
+        inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
+        k3sConfig: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/configK3s.yaml
+        kvmState: kvmState.yaml

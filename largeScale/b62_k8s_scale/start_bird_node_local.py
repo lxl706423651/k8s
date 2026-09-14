@@ -227,15 +227,6 @@ mkdir -p /etc/bird/conf /run/bird
 if [ ! -f /etc/bird/conf/kernel.conf ] && [ -f /etc/bird/conf/kernel.conf.disabled-before-start-kernel ]; then
     cp -f /etc/bird/conf/kernel.conf.disabled-before-start-kernel /etc/bird/conf/kernel.conf
 fi
-if [ -f /etc/bird/conf/kernel.conf ]; then
-    if grep -F '\''include "/etc/bird/conf/*.conf";'\'' /etc/bird/bird.conf >/dev/null 2>&1; then
-        sed -i '\''\#^include "/etc/bird/conf/kernel.conf";$#d'\'' /etc/bird/bird.conf
-    elif ! grep -F '\''include "/etc/bird/conf/kernel.conf";'\'' /etc/bird/bird.conf >/dev/null 2>&1; then
-        printf '\''\ninclude "/etc/bird/conf/kernel.conf";\n'\'' >> /etc/bird/bird.conf
-    fi
-elif ! grep -F '\''include "/etc/bird/conf/*.conf";'\'' /etc/bird/bird.conf >/dev/null 2>&1; then
-    sed -i '\''\#^include "/etc/bird/conf/kernel.conf";$#d'\'' /etc/bird/bird.conf
-fi
 bird >/tmp/seedemu-bird.log 2>&1 &
 echo started
 ' 2>/dev/null || true)"

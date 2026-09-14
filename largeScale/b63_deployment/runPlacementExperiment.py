@@ -14,8 +14,8 @@ Outputs:
 
 Side effects:
   - Without --deploy, the script only writes files under the b63 directory.
-  - With --deploy, it may create local KVM VMs, build a K3s/Kube-OVN cluster,
-    build/push images, apply the workload, and sample node/overlay metrics.
+  - With --deploy, it may create local KVM VMs, build a K3s cluster,
+    build/push images, apply the workload, and sample node/fabric metrics.
 """
 from __future__ import annotations
 
@@ -38,6 +38,10 @@ import yaml
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = next(parent for parent in SCRIPT_DIR.parents
+                  if (parent / "setup.py").is_file() and (parent / "seedemu").is_dir())
+sys.path.insert(0, str(_REPO_ROOT / "seedemu/k8sTools/resources/setup"))
+from normalizeResources import memoryMiB
 OUTPUT_DIR = SCRIPT_DIR / "output"
 SOURCE_MANIFEST = OUTPUT_DIR / "k8s.yaml"
 DEPLOY_MANIFEST = OUTPUT_DIR / "k8s.kube-ovn.yaml"
@@ -64,6 +68,10 @@ class NetworkInfo:
     cidr: str
     kind: str = "host"
     weight: float = 0.0
+    vlanId: int | None = None
+    vlanBaseInterface: str = ""
+    vlanMasterInterface: str = ""
+    vlanTrunk: str = ""
     endpoints: list[str] = field(default_factory=list)
 
 
@@ -118,7 +126,7 @@ class NodeInfo:
 
 
 class DynamicSampler:
-    """Sample node CPU, memory, and overlay interface counters over SSH."""
+    """Sample node CPU, memory, and SeedEMU fabric interface counters over SSH."""
 
     def __init__(self, nodes: list[NodeInfo], interval: float) -> None:
         self.nodes = nodes
@@ -167,6 +175,7 @@ class DynamicSampler:
         mem_by_node: dict[str, list[float]] = {node.name: [] for node in self.nodes}
         traffic_rates: list[float] = []
         interfaces: dict[str, list[str]] = {}
+        interface_families: dict[str, int] = {}
         for sample in self.samples:
             aggregate_rate = 0.0
             for name, item in sample.get("nodes", {}).items():
@@ -177,6 +186,9 @@ class DynamicSampler:
                 aggregate_rate += float(item.get("trafficBytesPerSecond") or 0.0)
                 if item.get("interfaces"):
                     interfaces[name] = sorted(set(interfaces.get(name, []) + item["interfaces"]))
+                    for iface in item["interfaces"]:
+                        family = classifyInterfaceFamily(str(iface))
+                        interface_families[family] = interface_families.get(family, 0) + 1
             if sample.get("nodes"):
                 traffic_rates.append(aggregate_rate)
         return {
@@ -196,6 +208,7 @@ class DynamicSampler:
                 "aggregateBytesPerSecondPeak": max(traffic_rates) if traffic_rates else 0.0,
                 "aggregateBytesPerSecondP95": percentile(traffic_rates, 95.0),
                 "interfacesObserved": interfaces,
+                "interfaceFamiliesObserved": interface_families,
             },
             "samples": self.samples,
             "errors": self.errors,
@@ -214,10 +227,19 @@ echo "cpu_idle=${idle_all}"
 echo "mem_total_kb=${mem_total}"
 echo "mem_available_kb=${mem_avail}"
 seen=0
-for dev in genev_sys_6081 vxlan_sys_4789 ovn0 flannel.1; do
-    if [ -e "/sys/class/net/${dev}/statistics/rx_bytes" ]; then
-        rx=$(cat "/sys/class/net/${dev}/statistics/rx_bytes")
-        tx=$(cat "/sys/class/net/${dev}/statistics/tx_bytes")
+for dev_path in /sys/class/net/*; do
+    [ -e "${dev_path}/statistics/rx_bytes" ] || continue
+    dev="$(basename "${dev_path}")"
+    case "${dev}" in
+        genev*|vxlan*|ovn*|flannel.1|cni0|br-seedemu|macseed*|macvlan*|*.*)
+            ;;
+        *)
+            continue
+            ;;
+    esac
+    if [ -e "${dev_path}/statistics/rx_bytes" ]; then
+        rx=$(cat "${dev_path}/statistics/rx_bytes")
+        tx=$(cat "${dev_path}/statistics/tx_bytes")
         echo "iface=${dev},$((rx + tx))"
         seen=1
     fi
@@ -266,8 +288,8 @@ fi
         }
 
 
-def parseArgs() -> argparse.Namespace:
-    """Parse command line arguments."""
+def parseArgs(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse argv, or the process CLI when argv is omitted."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
     parser.add_argument("--input-manifest", type=Path, default=None)
@@ -282,7 +304,19 @@ def parseArgs() -> argparse.Namespace:
     parser.add_argument("--compile", action="store_true", help="legacy option; use running/compile.sh instead")
     parser.add_argument("--deploy", action="store_true", help="run k8sTools build/up and dynamic collection")
     parser.add_argument("--reuse-cluster", action="store_true", help="reuse existing config-k3s/kubeconfig files")
-    parser.add_argument("--include-master", action="store_true", help="allow workload placement on the master node")
+    parser.add_argument(
+        "--include-master",
+        dest="include_master",
+        action="store_true",
+        default=True,
+        help="allow workload placement on the master node; enabled by default for the 12-VM b63 layout",
+    )
+    parser.add_argument(
+        "--exclude-master",
+        dest="include_master",
+        action="store_false",
+        help="exclude master/control-plane nodes from workload placement",
+    )
     parser.add_argument("--network-cost-mode", choices=("ratio", "pair", "endpoint-exposure"), default="ratio")
     parser.add_argument(
         "--algorithm",
@@ -299,8 +333,21 @@ def parseArgs() -> argparse.Namespace:
     )
     parser.add_argument("--alpha", type=float, default=1.0)
     parser.add_argument("--beta", type=float, default=1.0)
+    parser.add_argument("--pod-balance-weight", type=float, default=8.0)
+    parser.add_argument("--vlan-parent-balance-weight", type=float, default=4.0)
+    parser.add_argument("--pod-cap-slack", type=float, default=1.0)
+    parser.add_argument("--vlan-parent-cap-slack", type=float, default=1.50)
+    parser.add_argument("--capacity-balance-ratio", type=float, default=1.0)
+    parser.add_argument("--resource-overload-penalty", type=float, default=0.0)
+    parser.add_argument(
+        "--capacity-hard-cap-penalty",
+        type=float,
+        default=100000.0,
+        help="large greedy-score penalty for exceeding capacity-blended Pod hard caps",
+    )
     parser.add_argument("--improvement-passes", type=int, default=3)
     parser.add_argument("--fast-greedy-score", action="store_true")
+    parser.add_argument("--selected-only", action="store_true", help="only generate and evaluate the selected algorithm")
     parser.add_argument("--ix-weight", type=float, default=10.0)
     parser.add_argument("--peer-weight", type=float, default=5.0)
     parser.add_argument("--intra-weight", type=float, default=2.0)
@@ -320,9 +367,18 @@ def parseArgs() -> argparse.Namespace:
         "--network-preapply-timeout-seconds",
         type=float,
         default=180.0,
-        help="maximum time to wait for Kube-OVN network resources before creating Pods",
+        help="maximum time to wait for pre-applied network resources before creating Pods",
     )
-    parser.add_argument("--skip-resource-request-injection", action="store_true")
+    parser.add_argument(
+        "--inject-resource-requests",
+        action="store_true",
+        help="write estimated CPU/memory requests into the deploy manifest; disabled by default",
+    )
+    parser.add_argument(
+        "--skip-resource-request-injection",
+        action="store_true",
+        help="legacy no-op: resource request injection is disabled by default",
+    )
     parser.add_argument(
         "--pinning-mode",
         choices=("node-name", "node-selector"),
@@ -330,7 +386,7 @@ def parseArgs() -> argparse.Namespace:
         help="how to pin selected non-default placements into workload manifests",
     )
     parser.add_argument("--keep-temp", action="store_true")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def main() -> int:
@@ -362,25 +418,22 @@ def main() -> int:
     if not eligible_nodes:
         raise SystemExit("No eligible worker nodes found for placement")
 
-    placements = generatePlacements(pods, eligible_nodes, networks, args)
     selected_name = normalizeAlgorithmName(args.algorithm)
+    placements = generatePlacements(pods, eligible_nodes, networks, args)
     selected_placement = placements[selected_name]
     static_validation = {
-        name: evaluatePlacement(pods, nodes, networks, placement, args.network_cost_mode, args.alpha, args.beta)
-        for name, placement in placements.items()
+        name: evaluatePlacementWithArgs(pods, nodes, networks, placement, args) for name, placement in placements.items()
     }
     existing = readExistingPlacement(pods, docs)
     if existing:
         placements["manifest-existing"] = existing
-        static_validation["manifest-existing"] = evaluatePlacement(
-            pods, nodes, networks, existing, args.network_cost_mode, args.alpha, args.beta
-        )
+        static_validation["manifest-existing"] = evaluatePlacementWithArgs(pods, nodes, networks, existing, args)
 
     injectPlacement(
         docs,
         pods,
         selected_placement,
-        inject_resources=not args.skip_resource_request_injection,
+        inject_resources=args.inject_resource_requests,
         pinning_mode="none" if selected_name == "kubernetes-default-scheduler" else args.pinning_mode,
     )
     deploy_manifest.parent.mkdir(parents=True, exist_ok=True)
@@ -395,6 +448,15 @@ def main() -> int:
             "networkCostMode": args.network_cost_mode,
             "alpha": args.alpha,
             "beta": args.beta,
+            "podBalanceWeight": args.pod_balance_weight,
+            "vlanParentBalanceWeight": args.vlan_parent_balance_weight,
+            "podCapSlack": args.pod_cap_slack,
+            "vlanParentCapSlack": args.vlan_parent_cap_slack,
+            "capacityBalanceRatio": args.capacity_balance_ratio,
+            "resourceOverloadPenalty": args.resource_overload_penalty,
+            "capacityHardCapPenalty": args.capacity_hard_cap_penalty,
+            "resourceRequestsInjected": args.inject_resource_requests,
+            "fabricAssumption": detectFabricAssumption(networks),
         },
         "nodes": [node.__dict__ for node in nodes],
         "networks": {name: network.__dict__ for name, network in sorted(networks.items())},
@@ -508,8 +570,19 @@ def parseNetworks(docs: list[dict[str, Any]]) -> dict[str, NetworkInfo]:
             seedType=str(annotations.get(SEED_PREFIX + "type") or ""),
             scope=str(annotations.get(SEED_PREFIX + "scope") or ""),
             cidr=str(annotations.get(SEED_PREFIX + "prefix") or ""),
+            vlanId=parseOptionalInt(annotations.get(SEED_PREFIX + "vlan-id")),
+            vlanBaseInterface=str(annotations.get(SEED_PREFIX + "vlan-base-interface") or ""),
+            vlanMasterInterface=str(annotations.get(SEED_PREFIX + "vlan-master-interface") or ""),
+            vlanTrunk=str(annotations.get(SEED_PREFIX + "vlan-trunk") or ""),
         )
     return networks
+
+
+def parseOptionalInt(value: Any) -> int | None:
+    """Parse an optional integer annotation value."""
+    if value is None or str(value).strip() == "":
+        return None
+    return int(str(value))
 
 
 def parsePods(docs: list[dict[str, Any]], networks: dict[str, NetworkInfo]) -> list[PodInfo]:
@@ -711,6 +784,15 @@ def assignNetworkWeights(networks: dict[str, NetworkInfo], pods: list[PodInfo], 
         network.weight = float(weights[kind])
 
 
+def detectFabricAssumption(networks: dict[str, NetworkInfo]) -> str:
+    """Infer the report's fabric assumption from compiler NAD metadata."""
+    if any(network.vlanId is not None for network in networks.values()):
+        return "macvlan-vlan"
+    if any(network.kind in {"IX", "peer", "intra-AS", "host"} for network in networks.values()):
+        return "multus"
+    return "unknown"
+
+
 def writeNetworkWeights(path: Path, networks: dict[str, NetworkInfo]) -> None:
     """Write network_weights.yaml."""
     payload = {
@@ -901,7 +983,7 @@ def loadNodesFromKvmConfig(path: Path) -> list[NodeInfo]:
                     name=str(item.get("name") or ""),
                     role=str(item.get("role") or ""),
                     cpu=float(item.get("vcpus") or 0),
-                    memoryMb=float(item.get("memory_mb") or item.get("memoryMb") or 0),
+                    memoryMb=float(memoryMiB(item, default=0)),
                     ip=str(item.get("ip") or ""),
                     sshUser=str(default_ssh.get("user") or ""),
                     sshKey=str(Path(str(default_ssh.get("key") or "")).expanduser()) if default_ssh.get("key") else "",
@@ -916,7 +998,7 @@ def loadNodesFromKvmConfig(path: Path) -> list[NodeInfo]:
                 name=str(defaults.get("masterName") or defaults.get("master_name") or "seed-k3s-master"),
                 role="master",
                 cpu=float(master.get("vcpus") or 0),
-                memoryMb=float(master.get("memoryMb") or master.get("memory_mb") or 0),
+                memoryMb=float(memoryMiB(master, default=0)),
                 sshUser=str(default_ssh.get("user") or ""),
                 sshKey=str(Path(str(default_ssh.get("key") or "")).expanduser()) if default_ssh.get("key") else "",
             )
@@ -929,7 +1011,7 @@ def loadNodesFromKvmConfig(path: Path) -> list[NodeInfo]:
                 name=f"{prefix}{index}",
                 role="worker",
                 cpu=float(workers.get("vcpus") or 0),
-                memoryMb=float(workers.get("memoryMb") or workers.get("memory_mb") or 0),
+                memoryMb=float(memoryMiB(workers, default=0)),
                 sshUser=str(default_ssh.get("user") or ""),
                 sshKey=str(Path(str(default_ssh.get("key") or "")).expanduser()) if default_ssh.get("key") else "",
             )
@@ -944,27 +1026,143 @@ def generatePlacements(
     args: argparse.Namespace,
 ) -> dict[str, dict[str, str]]:
     """Generate the optimized placement and all baselines."""
-    return {
+    selected_name = normalizeAlgorithmName(args.algorithm)
+    if args.selected_only:
+        return {
+            selected_name: generateSelectedPlacement(
+                selected_name,
+                pods,
+                nodes,
+                networks,
+                args,
+            )
+        }
+    placements = {
         "kubernetes-default-scheduler": generateDefaultSchedulerPlacement(pods, nodes),
         "network-only": generateGreedyPlacement(
-            pods, nodes, networks, args.network_cost_mode, 1.0, 0.0, args.improvement_passes, args.fast_greedy_score
-        ),
-        "pod-count-balanced": generatePodCountPlacement(pods, nodes),
-        "resource-only": generateGreedyPlacement(
-            pods, nodes, networks, args.network_cost_mode, 0.0, 1.0, args.improvement_passes, args.fast_greedy_score
-        ),
-        "hypergraph": generateHypergraphPlacement(pods, nodes, networks),
-        "optimized": generateGreedyPlacement(
             pods,
             nodes,
             networks,
             args.network_cost_mode,
-            args.alpha,
-            args.beta,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            args.pod_cap_slack,
+            args.vlan_parent_cap_slack,
+            args.capacity_balance_ratio,
+            args.resource_overload_penalty,
+            args.capacity_hard_cap_penalty,
             args.improvement_passes,
             args.fast_greedy_score,
         ),
+        "pod-count-balanced": generatePodCountPlacement(pods, nodes),
+        "resource-only": generateGreedyPlacement(
+            pods,
+            nodes,
+            networks,
+            args.network_cost_mode,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            args.pod_cap_slack,
+            args.vlan_parent_cap_slack,
+            args.capacity_balance_ratio,
+            args.resource_overload_penalty,
+            args.capacity_hard_cap_penalty,
+            args.improvement_passes,
+            args.fast_greedy_score,
+        ),
+        "hypergraph": generateHypergraphPlacement(pods, nodes, networks),
     }
+    optimized_greedy = generateGreedyPlacement(
+        pods,
+        nodes,
+        networks,
+        args.network_cost_mode,
+        args.alpha,
+        args.beta,
+        args.pod_balance_weight,
+        args.vlan_parent_balance_weight,
+        args.pod_cap_slack,
+        args.vlan_parent_cap_slack,
+        args.capacity_balance_ratio,
+        args.resource_overload_penalty,
+        args.capacity_hard_cap_penalty,
+        args.improvement_passes,
+        args.fast_greedy_score,
+    )
+    placements["optimized"] = selectBestPlacement(
+        pods,
+        nodes,
+        networks,
+        args,
+        [optimized_greedy, *placements.values()],
+    )
+    return placements
+
+
+def generateSelectedPlacement(
+    selected_name: str,
+    pods: list[PodInfo],
+    nodes: list[NodeInfo],
+    networks: dict[str, NetworkInfo],
+    args: argparse.Namespace,
+) -> dict[str, str]:
+    """Generate only the selected placement algorithm for single-method large runs."""
+    if selected_name == "kubernetes-default-scheduler":
+        return generateDefaultSchedulerPlacement(pods, nodes)
+    if selected_name == "pod-count-balanced":
+        return generatePodCountPlacement(pods, nodes)
+    if selected_name == "hypergraph":
+        return generateHypergraphPlacement(pods, nodes, networks)
+    if selected_name == "network-only":
+        alpha, beta, pod_balance_weight, vlan_parent_balance_weight = 1.0, 0.0, 0.0, 0.0
+    elif selected_name == "resource-only":
+        alpha, beta, pod_balance_weight, vlan_parent_balance_weight = 0.0, 1.0, 0.0, 0.0
+    elif selected_name == "optimized":
+        alpha = args.alpha
+        beta = args.beta
+        pod_balance_weight = args.pod_balance_weight
+        vlan_parent_balance_weight = args.vlan_parent_balance_weight
+    else:
+        raise SystemExit(f"Unsupported placement algorithm: {selected_name}")
+    return generateGreedyPlacement(
+        pods,
+        nodes,
+        networks,
+        args.network_cost_mode,
+        alpha,
+        beta,
+        pod_balance_weight,
+        vlan_parent_balance_weight,
+        args.pod_cap_slack,
+        args.vlan_parent_cap_slack,
+        args.capacity_balance_ratio,
+        args.resource_overload_penalty,
+        args.capacity_hard_cap_penalty,
+        args.improvement_passes,
+        args.fast_greedy_score,
+    )
+
+
+def selectBestPlacement(
+    pods: list[PodInfo],
+    nodes: list[NodeInfo],
+    networks: dict[str, NetworkInfo],
+    args: argparse.Namespace,
+    candidates: list[dict[str, str]],
+) -> dict[str, str]:
+    """Select the lowest-scoring candidate under the b63 optimized objective."""
+    scored: list[tuple[tuple[float, float], dict[str, str]]] = []
+    for placement in candidates:
+        metrics = evaluatePlacementWithArgs(pods, nodes, networks, placement, args)
+        workload_pressure = metrics.get("workloadPressure") or {}
+        pod_pressure = workload_pressure.get("podPressure") or {}
+        pod_excess = float(pod_pressure.get("hardCapExcess") or 0.0)
+        scored.append(((pod_excess, float(metrics["objective"])), placement))
+    return dict(min(scored, key=lambda item: item[0])[1])
 
 
 def normalizeAlgorithmName(value: str) -> str:
@@ -984,20 +1182,75 @@ def generateGreedyPlacement(
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float,
+    vlan_parent_balance_weight: float,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    resource_overload_penalty: float,
+    capacity_hard_cap_penalty: float,
     improvement_passes: int,
     fast_score: bool,
 ) -> dict[str, str]:
     """Greedily minimize the configured network/resource objective."""
     if fast_score:
-        return generateFastGreedyPlacement(pods, nodes, networks, network_mode, alpha, beta, improvement_passes)
+        return generateFastGreedyPlacement(
+            pods,
+            nodes,
+            networks,
+            network_mode,
+            alpha,
+            beta,
+            pod_balance_weight,
+            vlan_parent_balance_weight,
+            pod_cap_slack,
+            vlan_parent_cap_slack,
+            capacity_balance_ratio,
+            resource_overload_penalty,
+            capacity_hard_cap_penalty,
+            improvement_passes,
+        )
     placement: dict[str, str] = {}
     for pod in sortedPodsForPlacement(pods):
         best_node = min(
             nodes,
-            key=lambda node: scoreCandidate(pods, nodes, networks, placement, pod, node, network_mode, alpha, beta),
+            key=lambda node: scoreCandidate(
+                pods,
+                nodes,
+                networks,
+                placement,
+                pod,
+                node,
+                network_mode,
+                alpha,
+                beta,
+                pod_balance_weight,
+                vlan_parent_balance_weight,
+                pod_cap_slack,
+                vlan_parent_cap_slack,
+                capacity_balance_ratio,
+                resource_overload_penalty,
+                capacity_hard_cap_penalty,
+            ),
         )
         placement[pod.name] = best_node.name
-    return improvePlacement(pods, nodes, networks, placement, network_mode, alpha, beta, improvement_passes)
+    return improvePlacement(
+        pods,
+        nodes,
+        networks,
+        placement,
+        network_mode,
+        alpha,
+        beta,
+        pod_balance_weight,
+        vlan_parent_balance_weight,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+        resource_overload_penalty,
+        capacity_hard_cap_penalty,
+        improvement_passes,
+    )
 
 
 def generateFastGreedyPlacement(
@@ -1007,13 +1260,26 @@ def generateFastGreedyPlacement(
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float,
+    vlan_parent_balance_weight: float,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    resource_overload_penalty: float,
+    capacity_hard_cap_penalty: float,
     improvement_passes: int,
 ) -> dict[str, str]:
     """Greedy placement with incremental candidate scoring for large manifests."""
     placement: dict[str, str] = {}
     load = {node.name: {"cpu": 0.0, "memory": 0.0, "pods": 0} for node in nodes}
     network_counts: dict[str, dict[str, int]] = {name: {} for name in networks}
+    vlan_network_nodes: dict[str, set[str]] = {
+        name: set() for name, network in networks.items() if network.vlanId is not None
+    }
+    vlan_parent_counts = {node.name: 0 for node in nodes}
+    vlan_network_count = len(vlan_network_nodes)
     total_network_weight = max(1e-9, sum(network.weight for network in networks.values() if len(network.endpoints) > 1))
+    total_expected_pods = sum(pod.podCount for pod in pods)
     for pod in sortedPodsForPlacement(pods):
         best_node = min(
             nodes,
@@ -1024,10 +1290,21 @@ def generateFastGreedyPlacement(
                 networks,
                 load,
                 network_counts,
+                vlan_network_nodes,
+                vlan_parent_counts,
+                vlan_network_count,
                 network_mode,
                 alpha,
                 beta,
+                pod_balance_weight,
+                vlan_parent_balance_weight,
+                pod_cap_slack,
+                vlan_parent_cap_slack,
+                capacity_balance_ratio,
+                resource_overload_penalty,
+                capacity_hard_cap_penalty,
                 total_network_weight,
+                total_expected_pods,
             ),
         )
         placement[pod.name] = best_node.name
@@ -1038,7 +1315,26 @@ def generateFastGreedyPlacement(
             if network_name in network_counts:
                 counts = network_counts[network_name]
                 counts[best_node.name] = counts.get(best_node.name, 0) + pod.podCount
-    return improvePlacement(pods, nodes, networks, placement, network_mode, alpha, beta, improvement_passes)
+            if network_name in vlan_network_nodes and best_node.name not in vlan_network_nodes[network_name]:
+                vlan_network_nodes[network_name].add(best_node.name)
+                vlan_parent_counts[best_node.name] += 1
+    return improvePlacement(
+        pods,
+        nodes,
+        networks,
+        placement,
+        network_mode,
+        alpha,
+        beta,
+        pod_balance_weight,
+        vlan_parent_balance_weight,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+        resource_overload_penalty,
+        capacity_hard_cap_penalty,
+        improvement_passes,
+    )
 
 
 def fastCandidateScore(
@@ -1048,10 +1344,21 @@ def fastCandidateScore(
     networks: dict[str, NetworkInfo],
     load: dict[str, dict[str, float]],
     network_counts: dict[str, dict[str, int]],
+    vlan_network_nodes: dict[str, set[str]],
+    vlan_parent_counts: dict[str, int],
+    vlan_network_count: int,
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float,
+    vlan_parent_balance_weight: float,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    resource_overload_penalty: float,
+    capacity_hard_cap_penalty: float,
     total_network_weight: float,
+    total_expected_pods: int,
 ) -> float:
     """Score a candidate by only recomputing affected network edges and node loads."""
     resource_score, overload = fastResourceScore(pod, node, nodes, load)
@@ -1065,7 +1372,30 @@ def fastCandidateScore(
         network_score += network.weight * networkCostForCounts(counts, network_mode)
     network_score /= total_network_weight
     pod_count = load[node.name]["pods"] + pod.podCount
-    return alpha * network_score + beta * resource_score + overload * 1000.0 + pod_count * 0.0001
+    pressure_score = fastWorkloadPressureScore(
+        pod,
+        node,
+        nodes,
+        networks,
+        load,
+        network_counts,
+        vlan_network_nodes,
+        vlan_parent_counts,
+        vlan_network_count,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+        total_expected_pods,
+    )
+    return (
+        alpha * network_score
+        + beta * resource_score
+        + pod_balance_weight * pressure_score["podScore"]
+        + vlan_parent_balance_weight * pressure_score["vlanParentScore"]
+        + overload * resource_overload_penalty
+        + calculateCapacityHardCapPenalty(pressure_score, capacity_hard_cap_penalty)
+        + pod_count * 0.000001
+    )
 
 
 def fastResourceScore(
@@ -1096,6 +1426,73 @@ def fastResourceScore(
     return 0.7 * (max(dominant) if dominant else 0.0) + 0.3 * skew, overload
 
 
+def fastWorkloadPressureScore(
+    pod: PodInfo,
+    candidate_node: NodeInfo,
+    nodes: list[NodeInfo],
+    networks: dict[str, NetworkInfo],
+    load: dict[str, dict[str, float]],
+    network_counts: dict[str, dict[str, int]],
+    vlan_network_nodes: dict[str, set[str]],
+    vlan_parent_counts: dict[str, int],
+    vlan_network_count: int,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    total_expected_pods: int,
+) -> dict[str, float]:
+    """Return pressure scores after tentatively placing pod on candidate_node."""
+    pod_counts = {node.name: int(load[node.name]["pods"]) for node in nodes}
+    pod_counts[candidate_node.name] += pod.podCount
+
+    candidate_vlan_parent_counts = dict(vlan_parent_counts)
+    seen_vlan_networks: set[str] = set()
+    for network_name in pod.networks:
+        nodes_with_network = vlan_network_nodes.get(network_name)
+        if nodes_with_network is None or network_name in seen_vlan_networks:
+            continue
+        seen_vlan_networks.add(network_name)
+        if candidate_node.name not in nodes_with_network:
+            candidate_vlan_parent_counts[candidate_node.name] += 1
+
+    pressure = calculateWorkloadPressureFromCounts(
+        nodes,
+        pod_counts,
+        candidate_vlan_parent_counts,
+        total_expected_pods=total_expected_pods,
+        vlan_network_count=vlan_network_count,
+        pod_cap_slack=pod_cap_slack,
+        vlan_parent_cap_slack=vlan_parent_cap_slack,
+        capacity_balance_ratio=capacity_balance_ratio,
+    )
+    return {
+        "podScore": float(pressure["podPressure"]["score"]),
+        "vlanParentScore": float(pressure["vlanParentPressure"]["score"]),
+        "podHardCapExcess": float(pressure["podPressure"]["hardCapExcess"]),
+        "vlanParentHardCapExcess": float(pressure["vlanParentPressure"]["hardCapExcess"]),
+    }
+
+
+def calculateCapacityHardCapPenalty(pressure: dict[str, Any], penalty: float) -> float:
+    """Return a near-hard greedy penalty for exceeding capacity-blended Pod caps."""
+    if penalty <= 0:
+        return 0.0
+    pod_excess = pressure.get("podHardCapExcess")
+    vlan_excess = pressure.get("vlanParentHardCapExcess")
+    if pod_excess is None:
+        pod_excess = (pressure.get("podPressure") or {}).get("hardCapExcess")
+    if vlan_excess is None:
+        vlan_excess = (pressure.get("vlanParentPressure") or {}).get("hardCapExcess")
+    pod_excess = float(pod_excess or 0.0)
+    vlan_excess = float(vlan_excess or 0.0)
+    score = 0.0
+    if pod_excess > 1e-9:
+        score += penalty * (1.0 + pod_excess)
+    if vlan_excess > 1e-9:
+        score += penalty * 0.01 * vlan_excess
+    return score
+
+
 def networkCostForCounts(counts: dict[str, int], network_mode: str) -> float:
     """Return one unweighted network cut cost from endpoint counts per node."""
     values = [count for count in counts.values() if count > 0]
@@ -1121,14 +1518,39 @@ def scoreCandidate(
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float,
+    vlan_parent_balance_weight: float,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    resource_overload_penalty: float,
+    capacity_hard_cap_penalty: float,
 ) -> float:
     """Score one candidate node for the next greedy assignment."""
     candidate = dict(placement)
     candidate[pod.name] = node.name
-    metrics = evaluatePlacement(pods, nodes, networks, candidate, network_mode, alpha, beta)
+    metrics = evaluatePlacement(
+        pods,
+        nodes,
+        networks,
+        candidate,
+        network_mode,
+        alpha,
+        beta,
+        pod_balance_weight,
+        vlan_parent_balance_weight,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+    )
     overload = sum(max(0.0, item["dominantUtilization"] - 1.0) for item in metrics["perNode"].values())
     pod_count = metrics["perNode"][node.name]["podCount"]
-    return float(metrics["objective"]) + overload * 1000.0 + pod_count * 0.0001
+    return (
+        float(metrics["objective"])
+        + overload * resource_overload_penalty
+        + calculateCapacityHardCapPenalty(metrics.get("workloadPressure") or {}, capacity_hard_cap_penalty)
+        + pod_count * 0.000001
+    )
 
 
 def improvePlacement(
@@ -1139,13 +1561,39 @@ def improvePlacement(
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float,
+    vlan_parent_balance_weight: float,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+    resource_overload_penalty: float,
+    capacity_hard_cap_penalty: float,
     improvement_passes: int,
 ) -> dict[str, str]:
     """Run a small deterministic local search over single-pod moves."""
     best = dict(placement)
     if improvement_passes <= 0:
         return best
-    best_score = float(evaluatePlacement(pods, nodes, networks, best, network_mode, alpha, beta)["objective"])
+    metrics = evaluatePlacement(
+        pods,
+        nodes,
+        networks,
+        best,
+        network_mode,
+        alpha,
+        beta,
+        pod_balance_weight,
+        vlan_parent_balance_weight,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+    )
+    overload = sum(max(0.0, item["dominantUtilization"] - 1.0) for item in metrics["perNode"].values())
+    best_score = (
+        float(metrics["objective"])
+        + overload * resource_overload_penalty
+        + calculateCapacityHardCapPenalty(metrics.get("workloadPressure") or {}, capacity_hard_cap_penalty)
+    )
     for _ in range(improvement_passes):
         changed = False
         for pod in sortedPodsForPlacement(pods):
@@ -1155,9 +1603,26 @@ def improvePlacement(
                     continue
                 candidate = dict(best)
                 candidate[pod.name] = node.name
-                metrics = evaluatePlacement(pods, nodes, networks, candidate, network_mode, alpha, beta)
+                metrics = evaluatePlacement(
+                    pods,
+                    nodes,
+                    networks,
+                    candidate,
+                    network_mode,
+                    alpha,
+                    beta,
+                    pod_balance_weight,
+                    vlan_parent_balance_weight,
+                    pod_cap_slack,
+                    vlan_parent_cap_slack,
+                    capacity_balance_ratio,
+                )
                 overload = sum(max(0.0, item["dominantUtilization"] - 1.0) for item in metrics["perNode"].values())
-                score = float(metrics["objective"]) + overload * 1000.0
+                score = (
+                    float(metrics["objective"])
+                    + overload * resource_overload_penalty
+                    + calculateCapacityHardCapPenalty(metrics.get("workloadPressure") or {}, capacity_hard_cap_penalty)
+                )
                 if score + 1e-9 < best_score:
                     best = candidate
                     best_score = score
@@ -1235,6 +1700,11 @@ def evaluatePlacement(
     network_mode: str,
     alpha: float,
     beta: float,
+    pod_balance_weight: float = 0.0,
+    vlan_parent_balance_weight: float = 0.0,
+    pod_cap_slack: float = 1.35,
+    vlan_parent_cap_slack: float = 1.50,
+    capacity_balance_ratio: float = 0.50,
 ) -> dict[str, Any]:
     """Compute static validation metrics for one placement."""
     per_node = {
@@ -1243,12 +1713,15 @@ def evaluatePlacement(
             "memoryRequestedMb": 0.0,
             "podCount": 0,
             "nicCount": 0,
+            "secondaryNicEstimate": 0,
+            "vlanParentEstimate": 0,
             "ovsSecondaryPortEstimate": 0,
             "ovsTotalPortEstimate": 0,
         }
         for node in nodes
     }
     node_by_name = {node.name: node for node in nodes}
+    networks_by_node: dict[str, set[str]] = {node.name: set() for node in nodes}
     for pod in pods:
         node_name = placement.get(pod.name)
         if node_name not in per_node:
@@ -1257,6 +1730,7 @@ def evaluatePlacement(
         per_node[node_name]["memoryRequestedMb"] += pod.memoryTotalMb
         per_node[node_name]["podCount"] += pod.podCount
         per_node[node_name]["nicCount"] += pod.nicCount
+        networks_by_node[node_name].update(pod.networks)
     for node_name, item in per_node.items():
         node = node_by_name[node_name]
         cpu_util = item["cpuRequested"] / max(node.cpu, 1e-9)
@@ -1264,19 +1738,76 @@ def evaluatePlacement(
         item["cpuUtilization"] = cpu_util
         item["memoryUtilization"] = mem_util
         item["dominantUtilization"] = max(cpu_util, mem_util)
+        item["secondaryNicEstimate"] = item["nicCount"]
+        item["vlanParentEstimate"] = len(
+            [
+                network_name
+                for network_name in networks_by_node.get(node_name, set())
+                if networks.get(network_name) is not None and networks[network_name].vlanId is not None
+            ]
+        )
         item["ovsSecondaryPortEstimate"] = item["nicCount"]
         item["ovsTotalPortEstimate"] = item["nicCount"] + item["podCount"]
     network_costs = calculateNetworkCosts(pods, networks, placement)
     resource = calculateResourceCost(per_node)
     pressure = calculateNodePressure(pods, networks, placement, nodes)
+    fabric = calculateFabricMetrics(pods, networks, placement, nodes)
+    workload_pressure = calculateWorkloadPressure(
+        per_node,
+        nodes,
+        pods,
+        networks,
+        pod_cap_slack,
+        vlan_parent_cap_slack,
+        capacity_balance_ratio,
+    )
+    network_objective = alpha * network_costs[network_mode]
+    resource_objective = beta * resource["score"]
+    pod_pressure_objective = pod_balance_weight * workload_pressure["podPressure"]["score"]
+    vlan_pressure_objective = vlan_parent_balance_weight * workload_pressure["vlanParentPressure"]["score"]
     return {
-        "objective": alpha * network_costs[network_mode] + beta * resource["score"],
+        "objective": network_objective
+        + resource_objective
+        + pod_pressure_objective
+        + vlan_pressure_objective,
+        "objectiveComponents": {
+            "network": network_objective,
+            "resource": resource_objective,
+            "podPressure": pod_pressure_objective,
+            "vlanParentPressure": vlan_pressure_objective,
+        },
         "networkCosts": network_costs,
         "resourceCost": resource,
+        "workloadPressure": workload_pressure,
+        "fabricMetrics": fabric,
         "perNode": per_node,
         "nodeCrossNetworkPressure": pressure,
         "utilizationSummary": summarizeUtilization(per_node),
     }
+
+
+def evaluatePlacementWithArgs(
+    pods: list[PodInfo],
+    nodes: list[NodeInfo],
+    networks: dict[str, NetworkInfo],
+    placement: dict[str, str],
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    """Evaluate placement using the CLI-selected b63 objective."""
+    return evaluatePlacement(
+        pods,
+        nodes,
+        networks,
+        placement,
+        args.network_cost_mode,
+        args.alpha,
+        args.beta,
+        args.pod_balance_weight,
+        args.vlan_parent_balance_weight,
+        args.pod_cap_slack,
+        args.vlan_parent_cap_slack,
+        args.capacity_balance_ratio,
+    )
 
 
 def calculateNetworkCosts(
@@ -1332,6 +1863,130 @@ def calculateResourceCost(per_node: dict[str, dict[str, Any]]) -> dict[str, floa
     }
 
 
+def calculateWorkloadPressure(
+    per_node: dict[str, dict[str, Any]],
+    nodes: list[NodeInfo],
+    pods: list[PodInfo],
+    networks: dict[str, NetworkInfo],
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+) -> dict[str, Any]:
+    """Compute macvlan+VLAN placement pressure from Pod and VLAN-parent skew."""
+    pressure_nodes = [
+        node
+        for node in nodes
+        if node.name in per_node and (node.schedulable or int(per_node[node.name].get("podCount") or 0) > 0)
+    ]
+    if not pressure_nodes:
+        pressure_nodes = [node for node in nodes if node.name in per_node]
+    pod_counts = {node.name: int(per_node[node.name].get("podCount") or 0) for node in pressure_nodes}
+    vlan_parent_counts = {
+        node.name: int(per_node[node.name].get("vlanParentEstimate") or 0) for node in pressure_nodes
+    }
+    return calculateWorkloadPressureFromCounts(
+        pressure_nodes,
+        pod_counts,
+        vlan_parent_counts,
+        total_expected_pods=sum(pod.podCount for pod in pods),
+        vlan_network_count=sum(1 for network in networks.values() if network.vlanId is not None),
+        pod_cap_slack=pod_cap_slack,
+        vlan_parent_cap_slack=vlan_parent_cap_slack,
+        capacity_balance_ratio=capacity_balance_ratio,
+    )
+
+
+def calculateWorkloadPressureFromCounts(
+    nodes: list[NodeInfo],
+    pod_counts: dict[str, int],
+    vlan_parent_counts: dict[str, int],
+    *,
+    total_expected_pods: int,
+    vlan_network_count: int,
+    pod_cap_slack: float,
+    vlan_parent_cap_slack: float,
+    capacity_balance_ratio: float,
+) -> dict[str, Any]:
+    """Score Pod and VLAN-parent concentration against capacity-blended targets."""
+    shares = calculateCapacityBlendShares(nodes, capacity_balance_ratio)
+    pod_pressure = calculatePressureForCounts(
+        pod_counts,
+        total_expected_pods,
+        shares,
+        max(1.0, pod_cap_slack),
+    )
+    vlan_parent_pressure = calculatePressureForCounts(
+        vlan_parent_counts,
+        vlan_network_count,
+        shares,
+        max(1.0, vlan_parent_cap_slack),
+    )
+    return {
+        "nodeShares": shares,
+        "podPressure": pod_pressure,
+        "vlanParentPressure": vlan_parent_pressure,
+    }
+
+
+def calculateCapacityBlendShares(nodes: list[NodeInfo], capacity_balance_ratio: float) -> dict[str, float]:
+    """Return per-node target shares from equal share and CPU/memory capacity."""
+    if not nodes:
+        return {}
+    equal = 1.0 / len(nodes)
+    cpu_total = sum(max(node.cpu, 0.0) for node in nodes)
+    memory_total = sum(max(node.memoryMb, 0.0) for node in nodes)
+    capacity_ratio = min(1.0, max(0.0, capacity_balance_ratio))
+    shares: dict[str, float] = {}
+    for node in nodes:
+        cpu_share = max(node.cpu, 0.0) / cpu_total if cpu_total > 0 else equal
+        memory_share = max(node.memoryMb, 0.0) / memory_total if memory_total > 0 else equal
+        capacity_share = (cpu_share + memory_share) / 2.0
+        shares[node.name] = (1.0 - capacity_ratio) * equal + capacity_ratio * capacity_share
+    total = sum(shares.values())
+    if total <= 0:
+        return {node.name: equal for node in nodes}
+    return {name: value / total for name, value in shares.items()}
+
+
+def calculatePressureForCounts(
+    counts: dict[str, int],
+    total_target: int,
+    shares: dict[str, float],
+    cap_slack: float,
+) -> dict[str, Any]:
+    """Score one concentration vector against per-node targets and hard caps."""
+    ratios: dict[str, float] = {}
+    cap_ratios: dict[str, float] = {}
+    targets: dict[str, float] = {}
+    hard_caps: dict[str, float] = {}
+    for node_name, share in shares.items():
+        target = max(1.0, float(total_target) * share)
+        hard_cap = max(1.0, target * cap_slack)
+        count = float(counts.get(node_name, 0))
+        targets[node_name] = target
+        hard_caps[node_name] = hard_cap
+        ratios[node_name] = count / target
+        cap_ratios[node_name] = count / hard_cap
+    values = [float(counts.get(node_name, 0)) for node_name in shares]
+    cap_excess = sum(max(0.0, ratio - 1.0) for ratio in cap_ratios.values())
+    max_ratio = max(ratios.values()) if ratios else 0.0
+    max_share = max((float(counts.get(node_name, 0)) / max(1.0, sum(values)) for node_name in shares), default=0.0)
+    cv = coefficientOfVariation(values)
+    return {
+        "totalTarget": total_target,
+        "observedTotal": int(sum(values)),
+        "targets": targets,
+        "hardCaps": hard_caps,
+        "ratios": ratios,
+        "hardCapRatios": cap_ratios,
+        "maxRatio": max_ratio,
+        "maxObservedShare": max_share,
+        "coefficientOfVariation": cv,
+        "hardCapExcess": cap_excess,
+        "score": max_ratio + 0.25 * cv + 10.0 * cap_excess,
+    }
+
+
 def calculateNodePressure(
     pods: list[PodInfo],
     networks: dict[str, NetworkInfo],
@@ -1354,6 +2009,70 @@ def calculateNodePressure(
         for node_name, count in counts.items():
             pressure[node_name] += network.weight * count * max(0, total - count)
     return pressure
+
+
+def calculateFabricMetrics(
+    pods: list[PodInfo],
+    networks: dict[str, NetworkInfo],
+    placement: dict[str, str],
+    nodes: list[NodeInfo],
+) -> dict[str, Any]:
+    """Compute macvlan+VLAN-oriented static fabric metrics."""
+    pod_by_name = {pod.name: pod for pod in pods}
+    vlan_networks_by_node: dict[str, set[str]] = {node.name: set() for node in nodes}
+    all_networks_by_node: dict[str, set[str]] = {node.name: set() for node in nodes}
+    spanning_networks: list[dict[str, Any]] = []
+    weighted_fanout = 0.0
+    weighted_cross_endpoint_pairs = 0.0
+    for network in networks.values():
+        counts: dict[str, int] = {}
+        total = 0
+        for pod_name in network.endpoints:
+            node_name = placement.get(pod_name)
+            if not node_name:
+                continue
+            pod_count = pod_by_name[pod_name].podCount
+            counts[node_name] = counts.get(node_name, 0) + pod_count
+            total += pod_count
+            all_networks_by_node.setdefault(node_name, set()).add(network.name)
+            if network.vlanId is not None:
+                vlan_networks_by_node.setdefault(node_name, set()).add(network.name)
+        if len(counts) <= 1:
+            continue
+        values = list(counts.values())
+        cross_pairs = 0
+        for index, left in enumerate(values):
+            for right in values[index + 1 :]:
+                cross_pairs += left * right
+        weighted_fanout += network.weight * (len(counts) - 1)
+        weighted_cross_endpoint_pairs += network.weight * cross_pairs
+        spanning_networks.append(
+            {
+                "name": network.name,
+                "kind": network.kind,
+                "weight": network.weight,
+                "vlanId": network.vlanId,
+                "nodeCount": len(counts),
+                "endpointCount": total,
+                "crossEndpointPairs": cross_pairs,
+            }
+        )
+
+    vlan_parent_counts = {node.name: len(vlan_networks_by_node.get(node.name, set())) for node in nodes}
+    network_fanout_counts = {node.name: len(all_networks_by_node.get(node.name, set())) for node in nodes}
+    return {
+        "macvlanVlanNetworkCount": sum(1 for network in networks.values() if network.vlanId is not None),
+        "spanningNetworkCount": len(spanning_networks),
+        "weightedSpanningFanout": weighted_fanout,
+        "weightedCrossEndpointPairs": weighted_cross_endpoint_pairs,
+        "vlanParentTotal": sum(vlan_parent_counts.values()),
+        "vlanParentMaxPerNode": max(vlan_parent_counts.values()) if vlan_parent_counts else 0,
+        "vlanParentAveragePerNode": average([float(value) for value in vlan_parent_counts.values()]),
+        "vlanParentCv": coefficientOfVariation([float(value) for value in vlan_parent_counts.values()]),
+        "perNodeVlanParents": vlan_parent_counts,
+        "perNodeNetworkFanout": network_fanout_counts,
+        "spanningNetworks": sorted(spanning_networks, key=lambda item: (-float(item["weight"]), item["name"]))[:100],
+    }
 
 
 def summarizeUtilization(per_node: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -1778,6 +2497,21 @@ def percentile(values: list[float], p: float) -> float:
     ordered = sorted(values)
     index = min(len(ordered) - 1, max(0, math.ceil((p / 100.0) * len(ordered)) - 1))
     return float(ordered[index])
+
+
+def classifyInterfaceFamily(name: str) -> str:
+    """Classify one host interface name for dynamic fabric summaries."""
+    if name.startswith("genev") or name.startswith("ovn"):
+        return "ovn-overlay"
+    if name.startswith("vxlan") or name == "flannel.1":
+        return "vxlan-overlay"
+    if "." in name:
+        return "vlan-parent"
+    if name.startswith("mac") or name.startswith("macvlan"):
+        return "macvlan"
+    if name.startswith("br") or name == "cni0":
+        return "bridge"
+    return "other"
 
 
 def dedupe(values: list[str]) -> list[str]:

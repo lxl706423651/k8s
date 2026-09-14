@@ -1,0 +1,93 @@
+kind: multiHostKvm
+clusterName: seedemu-b62-multihost-w29
+
+hypervisors:
+  - name: amd
+    ip: 10.202.236.88
+    connection: local
+    ssh:
+      user: lxl
+      key: ~/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.1.0/24
+      gateway: 10.80.1.1
+      networkName: seedemu-b62-mh-amd
+      bridgeName: virbrb62mha
+      vmIpStart: 10
+    vmCount: 24
+    remoteWorkDir: /data/lxl/k8sTools/b62-multihost/amd
+
+  - name: idc
+    ip: 10.202.191.39
+    ssh:
+      user: seed
+      key: ~/.ssh/id_ed25519
+    routedSubnet:
+      cidr: 10.80.2.0/24
+      gateway: 10.80.2.1
+      networkName: seedemu-b62-mh-idc
+      bridgeName: virbrb62mhi
+      vmIpStart: 10
+    vmCount: 6
+    remoteWorkDir: /home/seed/k8sTools/b62-multihost/idc
+
+vmSsh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+
+multiHostKvm:
+  routingTunnel:
+    type: vxlan
+    namePrefix: vxkvm
+    cidr: 10.255.80.0/24
+    vniBase: 4280
+    dstPort: 4790
+  fabricVxlan:
+    vniBase: 6200
+    dstPort: 4789
+
+master:
+  placement: amd
+  vcpus: 48
+  memoryGiB: 96
+  diskGb: 80
+
+workers:
+  vcpus: 8
+  memoryGiB: 17
+  diskGb: 80
+
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+    - name: trunk0
+      masterInterface: ens3
+      vlanStart: 1
+      vlanEnd: 4094
+    - name: trunk1
+      masterInterface: ens4
+      vlanStart: 1
+      vlanEnd: 4094
+
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+
+registry:
+  port: 5000
+
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.48.0.0/12
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+
+tuning:
+  userMaxNetNamespaces: 65536

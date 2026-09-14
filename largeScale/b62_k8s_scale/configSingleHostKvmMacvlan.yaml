@@ -1,0 +1,127 @@
+kind: kvm
+clusterName: seedemu-b62-singlehost-w5
+
+# The only user input for runSingleHostMacvlanExperiment.sh.
+# Worker count, namespace and run name are derived automatically.
+experiment:
+  topologySize: 4954
+  topologyDir: ~/seed-emulator/topology
+
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+
+defaults:
+  masterName: seed-k3s-master
+  workerNamePrefix: seed-k3s-worker
+  ipPrefix: 10.81.0
+  masterIpStart: 10
+  workerIpStart: 11
+  macPrefix: 52:54:00:66:10
+  masterMacStart: 16
+  workerMacStart: 17
+
+master:
+  vcpus: 24
+  memoryGiB: 36
+  diskGb: 80
+
+workers:
+  count: 47
+  vcpus: 6
+  memoryGiB: 12
+  diskGb: 40
+
+kvm:
+  prepareImageCache: false
+  network: seedemu-b62-singlehost-w5
+  networkBridge: virbrb62sh
+  networkCidr: 10.81.0.0/24
+  networkGateway: 10.81.0.1
+  dhcpStart: 10.81.0.10
+  dhcpEnd: 10.81.0.239
+  storageDir: /data/lxl/k8sTools/b62-singlehost-w5
+  diskDir: /data/lxl/k8sTools/b62-singlehost-w5/disks
+  cloudInitDir: /data/lxl/k8sTools/b62-singlehost-w5/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  legacyBaseImagePath: ~/k8s/largeScale/b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
+  extraNetworks:
+    - name: seedemu-b62-singlehost-w5-fabric0
+      bridge: brb62sh0
+      model: virtio
+      trunk: trunk0
+      masterInterface: ens3
+    - name: seedemu-b62-singlehost-w5-fabric1
+      bridge: brb62sh1
+      model: virtio
+      trunk: trunk1
+      masterInterface: ens4
+
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+    - name: trunk0
+      masterInterface: ens3
+      vlanStart: 1
+      vlanEnd: 4094
+    - name: trunk1
+      masterInterface: ens4
+      vlanStart: 1
+      vlanEnd: 4094
+
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+
+registry:
+  port: 5000
+
+seedemu:
+  hostImageCacheDir: ~/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs:
+    - ~/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.48.0.0/12
+  serviceCidr: 10.43.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 20
+  maxPods: 4000
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 20
+
+tuning:
+  userMaxNetNamespaces: 65536
+
+placement:
+  excludeControlPlane: false
+  nodePodReserve: 20
+
+# Preserve the previous assignment-based deployment settings.
+deploy:
+  batchSize: 80
+  batchSleepSeconds: 0
+  subnetBatchSize: 100
+  subnetBatchSleepSeconds: 0
+  monitorInterval: 20
+  monitorEnabled: false
+  staticApplyMode: batch
+  controllerApplyMode: batch
+  warmupBatches: 12
+  warmupBatchSize: 1
+  postControllerApplySettleSeconds: 5
+  pressureCheckSeconds: 5
+  stabilizeTimeoutSeconds: 36000
+  maxPendingPods: 160
+  maxCreatingPods: 160
+  maxCreatingPodsPerNode: 40
+  maxNotReadyPods: 160
+  maxFailedPods: 10
+  requireAllNodesReady: true
+  waitKubeOvnSubnets: false
+  nodeStreamObserveTimeoutSeconds: 120
+  nodeStreamMaxActivePerNode: 4

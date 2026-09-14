@@ -31,6 +31,7 @@ load_assignment_runtime() {
     eval "$(
         python3 - "${assignment_path}" "${run_dir}" "${TEST_DIR}" <<'PY'
 import json
+import ipaddress
 import os
 import shlex
 import sys
@@ -62,10 +63,48 @@ def find_repo_root(start):
     raise RuntimeError(f"Cannot find SeedEMU repository root above {start}")
 
 
+def load_mapping(path_text):
+    if not path_text:
+        return {}
+    path = resolve(path_text, Path.cwd())
+    if not path.is_file():
+        return {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return data if isinstance(data, dict) else {}
+
+
+def multi_host_master_ip(config):
+    hosts = config.get("hypervisors") if isinstance(config.get("hypervisors"), list) else []
+    master = config.get("master") if isinstance(config.get("master"), dict) else {}
+    placement = str(master.get("placement") or (hosts[0].get("name") if hosts else ""))
+    for host in hosts:
+        if not isinstance(host, dict) or str(host.get("name") or "") != placement:
+            continue
+        routed = host.get("routedSubnet") if isinstance(host.get("routedSubnet"), dict) else {}
+        network = ipaddress.ip_network(str(routed.get("cidr")), strict=False)
+        start = int(routed.get("vmIpStart") or 10)
+        candidate = ipaddress.ip_address(int(network.network_address) + start)
+        if candidate not in network:
+            raise RuntimeError(f"master VM address is outside {network}")
+        return str(candidate)
+    return ""
+
+
 assignment_path = resolve(sys.argv[1], Path.cwd())
 run_dir = resolve(sys.argv[2], Path.cwd())
 script_dir = resolve(sys.argv[3], Path.cwd())
 assignment = yaml.safe_load(assignment_path.read_text(encoding="utf-8")) or {}
+runtime = assignment.get("runtime", {}) or {}
+
+
+def resolve_runtime_path(env_key, field, default):
+    # Generated run metadata enables standalone stages without user exports.
+    return os.environ.get(env_key) or runtime.get(field) or str(default)
+
+
+config_k3s_path = resolve_runtime_path("B62_CONFIG_K3S_PATH", "configK3s", script_dir / "configK3s.yaml")
+kubeconfig_path = resolve_runtime_path("B62_KUBECONFIG_PATH", "kubeconfig", script_dir / "kubeconfig.yaml")
+inventory_path = resolve_runtime_path("B62_INVENTORY_PATH", "inventory", script_dir / "cluster.inventory.yaml")
 
 topology_size = int(get(assignment, "experiment.topologySize"))
 worker_count = int(get(assignment, "experiment.workerCount"))
@@ -73,6 +112,14 @@ namespace = str(get(assignment, "experiment.namespace", "") or f"seedemu-b62-{to
 experiment_name = str(get(assignment, "experiment.name", "") or f"b62-scale-{topology_size}")
 source_root = resolve(get(assignment, "experiment.sourceRoot", find_repo_root(script_dir)), script_dir)
 topology_dir = resolve(get(assignment, "experiment.topologyDir", Path.home() / "seed-emulator" / "topology"), script_dir)
+canonical_output_dir = resolve(
+    get(
+        assignment,
+        "experiment.canonicalOutputDir",
+        topology_dir / f"output_{topology_size}",
+    ),
+    script_dir,
+)
 cluster_name = f"{get(assignment, 'kvm.clusterNamePrefix', 'seedemu-b62')}-w{worker_count}"
 ip_prefix = str(get(assignment, "kvm.ipPrefix"))
 master_ip = f"{ip_prefix}.{int(get(assignment, 'kvm.master.ipStart'))}"
@@ -81,6 +128,8 @@ network_backend = str(get(assignment, "networking.backend", "kube-ovn")).strip()
 cni_type = str(get(assignment, "networking.cniType", "kube-ovn")).strip().lower() or "kube-ovn"
 local_link_cni_type = str(get(assignment, "networking.localLinkCniType", cni_type) or cni_type).strip().lower()
 attached_cni_type = str(get(assignment, "networking.attachedCniType", local_link_cni_type) or local_link_cni_type).strip().lower()
+cni_master_interface = str(get(assignment, "networking.cniMasterInterface", "ens2"))
+cni_mtu = int(get(assignment, "networking.cniMtu", 0) or 0)
 vlan_capable_cni = cni_type.replace("_", "-") in {"macvlan", "ipvlan", "bridge"}
 vlan_backend = network_backend.replace("_", "-") in {
     "macvlan",
@@ -116,28 +165,83 @@ else:
     exclude_nodes = []
 node_pod_reserve = int(placement.get("nodePodReserve", placement.get("node_pod_reserve", 20)) or 20)
 
+cluster_input_path = resolve_runtime_path("B62_CLUSTER_INPUT_CONFIG", "clusterInput", "").strip()
+cluster_input = load_mapping(cluster_input_path)
+generated_cluster = load_mapping(config_k3s_path) if cluster_input else {}
+cluster_runtime = generated_cluster or cluster_input
+if cluster_input:
+    cluster_name = str(cluster_runtime.get("clusterName") or cluster_input.get("clusterName") or cluster_name)
+    nodes = cluster_runtime.get("nodes") if isinstance(cluster_runtime.get("nodes"), list) else []
+    master_node = next(
+        (
+            node
+            for node in nodes
+            if isinstance(node, dict) and str(node.get("role") or "").lower() in {"master", "control-plane"}
+        ),
+        {},
+    )
+    master_ip = str(master_node.get("ip") or multi_host_master_ip(cluster_input) or master_ip)
+    hypervisors = cluster_input.get("hypervisors") if isinstance(cluster_input.get("hypervisors"), list) else []
+    planned_vm_count = sum(
+        int(host.get("vmCount") or 0)
+        for host in hypervisors
+        if isinstance(host, dict)
+    )
+    if nodes:
+        worker_count = max(len(nodes) - 1, 0)
+    elif planned_vm_count:
+        worker_count = max(planned_vm_count - 1, 0)
+    vm_ssh = cluster_input.get("vmSsh") if isinstance(cluster_input.get("vmSsh"), dict) else {}
+    if vm_ssh:
+        k3s_user = str(vm_ssh.get("user") or get(assignment, "kvm.ssh.user", "ubuntu"))
+        k3s_ssh_key = str(resolve(vm_ssh.get("key", "~/.ssh/id_ed25519"), script_dir))
+    else:
+        k3s_user = str(get(assignment, "kvm.ssh.user", "ubuntu"))
+        k3s_ssh_key = str(resolve(get(assignment, "kvm.ssh.key", "~/.ssh/id_ed25519"), script_dir))
+    fabric = cluster_runtime.get("fabric") if isinstance(cluster_runtime.get("fabric"), dict) else {}
+    input_fabric = cluster_input.get("fabric") if isinstance(cluster_input.get("fabric"), dict) else {}
+    fabric_type = str(fabric.get("type") or input_fabric.get("type") or "").strip().lower().replace("_", "-")
+    cni_mtu = int(fabric.get("mtu") or input_fabric.get("mtu") or cni_mtu or 0)
+    configured_trunks = fabric.get("vlanTrunks") or input_fabric.get("vlanTrunks")
+    if isinstance(configured_trunks, list) and configured_trunks:
+        vlan_trunks = configured_trunks
+        cni_master_interface = str(vlan_trunks[0].get("masterInterface") or cni_master_interface)
+    cni = cluster_runtime.get("cni") if isinstance(cluster_runtime.get("cni"), dict) else {}
+    if fabric_type in {"macvlan-vlan", "bridge-vlan", "ipvlan-vlan"}:
+        network_backend = fabric_type.removesuffix("-vlan")
+        cni_type = str(cni.get("cniType") or network_backend)
+        local_link_cni_type = str(cni.get("localLinkCniType") or cni_type)
+        attached_cni_type = str(cni.get("attachedCniType") or cni_type)
+        macvlan_vlan_mode = True
+    registry = cluster_runtime.get("registry") if isinstance(cluster_runtime.get("registry"), dict) else {}
+    registry_port = int(registry.get("port") or registry_port)
+else:
+    k3s_user = str(get(assignment, "kvm.ssh.user", "ubuntu"))
+    k3s_ssh_key = str(resolve(get(assignment, "kvm.ssh.key", "~/.ssh/id_ed25519"), script_dir))
+
 values = {
     "B62_ASSIGNMENT_FILE": str(assignment_path),
     "B62_WORKER_COUNT": str(worker_count),
     "B62_TOPOLOGY_SIZE": str(topology_size),
     "B62_EXPERIMENT_NAME": experiment_name,
-    "B62_CONFIG_KVM_OVN_PATH": str(script_dir / "configKvmOvn.yaml"),
-    "B62_CONFIG_K3S_PATH": str(script_dir / "configK3s.yaml"),
-    "B62_KUBECONFIG_PATH": str(script_dir / "kubeconfig.yaml"),
-    "B62_INVENTORY_PATH": str(script_dir / "cluster.inventory.yaml"),
+    "B62_CONFIG_KVM_PATH": os.environ.get("B62_CONFIG_KVM_PATH") or cluster_input_path or str(script_dir / "configKvm.yaml"),
+    "B62_CONFIG_K3S_PATH": config_k3s_path,
+    "B62_KUBECONFIG_PATH": kubeconfig_path,
+    "B62_INVENTORY_PATH": inventory_path,
     "B62_RESOURCE_PLAN_YAML": str(script_dir / "resourcePlan.yaml"),
     "B62_RESOURCE_PLAN_JSON": str(script_dir / "resourcePlan.json"),
     "SEED_SOURCE_ROOT": str(source_root),
     "SEED_TOPOLOGY_SIZE": str(topology_size),
     "SEED_K3S_CLUSTER_NAME": cluster_name,
     "SEED_CLUSTER_INVENTORY": cluster_name,
-    "SEED_CLUSTER_INVENTORY_PATH": str(script_dir / "cluster.inventory.yaml"),
-    "SEED_KUBECONFIG_PATH": str(script_dir / "kubeconfig.yaml"),
-    "KUBECONFIG": str(script_dir / "kubeconfig.yaml"),
-    "SEED_K3S_USER": str(get(assignment, "kvm.ssh.user", "ubuntu")),
-    "SEED_K3S_SSH_KEY": str(resolve(get(assignment, "kvm.ssh.key", "~/.ssh/id_ed25519"), script_dir)),
+    "SEED_CLUSTER_INVENTORY_PATH": inventory_path,
+    "SEED_KUBECONFIG_PATH": kubeconfig_path,
+    "KUBECONFIG": kubeconfig_path,
+    "SEED_K3S_USER": k3s_user,
+    "SEED_K3S_SSH_KEY": k3s_ssh_key,
     "SEED_NAMESPACE": namespace,
     "SEED_REAL_TOPOLOGY_DIR": str(topology_dir),
+    "SEED_CANONICAL_OUTPUT_DIR": str(canonical_output_dir),
     "SEED_K3S_MASTER_IP": master_ip,
     "SEED_REGISTRY_HOST": master_ip,
     "SEED_REGISTRY_PORT": str(registry_port),
@@ -146,7 +250,8 @@ values = {
     "SEED_CNI_TYPE": cni_type,
     "SEED_LOCAL_LINK_CNI_TYPE": local_link_cni_type,
     "SEED_ATTACHED_CNI_TYPE": attached_cni_type,
-    "SEED_CNI_MASTER_INTERFACE": str(get(assignment, "networking.cniMasterInterface", "ens2")),
+    "SEED_CNI_MASTER_INTERFACE": cni_master_interface,
+    "SEED_CNI_MTU": str(cni_mtu) if cni_mtu else "",
     "SEED_MACVLAN_VLAN_MODE": "1" if macvlan_vlan_mode else "0",
     "SEED_MACVLAN_VLAN_START": str(macvlan_vlan_start),
     "SEED_MACVLAN_VLAN_TRUNKS_JSON": json.dumps(vlan_trunks, separators=(",", ":")),
@@ -155,6 +260,9 @@ values = {
     "SEED_PLACEMENT_EXCLUDE_NODES": ",".join(exclude_nodes),
     "SEED_NODE_POD_RESERVE": str(node_pod_reserve),
 }
+
+if cluster_input_path:
+    values["B62_CLUSTER_INPUT_CONFIG"] = cluster_input_path
 
 for key, value in values.items():
     print(f"export {key}={shlex.quote(value)}")

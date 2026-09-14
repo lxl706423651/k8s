@@ -62,10 +62,12 @@ require_file "${PLACEMENT_MAPPING_FILE}"
 echo "[3/3] Running Kubernetes compile"
 echo "EXPERIMENT_DIR=${EXPERIMENT_DIR}"
 echo "SEED_TOPOLOGY_SIZE=${SEED_TOPOLOGY_SIZE}"
+echo "SEED_CANONICAL_OUTPUT_DIR=${SEED_CANONICAL_OUTPUT_DIR}"
 echo "SEED_CLUSTER_INVENTORY_PATH=${SEED_CLUSTER_INVENTORY_PATH}"
 echo "KUBECONFIG=${KUBECONFIG}"
 echo "SEED_NAMESPACE=${SEED_NAMESPACE}"
 echo "SEED_MACVLAN_VLAN_MODE=${SEED_MACVLAN_VLAN_MODE:-0}"
+echo "SEED_CNI_MTU=${SEED_CNI_MTU:-}"
 echo "SEED_MACVLAN_VLAN_START=${SEED_MACVLAN_VLAN_START:-100}"
 echo "SEED_MACVLAN_VLAN_TRUNKS_JSON=${SEED_MACVLAN_VLAN_TRUNKS_JSON:-[]}"
 echo "Current Dir: ${REPO_ROOT}"
@@ -81,6 +83,7 @@ run_in_seedpy310 env \
     SEED_CNI_TYPE="${SEED_CNI_TYPE}" \
     SEED_LOCAL_LINK_CNI_TYPE="${SEED_LOCAL_LINK_CNI_TYPE:-}" \
     SEED_CNI_MASTER_INTERFACE="${SEED_CNI_MASTER_INTERFACE}" \
+    SEED_CNI_MTU="${SEED_CNI_MTU:-}" \
     SEED_MACVLAN_VLAN_MODE="${SEED_MACVLAN_VLAN_MODE:-0}" \
     SEED_MACVLAN_VLAN_START="${SEED_MACVLAN_VLAN_START:-100}" \
     SEED_MACVLAN_VLAN_TRUNKS_JSON="${SEED_MACVLAN_VLAN_TRUNKS_JSON:-}" \
@@ -94,6 +97,16 @@ run_in_seedpy310 env \
     SEED_TOPOLOGY_FILE="${TOPOLOGY_FILE}" \
     SEED_ASSIGNMENT_FILE="${ASSIGNMENT_FILE}" \
     python3 examples/kubernetes/real_topology_k3s_compile.py
+
+if [[ ! -d "${SEED_CANONICAL_OUTPUT_DIR}" ]]; then
+    echo "Canonical DockerCompiler output is missing: ${SEED_CANONICAL_OUTPUT_DIR}" >&2
+    exit 1
+fi
+python3 "${SCRIPT_DIR}/adaptCanonicalOutput.py" \
+    --canonical-output "${SEED_CANONICAL_OUTPUT_DIR}" \
+    --compiled-output "${OUTPUT_DIR}" \
+    --expected-nodes "${SEED_TOPOLOGY_SIZE}" \
+    --summary "${EXPERIMENT_DIR}/canonical_output_summary.json"
 
 RUNTIME_MANIFEST="$(render_runtime_manifest)"
 echo "Compile completed. Source manifest: ${OUTPUT_DIR}/k8s.yaml"

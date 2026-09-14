@@ -13,12 +13,15 @@ from __future__ import annotations
 
 import argparse
 import copy
+from dataclasses import dataclass
 import hashlib
 import io
 import json
 import os
+import posixpath
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -29,17 +32,30 @@ from typing import Dict, Iterable, List, Tuple
 BUILD_RE = re.compile(r"^seedemu_build_and_push\s+(\S+)\s+(\S+)\s*$")
 COMPILER_HASH_RE = re.compile(r"^[0-9a-f]{32}(:latest)?$")
 
-COPY_MAP = (
-    ("92872f20cfb75af4e3e1c588b00d6484", "replace_address.sh", None),
-    ("365d27384adc9719099d1f63f2d15824", "root/.zshrc.pre", None),
-    ("082b96ec819c95ae773daebde675ef80", "start.sh", 0o755),
-    ("d18858afc6bb66ec3a19d872077acfd2", "seedemu_sniffer", 0o755),
-    ("17ac2d812a99a91e7f747e1defb72a29", "seedemu_worker", 0o755),
-    ("2b0ae038330eccd43095538618caee7d", "etc/bird/bird.conf", None),
-    ("8e9a384ab59c7626a3ffab63886cc30f", "etc/bird/conf/kernel.conf", None),
-    ("e01e36443f9f72c6204189260d0bd276", "ifinfo.txt", None),
-    ("d3d51fdf7f4bad30dc5db560a01ce629", "interface_setup", None),
-)
+EXECUTABLE_DEST_MODES = {
+    "start.sh": 0o755,
+    "seedemu_sniffer": 0o755,
+    "seedemu_worker": 0o755,
+}
+
+EMULATED_RUN_COMMANDS = {
+    "mkdir -p /usr/share/doc/bird2/examples/",
+    "touch /usr/share/doc/bird2/examples/bird.conf",
+    "chmod +x /start.sh",
+    "chmod +x /seedemu_sniffer",
+    "chmod +x /seedemu_worker",
+}
+
+
+@dataclass
+class BaseVariant:
+    """One shared base image/archive for a Dockerfile build-instruction set."""
+
+    image: str
+    instructions: Tuple[str, ...]
+    archive_dir: Path
+    config: dict
+    layers: List[str]
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -117,6 +133,87 @@ def dockerfile_from_images(path: Path) -> Iterable[str]:
             yield fields[1]
 
 
+def dockerfile_logical_lines(path: Path) -> Iterable[str]:
+    """Yield normalized Dockerfile instructions, joining backslash lines."""
+    pending = ""
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or (line.startswith("#") and not pending):
+            continue
+        pending = f"{pending} {line}".strip() if pending else line
+        if pending.endswith("\\"):
+            pending = pending[:-1].rstrip()
+            continue
+        yield pending
+        pending = ""
+    if pending:
+        raise RuntimeError(f"unterminated Dockerfile continuation in {path}")
+
+
+def dockerfile_build_instructions(path: Path) -> Tuple[str, ...]:
+    """Return pre-COPY instructions that require a real shared image build.
+
+    The fast runtime layer explicitly implements SeedEMU's standard mkdir,
+    touch, COPY, chmod, and CMD operations. Other RUN commands, such as
+    installing iperf3, must be executed in a shared base variant. A nonstandard
+    RUN after COPY may depend on per-context files and therefore cannot be
+    folded into a shared base safely.
+    """
+    prefix: List[str] = []
+    has_required_run = False
+    seen_copy = False
+    for line in dockerfile_logical_lines(path):
+        fields = line.split(maxsplit=1)
+        operation = fields[0].upper()
+        argument = fields[1].strip() if len(fields) > 1 else ""
+        if operation in {"COPY", "ADD"}:
+            seen_copy = True
+            continue
+        if operation == "RUN":
+            if argument in EMULATED_RUN_COMMANDS:
+                continue
+            if seen_copy:
+                raise RuntimeError(
+                    f"unsupported RUN after COPY in {path}: {line}; "
+                    "disable fast archive mode or move the software install before COPY"
+                )
+            prefix.append(line)
+            has_required_run = True
+            continue
+        if not seen_copy and operation in {"ARG", "ENV", "SHELL", "USER", "WORKDIR"}:
+            prefix.append(line)
+    return tuple(prefix) if has_required_run else ()
+
+
+def dockerfile_copy_entries(path: Path) -> Iterable[Tuple[str, str, int | None]]:
+    """Yield Dockerfile COPY source/destination pairs used by SeedEMU contexts."""
+    for line in dockerfile_logical_lines(path):
+        try:
+            fields = shlex.split(line)
+        except ValueError as exc:
+            raise RuntimeError(f"cannot parse Dockerfile line in {path}: {line}") from exc
+        if not fields or fields[0].upper() != "COPY":
+            continue
+
+        args = fields[1:]
+        while args and args[0].startswith("--"):
+            args = args[1:]
+        if len(args) < 2:
+            raise RuntimeError(f"unsupported COPY line in {path}: {line}")
+
+        dest = args[-1].lstrip("/")
+        sources = args[:-1]
+        multiple_sources = len(sources) > 1
+        for source in sources:
+            if multiple_sources or dest.endswith("/"):
+                target = posixpath.join(dest.rstrip("/"), posixpath.basename(source))
+            else:
+                target = dest
+            target = target.lstrip("/")
+            mode = EXECUTABLE_DEST_MODES.get(target)
+            yield source, target, mode
+
+
 def ensure_base_image(base_image: str, work_dir: Path) -> None:
     if docker_image_exists(base_image):
         return
@@ -131,6 +228,50 @@ def ensure_base_image(base_image: str, work_dir: Path) -> None:
         ensure_source_image(source, work_dir)
     print(f"[fast-archive] building base image {base_image} from {context_dir}", flush=True)
     run(["docker", "build", "-t", base_image, str(context_dir)])
+
+
+def docker_image_id(image: str) -> str:
+    """Return the immutable local Docker image ID for cache keys."""
+    response = subprocess.run(
+        ["docker", "image", "inspect", "--format", "{{.Id}}", image],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    image_id = response.stdout.strip()
+    if not image_id:
+        raise RuntimeError(f"docker returned an empty image ID for {image}")
+    return image_id
+
+
+def ensure_base_variant(
+    base_image: str,
+    instructions: Tuple[str, ...],
+    work_dir: Path,
+) -> str:
+    """Build and return one deterministic shared software-base image."""
+    if not instructions:
+        return base_image
+    payload = "\n".join((docker_image_id(base_image), *instructions)).encode("utf-8")
+    digest = sha256_bytes(payload)
+    image = f"seedemu-fast-base:{digest[:24]}"
+    if docker_image_exists(image):
+        return image
+
+    context_dir = work_dir / ".fast_base_variant_build" / digest
+    context_dir.mkdir(parents=True, exist_ok=True)
+    dockerfile = context_dir / "Dockerfile"
+    dockerfile.write_text(
+        "\n".join((f"FROM {base_image}", *instructions, "")),
+        encoding="utf-8",
+    )
+    print(
+        f"[fast-archive] building software base {image} "
+        f"with {len(instructions)} instruction(s)",
+        flush=True,
+    )
+    run(["docker", "build", "-t", image, str(context_dir)])
+    return image
 
 
 def extract_base_archive(base_image: str, base_dir: Path) -> None:
@@ -213,6 +354,14 @@ def add_context_file(
 def make_layer(context_dir: Path) -> Tuple[str, bytes]:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w") as archive:
+        added_dirs = set()
+        def add_dir_once(dirname: str) -> None:
+            dirname = dirname.strip("/")
+            if not dirname or dirname in added_dirs:
+                return
+            add_dir(archive, dirname)
+            added_dirs.add(dirname)
+
         for dirname in (
             "usr",
             "usr/share",
@@ -224,9 +373,16 @@ def make_layer(context_dir: Path) -> Tuple[str, bytes]:
             "etc/bird/conf",
             "root",
         ):
-            add_dir(archive, dirname)
+            add_dir_once(dirname)
         add_bytes(archive, "usr/share/doc/bird2/examples/bird.conf", b"", 0o644)
-        for src_name, dest, mode in COPY_MAP:
+        dockerfile = context_dir / "Dockerfile"
+        if not dockerfile.exists():
+            raise RuntimeError(f"missing Dockerfile in context {context_dir}")
+        for src_name, dest, mode in dockerfile_copy_entries(dockerfile):
+            dirname = posixpath.dirname(dest)
+            while dirname and dirname != ".":
+                add_dir_once(dirname)
+                dirname = posixpath.dirname(dirname)
             src = context_dir / src_name
             if not src.exists():
                 raise RuntimeError(f"missing context file {src}")
@@ -261,6 +417,44 @@ def image_context(work_dir: Path, context_ref: Path) -> Path:
     return (work_dir / context_ref).resolve()
 
 
+def prepare_base_variants(
+    *,
+    base_image: str,
+    work_dir: Path,
+    image_to_context: Dict[str, Path],
+    cache_root: Path,
+) -> Tuple[Dict[Tuple[str, ...], BaseVariant], Dict[str, Tuple[str, ...]], Dict[Tuple[str, ...], int]]:
+    """Build/extract all software-base variants used by workload contexts."""
+    context_instructions: Dict[str, Tuple[str, ...]] = {}
+    variant_counts: Dict[Tuple[str, ...], int] = {}
+    for context_ref in image_to_context.values():
+        context_dir = image_context(work_dir, context_ref)
+        key = str(context_dir)
+        instructions = context_instructions.get(key)
+        if instructions is None:
+            instructions = dockerfile_build_instructions(context_dir / "Dockerfile")
+            context_instructions[key] = instructions
+        variant_counts[instructions] = variant_counts.get(instructions, 0) + 1
+
+    variants: Dict[Tuple[str, ...], BaseVariant] = {}
+    for instructions in sorted(variant_counts, key=lambda item: (len(item), item)):
+        image = ensure_base_variant(base_image, instructions, work_dir)
+        cache_key = sha256_bytes(
+            "\n".join((docker_image_id(image), *instructions)).encode("utf-8")
+        )
+        archive_dir = cache_root / cache_key
+        extract_base_archive(image, archive_dir)
+        config, layers = load_base(archive_dir)
+        variants[instructions] = BaseVariant(
+            image=image,
+            instructions=instructions,
+            archive_dir=archive_dir,
+            config=config,
+            layers=layers,
+        )
+    return variants, context_instructions, variant_counts
+
+
 def infer_base_image(work_dir: Path, image_to_context: Dict[str, Path]) -> str:
     for context_ref in image_to_context.values():
         dockerfile = image_context(work_dir, context_ref) / "Dockerfile"
@@ -286,9 +480,8 @@ def write_node_archive(
     node_name: str,
     images: List[str],
     work_dir: Path,
-    base_dir: Path,
-    base_config: dict,
-    base_layers: List[str],
+    base_variants: Dict[Tuple[str, ...], BaseVariant],
+    context_instructions: Dict[str, Tuple[str, ...]],
     image_to_context: Dict[str, Path],
     archive_dir: Path,
 ) -> dict:
@@ -297,33 +490,42 @@ def write_node_archive(
     manifest_entries = []
     layer_cache: Dict[str, Tuple[str, bytes]] = {}
     config_blobs: Dict[str, bytes] = {}
+    archived_paths = set()
 
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(archive_path, mode="w") as output:
-        for layer in base_layers:
-            add_file_to_archive(output, base_dir / layer, layer)
         for image in images:
             context_ref = image_to_context.get(image)
             if context_ref is None:
                 raise RuntimeError(f"image {image} is missing from build_images.sh")
             context_dir = image_context(work_dir, context_ref)
+            instructions = context_instructions[str(context_dir)]
+            base_variant = base_variants[instructions]
+            for layer in base_variant.layers:
+                if layer in archived_paths:
+                    continue
+                add_file_to_archive(output, base_variant.archive_dir / layer, layer)
+                archived_paths.add(layer)
             layer_diff_id, layer_data = layer_cache.get(str(context_dir), (None, None))  # type: ignore[arg-type]
             if layer_diff_id is None or layer_data is None:
                 layer_diff_id, layer_data = make_layer(context_dir)
                 layer_cache[str(context_dir)] = (layer_diff_id, layer_data)
             layer_path = f"blobs/sha256/{layer_diff_id}"
-            add_bytes(output, layer_path, layer_data, 0o444)
+            if layer_path not in archived_paths:
+                add_bytes(output, layer_path, layer_data, 0o444)
+                archived_paths.add(layer_path)
 
-            config_digest, config_data = make_config(base_config, layer_diff_id)
+            config_digest, config_data = make_config(base_variant.config, layer_diff_id)
             config_path = f"blobs/sha256/{config_digest}"
             if config_digest not in config_blobs:
                 config_blobs[config_digest] = config_data
                 add_bytes(output, config_path, config_data, 0o444)
+                archived_paths.add(config_path)
             manifest_entries.append(
                 {
                     "Config": config_path,
                     "RepoTags": [image],
-                    "Layers": base_layers + [layer_path],
+                    "Layers": base_variant.layers + [layer_path],
                 }
             )
         add_bytes(
@@ -361,7 +563,7 @@ def main() -> int:
     work_dir = args.work_dir.resolve()
     node_image_dir = args.node_image_dir.resolve()
     archive_dir = args.archive_dir.resolve()
-    base_dir = (args.base_cache_dir or (work_dir / ".fast_base_archive")).resolve()
+    base_cache_root = (args.base_cache_dir or (work_dir / ".fast_base_archives")).resolve()
 
     build_images = work_dir / "build_images.sh"
     if not build_images.exists():
@@ -373,8 +575,12 @@ def main() -> int:
     image_to_context = parse_build_images(build_images)
     base_image = args.base_image or infer_base_image(work_dir, image_to_context)
     ensure_base_image(base_image, work_dir)
-    extract_base_archive(base_image, base_dir)
-    base_config, base_layers = load_base(base_dir)
+    base_variants, context_instructions, variant_counts = prepare_base_variants(
+        base_image=base_image,
+        work_dir=work_dir,
+        image_to_context=image_to_context,
+        cache_root=base_cache_root,
+    )
 
     results = []
     total_images = 0
@@ -395,9 +601,8 @@ def main() -> int:
             node_name=node_name,
             images=images,
             work_dir=work_dir,
-            base_dir=base_dir,
-            base_config=base_config,
-            base_layers=base_layers,
+            base_variants=base_variants,
+            context_instructions=context_instructions,
             image_to_context=image_to_context,
             archive_dir=archive_dir,
         )
@@ -415,6 +620,14 @@ def main() -> int:
         "nodeImageDir": str(node_image_dir),
         "archiveDir": str(archive_dir),
         "baseImage": base_image,
+        "baseVariants": [
+            {
+                "image": base_variants[instructions].image,
+                "imageCount": variant_counts[instructions],
+                "instructions": list(instructions),
+            }
+            for instructions in sorted(variant_counts, key=lambda item: (len(item), item))
+        ],
         "nodeCount": len(results),
         "imageCount": total_images,
         "durationSeconds": round(time.monotonic() - started, 2),

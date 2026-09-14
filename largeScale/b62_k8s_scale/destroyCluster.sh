@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Destroy the B62 K3s/KVM cluster and its dedicated libvirt networks.
 #
-# Inputs: configK3s.yaml, configKvmOvn.yaml, assignment.yaml, and k8sTools.py.
+# Inputs: configK3s.yaml, configKvm.yaml, assignment.yaml, and k8sTools.py.
 # Outputs: destroy-cluster log under the provided run directory.
 # Side effects: removes K3s/Kube-OVN state and KVM resources recorded in the
 #               selected configK3s YAML, then destroys and undefines matching
@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUN_DIR="${1:-${SCRIPT_DIR}/runs/destroy_cluster_$(date +%Y%m%d_%H%M%S)}"
 LOG_FILE="${RUN_DIR}/destroy-cluster.log"
 CONFIG_K3S="${SCRIPT_DIR}/configK3s.yaml"
-CONFIG_KVM="${SCRIPT_DIR}/configKvmOvn.yaml"
+CONFIG_KVM="${SCRIPT_DIR}/configKvm.yaml"
 ASSIGNMENT_FILE="${SCRIPT_DIR}/assignment.yaml"
 LOCK_FILE="${SCRIPT_DIR}/.cluster-lifecycle.lock"
 DESTROY_TIMEOUT_SECONDS="${SEED_DESTROY_CLUSTER_TIMEOUT_SECONDS:-900}"
