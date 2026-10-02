@@ -1,5 +1,21 @@
-kind: kvmOvn
-clusterName: seedemu-k3s
+kind: kvm
+clusterName: seedemu-b61-macvlan-vlan
+
+fabric:
+  type: macvlan-vlan
+
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens2
+
+k3s:
+  version: v1.29.15+k3s1
+
+defaults:
+  masterName: seedemu-b61-mvlan-master
+  workerNamePrefix: seedemu-b61-mvlan-worker
 
 master:
   vcpus: 12
@@ -7,7 +23,7 @@ master:
   diskGb: 80
 
 workers:
-  count: 2
+  count: 3
   vcpus: 6
   memoryMb: 10240
   diskGb: 80

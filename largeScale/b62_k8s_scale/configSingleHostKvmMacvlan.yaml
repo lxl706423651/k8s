@@ -4,7 +4,7 @@ clusterName: seedemu-b62-singlehost-w5
 # The only user input for runSingleHostMacvlanExperiment.sh.
 # Worker count, namespace and run name are derived automatically.
 experiment:
-  topologySize: 4954
+  topologySize: 7001
   topologyDir: ~/seed-emulator/topology
 
 ssh:

@@ -1,0 +1,78 @@
+kind: kvm
+clusterName: seedemu-b63-e3-1078
+experiment: {topologySize: 1078, topologyDir: /data/lxl/seed-emulator/topology, name: b63-e3-1078, namespace: seedemu-b63-e3-1078}
+ssh: {user: ubuntu, key: /home/lxl/.ssh/id_ed25519}
+defaults:
+  masterName: b63-e3-master
+  workerNamePrefix: b63-e3-worker
+  ipPrefix: 10.87.0
+  masterIpStart: 10
+  workerIpStart: 11
+  macPrefix: 52:54:00:63:87
+  masterMacStart: 16
+  workerMacStart: 17
+master: {vcpus: 8, memoryGiB: 8, diskGb: 32}
+workers: {count: 3, vcpus: 8, memoryGiB: 8, diskGb: 32}
+kvm:
+  prepareImageCache: false
+  network: seedemu-b63-e3-1078
+  networkBridge: virbrb63e3
+  networkCidr: 10.87.0.0/24
+  networkGateway: 10.87.0.1
+  dhcpStart: 10.87.0.10
+  dhcpEnd: 10.87.0.99
+  storageDir: /data/lxl/k8sTools/b63-e3-1078
+  diskDir: /data/lxl/k8sTools/b63-e3-1078/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-e3-1078/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  extraNetworks:
+  - {name: seedemu-b63-e3-1078-fabric0, bridge: brb63e3f0, model: virtio, trunk: trunk0, masterInterface: ens3}
+  - {name: seedemu-b63-e3-1078-fabric1, bridge: brb63e3f1, model: virtio, trunk: trunk1, masterInterface: ens4}
+  allowExisting: false
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - {name: trunk0, masterInterface: ens3, vlanStart: 1, vlanEnd: 4094}
+  - {name: trunk1, masterInterface: ens4, vlanStart: 1, vlanEnd: 4094}
+cni: {cniType: macvlan, localLinkCniType: macvlan, attachedCniType: macvlan, defaultMasterInterface: ens3}
+registry: {port: 5087}
+seedemu:
+  hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs: [/home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache]
+k3s: {version: v1.29.15+k3s1, clusterCidr: 10.102.0.0/16, serviceCidr: 10.103.0.0/16, flannelBackend: vxlan, nodeCidrMaskSizeIpv4: 23, maxPods: 400, kubeletRegistryQps: 100, kubeletRegistryBurst: 20}
+tuning: {userMaxNetNamespaces: 65536}
+placement:
+  excludeControlPlane: true
+  algorithm: performance-model
+  selectedOnly: true
+  injectResourceRequests: false
+  fastGreedyScore: true
+  externalCpuMillicores: 15
+  resourceTargetUtilization: 0.70
+  contentionKnee: 0.70
+  placementSeed: 20260918
+  performanceModel: /home/lxl/k8s/largeScale/b63_deployment/experiments/research_e1_topology214_20260918/performance_model.json
+deploy: {batchSize: 30, batchSleepSeconds: 0, subnetBatchSize: 50, subnetBatchSleepSeconds: 0, monitorInterval: 10, monitorEnabled: false, staticApplyMode: batch, controllerApplyMode: batch, warmupBatches: 4, warmupBatchSize: 1, postControllerApplySettleSeconds: 3, pressureCheckSeconds: 3, stabilizeTimeoutSeconds: 7200, maxPendingPods: 80, maxCreatingPods: 80, maxCreatingPodsPerNode: 25, maxNotReadyPods: 80, maxFailedPods: 0, requireAllNodesReady: true, waitKubeOvnSubnets: false}
+study:
+  phase: E3
+  # A placement may legitimately stall under contention.  Preserve that FAIL,
+  # clean its isolated cluster, and still measure the remaining algorithms.
+  continueAfterVariantFailure: true
+  cleanupFailedVariants: true
+  variants:
+  - {id: crescent, algorithm: crescent}
+  - {id: crescent-resource, algorithm: crescent-resource-aware}
+  - {id: performance-model, algorithm: performance-model}
+  # 1078 / 3 workers is about 359 Pods per worker.  The 15m endpoint
+  # contributes about 5.4 cores per 8-vCPU worker before base routing load.
+  loadSweepCpuMillicores: [5, 15]
+  calibrationLoadsMillicores: []
+  holdoutLoadsMillicores: [5, 15]
+  loadSettleSeconds: 15
+  loadApplyNodeConcurrency: 0
+  loadApplyNodeTimeoutSeconds: 900
+  loadApplyRetries: 3
+  loadApplyRetryBackoffSeconds: 2
+  hostSampleIntervalSeconds: 3
+  dataplane: {pairPlanVersion: 2, pairSeed: 20260918, pairsPerStratum: 10, maxPairsTotal: 30, pingCount: 5, pingConcurrency: 8, baselineTcpDirections: 12, baselineTcpDuration: 4, baselineTcpConcurrency: 4, stressLevels: "4,8,16", stressRepetitions: 2, stressDuration: 6, loadedPingCanaries: 6, loadedPingCount: 6}

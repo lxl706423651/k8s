@@ -186,7 +186,7 @@ def kubectlListPods(namespace: str, kubeconfig: str, timeout: int) -> dict[str, 
 
 
 def selectTargets(namespace: str, kubeconfig: str, sample_count: int, list_timeout: int) -> list[BirdTarget]:
-    """Select the smallest-r brd pod from each of the first sample_count ASNs."""
+    """Select up to sample_count distinct ASes, covering all when fewer exist."""
     data = kubectlListPods(namespace, kubeconfig, list_timeout)
     best_by_asn: dict[int, BirdTarget] = {}
     for item in data.get("items", []):
@@ -213,8 +213,10 @@ def selectTargets(namespace: str, kubeconfig: str, sample_count: int, list_timeo
         if current is None or (target.routerId, target.pod) < (current.routerId, current.pod):
             best_by_asn[asn] = target
     selected = [best_by_asn[asn] for asn in sorted(best_by_asn)[:sample_count]]
+    if not selected:
+        raise RuntimeError("no distinct AS brd pods found")
     if len(selected) < sample_count:
-        raise RuntimeError(f"only found {len(selected)} distinct AS brd pods; need {sample_count}")
+        log(f"topology has only {len(selected)} distinct AS brd pods; checking all of them")
     return selected
 
 
@@ -402,13 +404,14 @@ def main() -> int:
         "load1": None,
         "load_wait_seconds": None,
         "sample_count": 0,
+        "requested_sample_count": args.sample_count,
         "selected_containers": [],
         "failed_samples": [],
         "protocol_attempts": 0,
         "protocol_convergence_wait_seconds": 0,
         "protocol_wait_seconds": args.protocol_wait_seconds,
         "duration_seconds": None,
-        "strategy": "first-10-as-smallest-r-brd-kubectl-exec",
+        "strategy": "first-N-as-smallest-r-brd-kubectl-exec; all ASes when fewer than N",
     }
     try:
         nodes = loadInventory(args.inventory)

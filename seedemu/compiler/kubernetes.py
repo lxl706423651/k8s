@@ -49,6 +49,7 @@ class KubernetesCompiler(Docker):
     __cni_type: str
     __local_link_cni_type: Optional[str]
     __cni_master_interface: str
+    __cni_mtu: Optional[int]
     __macvlan_vlan_mode: bool
     __macvlan_vlan_id_start: int
     __macvlan_vlan_trunks: List[Dict[str, Any]]
@@ -67,10 +68,11 @@ class KubernetesCompiler(Docker):
         scheduling_strategy: str = SchedulingStrategy.NONE,
         node_labels: Dict[str, Dict[str, str]] = None,
         default_resources: Dict[str, Dict[str, str]] = None,
-        cni_type: str = "kube-ovn",
+        cni_type: str = "macvlan",
         local_link_cni_type: Optional[str] = None,
         cni_master_interface: str = "eth0",
-        macvlan_vlan_mode: bool = False,
+        cni_mtu: Optional[int] = None,
+        macvlan_vlan_mode: bool = True,
         macvlan_vlan_id_start: int = 100,
         macvlan_vlan_trunks: Optional[List[Dict[str, Any]]] = None,
         generate_services: bool = False,
@@ -97,17 +99,19 @@ class KubernetesCompiler(Docker):
             Example: {"requests": {"cpu": "100m", "memory": "128Mi"}, 
                       "limits": {"cpu": "500m", "memory": "512Mi"}}
         @param cni_type (optional) CNI plugin type for NetworkAttachmentDefinition. Options:
-            - "kube-ovn"/"ovn": Kube-OVN attached networks through OVS (default)
+            - "kube-ovn"/"ovn": Kube-OVN attached networks through OVS
             - "bridge": Local bridge (single-node only)
-            - "macvlan": macvlan for cross-node with L2 access
+            - "macvlan": macvlan for cross-node with L2 access (default)
             - "ipvlan": ipvlan for cross-node networking
             - "host-local": Use host-local IPAM
         @param local_link_cni_type (optional) Override CNI type for node-local internal links.
             When left unset, all network types use `cni_type`.
         @param cni_master_interface (optional) Master interface for macvlan/ipvlan. Default "eth0".
+        @param cni_mtu (optional) MTU for macvlan/ipvlan/bridge secondary
+            interfaces. Leave unset to use the CNI/parent default.
         @param macvlan_vlan_mode (optional) Put each macvlan/ipvlan/bridge NAD
             on a dedicated VLAN subinterface of cni_master_interface. Default
-            False. The historical parameter name is kept for API
+            True. The historical parameter name is kept for API
             compatibility.
         @param macvlan_vlan_id_start (optional) First VLAN ID assigned in
             macvlan_vlan_mode. Default 100.
@@ -144,13 +148,16 @@ class KubernetesCompiler(Docker):
         self.__scheduling_strategy = strategy if strategy in valid else SchedulingStrategy.NONE
         self.__node_labels = node_labels or {}
         self.__default_resources = default_resources or {}
-        self.__cni_type = str(cni_type or "kube-ovn").strip().lower().replace("_", "-") or "kube-ovn"
+        self.__cni_type = str(cni_type or "macvlan").strip().lower().replace("_", "-") or "macvlan"
         self.__local_link_cni_type = (
             local_link_cni_type.strip().lower().replace("_", "-")
             if isinstance(local_link_cni_type, str) and local_link_cni_type.strip()
             else None
         )
         self.__cni_master_interface = cni_master_interface
+        self.__cni_mtu = int(cni_mtu) if cni_mtu is not None else None
+        if self.__cni_mtu is not None and not 576 <= self.__cni_mtu <= 65535:
+            raise ValueError("cni_mtu must be in range 576..65535")
         self.__macvlan_vlan_mode = bool(macvlan_vlan_mode)
         self.__macvlan_vlan_id_start = int(macvlan_vlan_id_start)
         if self.__macvlan_vlan_id_start < 1 or self.__macvlan_vlan_id_start > 4094:
@@ -648,6 +655,7 @@ class KubernetesCompiler(Docker):
             "cniType": self.__cni_type,
             "localLinkCniType": self.__local_link_cni_type or "",
             "cniMasterInterface": self.__cni_master_interface,
+            "cniMtu": self.__cni_mtu,
             "macvlanVlanMode": self.__macvlan_vlan_mode,
             "macvlanVlanIdStart": self.__macvlan_vlan_id_start,
             "macvlanVlanTrunks": self.__macvlan_vlan_trunks if self.__macvlan_vlan_mode else [],
@@ -778,6 +786,9 @@ class KubernetesCompiler(Docker):
                 "bridge": self._safeBridgeName(f"{self.__namespace}:{name}"),
                 "ipam": {}  # No IPAM, we manage IPs inside
             }
+
+        if self.__cni_mtu is not None and config.get("type") in {"macvlan", "ipvlan", "bridge"}:
+            config["mtu"] = self.__cni_mtu
 
         scope, _, registry_name = net.getRegistryInfo()
         annotations = {

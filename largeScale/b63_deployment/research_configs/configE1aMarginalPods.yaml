@@ -1,0 +1,94 @@
+# Dedicated two-VM configuration and frozen workload defaults for E1-A.
+kind: kvm
+clusterName: seedemu-b63-e1a
+
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+
+defaults:
+  masterName: b63-e1a-master
+  workerNamePrefix: b63-e1a-worker
+  ipPrefix: 10.90.0
+  masterIpStart: 10
+  workerIpStart: 11
+  macPrefix: 52:54:00:63:90
+  masterMacStart: 16
+  workerMacStart: 17
+
+master: {vcpus: 2, memoryGiB: 8, diskGb: 32}
+workers: {count: 1, vcpus: 4, memoryGiB: 8, diskGb: 32}
+
+kvm:
+  prepareImageCache: false
+  network: seedemu-b63-e1a
+  networkBridge: virbrb63e1a
+  networkCidr: 10.90.0.0/24
+  networkGateway: 10.90.0.1
+  dhcpStart: 10.90.0.10
+  dhcpEnd: 10.90.0.99
+  storageDir: /data/lxl/k8sTools/b63-e1a
+  diskDir: /data/lxl/k8sTools/b63-e1a/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-e1a/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  allowExisting: false
+
+# E1-A uses only the ordinary K3s primary network. No SEED secondary fabric is
+# created, because this phase measures local co-location contention only.
+fabric: {type: none}
+registry: {port: 5090}
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.120.0.0/16
+  serviceCidr: 10.121.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 24
+  maxPods: 240
+  kubeletRegistryQps: 50
+  kubeletRegistryBurst: 20
+tuning: {userMaxNetNamespaces: 65536}
+
+e1a:
+  namespacePrefix: seedemu-b63-e1a
+  phaseSeed: 20260918
+  workload:
+    backgroundJobsPerSecond: 10
+    backgroundTargetCpuMicroseconds: 5000
+    backgroundDeadlineMicroseconds: 100000
+    canaryJobsPerSecond: 100
+    canaryTargetCpuMicroseconds: 200
+    canaryDeadlineMicroseconds: 10000
+    maxBacklogSeconds: 5
+    cpuRequest: 10m
+    memoryRequest: 16Mi
+    # Work units are calibrated once inside the dedicated worker, then frozen.
+    backgroundWorkUnits: null
+    canaryWorkUnits: null
+  pilot:
+    warmupSeconds: 10
+    measurementSeconds: 30
+    pointStartLeadSeconds: 10
+    pointReadyTimeoutSeconds: 600
+    loadedN: [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
+    # These controls catch Pod-count overhead while keeping the pilot bounded.
+    idleN: [0, 100, 200]
+  formal:
+    warmupSeconds: 30
+    measurementSeconds: 120
+    pointStartLeadSeconds: 10
+    pointReadyTimeoutSeconds: 900
+    repetitions: 5
+    coarseN: [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
+    fineRadiusPods: 10
+    fineStepPods: 5
+    randomSeed: 20260918
+  measurement:
+    nodeSampleIntervalSeconds: 1
+    overloadOnTimeThreshold: 0.99
+    relativeSlowdownReference: 0.20
+  pinning:
+    enabled: true
+    masterPcpus: [360, 361]
+    workerPcpus: [362, 363, 364, 365]
+  cleanup:
+    destroyClusterAfterRun: true

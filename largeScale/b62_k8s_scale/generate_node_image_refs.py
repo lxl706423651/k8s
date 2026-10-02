@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Generate image preload lists from a manifest and expected node names.
+
+Writes per-node lists and summary.json. --all-nodes distributes all container
+and init-container images to every supplied node for real default scheduling.
+Only local files are read/written; no build or cluster operations occur here.
+"""
 from __future__ import annotations
 
 import json
@@ -23,13 +29,18 @@ def pod_spec(doc: dict) -> dict | None:
 
 
 def main() -> int:
+    all_node_preload = '--all-nodes' in sys.argv[1:]
+    if all_node_preload:
+        sys.argv.remove('--all-nodes')
     if len(sys.argv) < 3:
-        print("Usage: generate_node_image_refs.py <k8s.yaml> <out_dir> [node ...]", file=sys.stderr)
+        print("Usage: generate_node_image_refs.py [--all-nodes] <k8s.yaml> <out_dir> [node ...]", file=sys.stderr)
         return 2
 
     manifest_path = Path(sys.argv[1]).expanduser().resolve()
     out_dir = Path(sys.argv[2]).expanduser().resolve()
     expected_nodes = sys.argv[3:]
+    if all_node_preload and not expected_nodes:
+        raise SystemExit('--all-nodes requires explicit target nodes')
 
     if not manifest_path.is_file():
         print(f"Manifest not found: {manifest_path}", file=sys.stderr)
@@ -46,8 +57,10 @@ def main() -> int:
             if not spec:
                 continue
             selector = spec.get("nodeSelector") or {}
-            node = selector.get("kubernetes.io/hostname") if isinstance(selector, dict) else None
-            if not node:
+            node = str(spec.get("nodeName") or (
+                selector.get("kubernetes.io/hostname") if isinstance(selector, dict) else None
+            ) or "").strip()
+            if not node and not all_node_preload:
                 meta = doc.get("metadata") or {}
                 missing_selector.append({
                     "doc_index": index,
@@ -56,6 +69,9 @@ def main() -> int:
                     "namespace": meta.get("namespace"),
                 })
                 continue
+            if node and expected_nodes and node not in expected_nodes and not all_node_preload:
+                print(f"Unknown target node {node!r} in manifest document {index}", file=sys.stderr)
+                return 1
 
             for key in ("initContainers", "containers"):
                 for container in spec.get(key) or []:
@@ -63,7 +79,8 @@ def main() -> int:
                         continue
                     image = str(container.get("image", "")).strip()
                     if image:
-                        node_to_images[node].add(image)
+                        for target in expected_nodes if all_node_preload else [node]:
+                            node_to_images[target].add(image)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     all_nodes = sorted(set(expected_nodes) | set(node_to_images.keys()))
@@ -71,6 +88,7 @@ def main() -> int:
         "manifest": str(manifest_path),
         "out_dir": str(out_dir),
         "nodes": {},
+        "distribution_mode": "all-nodes" if all_node_preload else "placement",
         "missing_selector_count": len(missing_selector),
         "missing_selector_examples": missing_selector[:20],
     }

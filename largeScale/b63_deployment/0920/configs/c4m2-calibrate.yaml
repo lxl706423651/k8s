@@ -1,0 +1,38 @@
+network:
+  name: seedemu-placement-0920
+  bridge: virbrpl0920
+  gateway: 10.93.0.1
+  cidr: 10.93.0.0/24
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+storage: /data/lxl/k8sTools/placement-0920
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+profiles:
+- id: c4m2
+  name: placement-0920-c4m2
+  address: 10.93.0.12
+  mac: 52:54:00:93:20:12
+  cpus: 4
+  memory: 2
+  hostCpus:
+  - 122
+  - 123
+  - 124
+  - 125
+pilot:
+  seed: 2026092102
+  repeats: 5
+  seconds: 10
+  warmup: 2
+  cpu:
+  - 0.1
+  - 0.4
+  - 0.5
+  - 0.6
+  - 0.9
+  memory:
+  - 0.15
+  - 0.45
+  modes:
+  - resident
+evidenceSplit: calibrate

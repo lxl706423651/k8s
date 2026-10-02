@@ -708,38 +708,16 @@ on_error() {
 trap cleanup_monitor EXIT
 trap on_error ERR INT TERM
 
-manifest_kind_and_node() {
-    local file="$1"
-    python3 - "${file}" <<'PY'
-import re, sys
-path = sys.argv[1]
-content = open(path, "r", encoding="utf-8").read()
-kind = ""
-node = ""
-m = re.search(r'^kind:\s*(\S+)', content, re.M)
-if not m:
-    m = re.search(r'"kind"\s*:\s*"([^"]+)"', content)
-if m:
-    kind = m.group(1)
-m = re.search(r'nodeSelector:\s*(?:\n(?:[ \t]+.*\n)*)?[ \t]+kubernetes\.io/hostname:\s*["\']?([^"\'\n]+)', content)
-if not m:
-    m = re.search(r'"nodeSelector"\s*:\s*\{[^{}]*"kubernetes\.io/hostname"\s*:\s*"([^"]+)"', content, re.S)
-if m:
-    node = m.group(1).strip()
-print(kind)
-print(node)
-PY
-}
-
 split_manifest() {
+    # Split $1=manifest into DEPLOY_KIND_DIR, grouping controllers by their
+    # effective Pod nodeName or hostname nodeSelector for per-node pacing.
     local manifest="$1"
     local split_dir="$2/raw_docs"
     python3 - "${manifest}" "${DEPLOY_KIND_DIR}" "${split_dir}" "${SEED_NODE_NAMES[@]}" <<'PY'
-import json
-import re
 import shutil
 import sys
 from pathlib import Path
+import yaml
 
 manifest = Path(sys.argv[1])
 kind_dir = Path(sys.argv[2])
@@ -760,12 +738,6 @@ for path in dirs.values():
     path.mkdir(parents=True, exist_ok=True)
 for node in nodes:
     (dirs["by_node"] / node).mkdir(parents=True, exist_ok=True)
-
-kind_re = re.compile(r'^kind:\s*(\S+)', re.M)
-kind_json_re = re.compile(r'"kind"\s*:\s*"([^"]+)"')
-node_re = re.compile(r'nodeSelector:\s*(?:\n(?:[ \t]+.*\n)*)?[ \t]+kubernetes\.io/hostname:\s*["\']?([^"\'\n]+)')
-node_json_re = re.compile(r'"nodeSelector"\s*:\s*\{[^{}]*"kubernetes\.io/hostname"\s*:\s*"([^"]+)"', re.S)
-
 
 def split_docs(text: str):
     cur = []
@@ -790,32 +762,25 @@ def nested(data, keys):
         if not isinstance(cur, dict):
             return ""
         cur = cur.get(key)
-    return cur if isinstance(cur, str) else ""
+    return cur
 
 
 def meta(doc: str):
-    kind = ""
-    node = ""
-    stripped = doc.lstrip()
-    if stripped.startswith("{"):
-        try:
-            data = json.loads(stripped)
-        except json.JSONDecodeError:
-            data = None
-        if isinstance(data, dict):
-            kind = str(data.get("kind") or "")
-            node = nested(data, ("spec", "template", "spec", "nodeSelector", "kubernetes.io/hostname"))
-            if not node:
-                node = nested(data, ("spec", "nodeSelector", "kubernetes.io/hostname"))
-    if not kind:
-        match = kind_re.search(doc) or kind_json_re.search(doc)
-        if match:
-            kind = match.group(1)
-    if not node:
-        match = node_re.search(doc) or node_json_re.search(doc)
-        if match:
-            node = match.group(1).strip()
-    return kind, node
+    # $doc is one YAML or JSON object. nodeName wins if both forms are set,
+    # matching Kubernetes' effective placement for the Pod template.
+    data = yaml.safe_load(doc)
+    if not isinstance(data, dict):
+        raise ValueError("manifest document must be a Kubernetes object")
+    kind = str(data.get("kind") or "")
+    spec = nested(data, ("spec", "template", "spec"))
+    if not isinstance(spec, dict):
+        spec = data.get("spec") or {}
+    if not isinstance(spec, dict):
+        spec = {}
+    node_name = spec.get("nodeName")
+    selector = spec.get("nodeSelector") or {}
+    node_selector = selector.get("kubernetes.io/hostname") if isinstance(selector, dict) else ""
+    return kind, str(node_name or node_selector or "").strip()
 
 
 def copy_doc(src: Path, dest_dir: Path):
@@ -826,7 +791,7 @@ def copy_doc(src: Path, dest_dir: Path):
 for idx, doc in enumerate(split_docs(manifest.read_text(encoding="utf-8")), start=1):
     raw = split_dir / f"doc_{idx:05d}.yaml"
     raw.write_text(doc, encoding="utf-8")
-    kind, node_selector = meta(doc)
+    kind, target_node = meta(doc)
     if kind == "CustomResourceDefinition":
         copy_doc(raw, dirs["crds"])
     elif kind in {
@@ -848,8 +813,10 @@ for idx, doc in enumerate(split_docs(manifest.read_text(encoding="utf-8")), star
         copy_doc(raw, dirs["services"])
     elif kind in {"Deployment", "StatefulSet", "DaemonSet", "Job"}:
         copy_doc(raw, dirs["controllers"])
-        if node_selector and node_selector in nodes:
-            copy_doc(raw, dirs["by_node"] / node_selector)
+        if target_node and target_node not in nodes:
+            raise ValueError(f"controller in {raw.name} targets unknown node {target_node!r}")
+        if target_node:
+            copy_doc(raw, dirs["by_node"] / target_node)
         else:
             copy_doc(raw, dirs["unpinned"])
     else:

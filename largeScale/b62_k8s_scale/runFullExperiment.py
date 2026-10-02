@@ -528,8 +528,8 @@ def createRuntimeEnv(
     cluster_name = f"{getNested(assignment, 'kvm.clusterNamePrefix', 'seedemu-b62')}-w{worker_count}"
     master_ip = f"{getNested(assignment, 'kvm.ipPrefix')}.{int(getNested(assignment, 'kvm.master.ipStart'))}"
     registry_port = int(getNested(assignment, "registry.port", 5000))
-    network_backend = str(getNested(assignment, "networking.backend", "kube-ovn")).strip().lower() or "kube-ovn"
-    cni_type = str(getNested(assignment, "networking.cniType", "kube-ovn") or "kube-ovn").strip().lower()
+    network_backend = str(getNested(assignment, "networking.backend", "macvlan")).strip().lower() or "macvlan"
+    cni_type = str(getNested(assignment, "networking.cniType", "macvlan") or "macvlan").strip().lower()
     local_link_cni_type = str(getNested(assignment, "networking.localLinkCniType", cni_type) or cni_type).strip().lower()
     attached_cni_type = str(getNested(assignment, "networking.attachedCniType", local_link_cni_type) or local_link_cni_type).strip().lower()
     vlan_capable_cni = cni_type.replace("_", "-") in {"macvlan", "ipvlan", "bridge"}
@@ -904,11 +904,13 @@ def runWorkloadStages(
     resume_from_build: bool = False,
     after_compile: Callable | None = None,
     after_ready: Callable | None = None,
+    before_build: Callable | None = None,
 ) -> None:
     """Run shared stages; optional callbacks receive summary, path, run dir, env.
 
     after_compile can replace placement before image preload; after_ready can
-    verify that placement before routing starts. Defaults preserve B62 behavior.
+    verify that placement before routing starts. before_build validates artifacts
+    before preload, including build resumes. Defaults preserve B62 behavior.
     """
     if not resume_from_kernel:
         required_before_bird = [
@@ -925,6 +927,8 @@ def runWorkloadStages(
                 raise FileNotFoundError("Resuming build requires the compiled manifest")
             required_before_bird = required_before_bird[3:]
         for name, script in required_before_bird:
+            if name == "build" and before_build is not None:
+                before_build(summary, summary_path, run_dir, env)
             runStage(
                 name,
                 [str(SCRIPT_DIR / script), str(run_dir)],
@@ -1107,8 +1111,14 @@ def parseArgs(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None, *, after_compile: Callable | None = None,
-         after_ready: Callable | None = None) -> int:
-    """Run argv through B62, with optional placement and readiness callbacks."""
+         after_ready: Callable | None = None, after_workload: Callable | None = None,
+         before_build: Callable | None = None) -> int:
+    """Run argv with optional placement, validation and final workload callbacks.
+
+    Each callback receives summary, summary_path, run_dir and env. The final
+    callback runs after successful workload/recovery stages, before marking PASS;
+    it also runs on resume, but never during prepare-only.
+    """
     args = parseArgs(argv)
     config_k3s = resolvePath(args.config_k3s)
     kubeconfig = resolvePath(args.kubeconfig)
@@ -1202,6 +1212,7 @@ def main(argv: list[str] | None = None, *, after_compile: Callable | None = None
                     resume_from_kernel=args.resume_from == "start-kernel",
                     resume_from_build=args.resume_from == "build",
                     after_compile=after_compile, after_ready=after_ready,
+                    before_build=before_build,
                 )
         elif cluster_input is None:
             runStage(
@@ -1256,7 +1267,10 @@ def main(argv: list[str] | None = None, *, after_compile: Callable | None = None
 
             buildCluster(summary, summary_path, run_dir, env)
             runWorkloadStages(summary, summary_path, run_dir, env,
-                              after_compile=after_compile, after_ready=after_ready)
+                              after_compile=after_compile, after_ready=after_ready,
+                              before_build=before_build)
+        if after_workload is not None:
+            after_workload(summary, summary_path, run_dir, env)
         # test-bgp is intentionally disabled in the current manual flow.
         # runBgpTest(summary, summary_path, run_dir, env)
         # destroy-cluster-after-pass is intentionally disabled in the current manual flow.

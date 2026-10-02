@@ -1,4 +1,4 @@
-kind: multiHostKvmOvn
+kind: multiHostKvm
 clusterName: seedemu-k3s
 
 hypervisors:
@@ -40,6 +40,9 @@ multiHostKvm:
     cidr: 10.255.80.0/24
     vniBase: 4280
     dstPort: 4790
+  fabricVxlan:
+    vniBase: 6100
+    dstPort: 4789
 
 master:
   placement: amd
@@ -53,7 +56,22 @@ workers:
   diskGb: 80
 
 fabric:
-  type: ovn
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+    - name: trunk0
+      masterInterface: ens3
+      vlanStart: 1
+      vlanEnd: 4094
+
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+
+k3s:
+  version: v1.29.15+k3s1
 
 registry:
   port: 5000

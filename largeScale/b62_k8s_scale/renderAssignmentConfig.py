@@ -328,8 +328,8 @@ def createKvmConfig(assignment: dict[str, Any], run_dir: Path, paths: dict[str, 
     validateK3sPodCidrCapacity(assignment, worker_count)
     cluster_name = f"{getNested(assignment, 'kvm.clusterNamePrefix')}-w{worker_count}"
     registry_port = int(getNested(assignment, "registry.port", 5000))
-    network_backend = normalizeNetworkValue(getNested(assignment, "networking.backend", "kube-ovn"))
-    cni_type = normalizeNetworkValue(getNested(assignment, "networking.cniType", "kube-ovn"))
+    network_backend = normalizeNetworkValue(getNested(assignment, "networking.backend", "macvlan"))
+    cni_type = normalizeNetworkValue(getNested(assignment, "networking.cniType", "macvlan"))
     local_link_cni_type = normalizeNetworkValue(getNested(assignment, "networking.localLinkCniType", cni_type))
     attached_cni_type = normalizeNetworkValue(getNested(assignment, "networking.attachedCniType", local_link_cni_type))
     cni_master_interface = str(getNested(assignment, "networking.cniMasterInterface", "ens2"))

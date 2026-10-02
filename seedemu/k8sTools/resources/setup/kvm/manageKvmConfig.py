@@ -5,10 +5,14 @@ import argparse
 import os
 import re
 import shlex
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from normalizeResources import normalizeMemory
 
 
 SETUP_DIR = Path(__file__).resolve().parent
@@ -48,6 +52,7 @@ def normalize_config(data: dict[str, Any]) -> None:
     for section in ("master", "workers"):
         value = data.get(section)
         if isinstance(value, dict):
+            normalizeMemory(value)
             aliases = {"memoryMb": "memory_mb", "diskGb": "disk_gb", "namePrefix": "name_prefix"}
             for new_key, old_key in aliases.items():
                 if new_key in value and old_key not in value:
@@ -65,6 +70,7 @@ def normalize_config(data: dict[str, Any]) -> None:
             "bootTimeoutSeconds": "boot_timeout_seconds",
             "allowExisting": "allow_existing",
             "skipK3sConfig": "skip_k3s_config",
+            "prepareImageCache": "prepare_image_cache",
         }
         for new_key, old_key in aliases.items():
             if new_key in kvm and old_key not in kvm:
@@ -173,7 +179,17 @@ def default_seedemu_docker_dir() -> str:
 def normalize_node(node: dict[str, Any], defaults: dict[str, Any] | None = None) -> dict[str, Any]:
     defaults = defaults or {}
     out = dict(defaults)
+    normalizeMemory(out)
+    node = dict(node)
+    normalizeMemory(node)
     out.update(node)
+    # The public config adapter emits diskGb for explicit heterogeneous nodes.
+    if "diskGb" in out:
+        if "disk_gb" in out and int(out["diskGb"]) != int(out["disk_gb"]):
+            raise SystemExit("Conflicting diskGb and disk_gb in explicit node")
+        out["disk_gb"] = out["diskGb"]
+    if "memoryMb" in out:
+        out["memory_mb"] = out["memoryMb"]
     required = ["name", "role", "ip", "mac", "vcpus", "memory_mb", "disk_gb"]
     missing = [key for key in required if key not in out or out[key] in ("", None)]
     if missing:
@@ -467,6 +483,7 @@ def kvm_env(args: argparse.Namespace) -> None:
         "kvmBootTimeoutSeconds": get_nested(data, "kvm.boot_timeout_seconds", 300),
         "kvmAllowExisting": str(get_nested(data, "kvm.allow_existing", False)).lower(),
         "kvmSkipK3sConfig": str(get_nested(data, "kvm.skip_k3s_config", False)).lower(),
+        "kvmPrepareImageCache": str(get_nested(data, "kvm.prepare_image_cache", True)).lower(),
         "sshUser": get_nested(data, "ssh.user", "ubuntu"),
         "sshKey": expand_path(str(get_nested(data, "ssh.key", "~/.ssh/id_ed25519"))),
         "masterName": master["name"] if master else "",

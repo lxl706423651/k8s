@@ -1,0 +1,330 @@
+{
+  "seed": 2026092104,
+  "seconds": 15,
+  "cases": [
+    {
+      "id": "s00-r0",
+      "nnet": 1,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s01-r0",
+      "nnet": 3,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s02-r0",
+      "nnet": 1,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s03-r0",
+      "nnet": 3,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s04-r0",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s05-r0",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s06-r0",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s07-r0",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s08-r0",
+      "nnet": 5,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 1,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s09-r0",
+      "nnet": 8,
+      "niBGP": 4,
+      "neBGP": 2,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s10-r0",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 4,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s11-r0",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 4,
+      "routes": 256,
+      "repeat": 0
+    },
+    {
+      "id": "s00-r1",
+      "nnet": 1,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s01-r1",
+      "nnet": 3,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s02-r1",
+      "nnet": 1,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s03-r1",
+      "nnet": 3,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s04-r1",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s05-r1",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s06-r1",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s07-r1",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s08-r1",
+      "nnet": 5,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 1,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s09-r1",
+      "nnet": 8,
+      "niBGP": 4,
+      "neBGP": 2,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s10-r1",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 4,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s11-r1",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 4,
+      "routes": 256,
+      "repeat": 1
+    },
+    {
+      "id": "s00-r2",
+      "nnet": 1,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s01-r2",
+      "nnet": 3,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s02-r2",
+      "nnet": 1,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s03-r2",
+      "nnet": 3,
+      "niBGP": 1,
+      "neBGP": 0,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s04-r2",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s05-r2",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 2,
+      "nOSPF": 0,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s06-r2",
+      "nnet": 2,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s07-r2",
+      "nnet": 4,
+      "niBGP": 0,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s08-r2",
+      "nnet": 5,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 1,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s09-r2",
+      "nnet": 8,
+      "niBGP": 4,
+      "neBGP": 2,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s10-r2",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 4,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 2
+    },
+    {
+      "id": "s11-r2",
+      "nnet": 8,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 4,
+      "routes": 256,
+      "repeat": 2
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-kind: kvmOvn
+kind: kvm
 clusterName: seedemu-b63-placement-kvm
 
 nodes:
@@ -99,6 +99,9 @@ fabric:
   type: macvlan-vlan
 
 cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
   defaultMasterInterface: ens2
 
 registry:

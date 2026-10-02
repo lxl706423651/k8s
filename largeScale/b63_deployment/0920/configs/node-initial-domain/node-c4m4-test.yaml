@@ -1,0 +1,43 @@
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+evidenceSplit: target_k3s_node_lowload_v4_test
+network:
+  bridge: virbrpd0920
+  cidr: 10.97.0.0/24
+  gateway: 10.97.0.1
+  name: placement-deploy0920
+pilot:
+  cpu:
+  - 0.003
+  - 0.008
+  - 0.017
+  - 0.035
+  - 0.09
+  memory:
+  - 0.1
+  - 0.4
+  modes:
+  - resident
+  - stream
+  - integer
+  repeats: 5
+  seconds: 10
+  seed: 2026100202
+  warmup: 2
+  warmupMode: pressure_only
+profiles:
+- address: 10.97.0.13
+  cpus: 4
+  hostCpus:
+  - 144
+  - 145
+  - 146
+  - 147
+  id: c4m4
+  mac: 52:54:00:97:20:0d
+  memory: 4
+  name: placement-deploy0920-c4m4
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+storage: /data/lxl/k8sTools/placement-deploy0920
+scopeNote: Per-node profile on actual K3s worker, CPU injection <= .12; not a universal
+  specification-type profile. Original bare-VM failures retained.

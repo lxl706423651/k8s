@@ -1,0 +1,15 @@
+{
+  "seed": 2026092104,
+  "seconds": 3,
+  "cases": [
+    {
+      "id": "s08-r0",
+      "nnet": 5,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 1,
+      "routes": 256,
+      "repeat": 0
+    }
+  ]
+}

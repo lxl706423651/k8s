@@ -1,0 +1,22 @@
+c2m2:
+  model: node-c2m2-model.json
+  evaluation: node-c2m2-test-evaluation.json
+  training:
+  - node-c2m2-train/c2m2/raw.jsonl
+  calibration: node-c2m2-calibration/c2m2/raw.jsonl
+  test: node-c2m2-test/c2m2/raw.jsonl
+c4m2:
+  model: node-c4m2-refined-model.json
+  evaluation: node-c4m2-refined-test-evaluation.json
+  training:
+  - node-c4m2-train/c4m2/raw.jsonl
+  - node-c4m2-calibration/c4m2/raw.jsonl
+  calibration: node-c4m2-refined-calibration/c4m2/raw.jsonl
+  test: node-c4m2-refined-test/c4m2/raw.jsonl
+c4m4:
+  model: node-c4m4-model.json
+  evaluation: node-c4m4-test-evaluation.json
+  training:
+  - node-c4m4-train/c4m4/raw.jsonl
+  calibration: node-c4m4-calibration/c4m4/raw.jsonl
+  test: node-c4m4-test/c4m4/raw.jsonl

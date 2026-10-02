@@ -1,0 +1,9 @@
+{
+  "default": 1.0,
+  "flowWeights": {
+    "e1b-00-7b3d574f3b90a46f-a": 3.0
+  },
+  "stratumWeights": {
+    "ebgp_ix_peer": 2.0
+  }
+}

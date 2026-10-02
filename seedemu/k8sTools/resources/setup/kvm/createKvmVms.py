@@ -307,6 +307,8 @@ createOrStartVm() {
         --memory "${memory_mb}" \
         --vcpus "${vcpus}" \
         --cpu host-passthrough \
+        --controller type=virtio-serial \
+        --channel unix,target_type=virtio,name=org.qemu.guest_agent.0 \
         --import \
         --os-variant generic \
         --network "network=${kvmNetwork},model=virtio,mac=${vm_mac}" \

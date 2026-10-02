@@ -20,6 +20,8 @@ Side effects:
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from decimal import Decimal, InvalidOperation
 import json
 import math
 import os
@@ -36,6 +38,8 @@ from typing import Any
 
 import yaml
 
+import researchPlacement
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = next(parent for parent in SCRIPT_DIR.parents
@@ -44,7 +48,7 @@ sys.path.insert(0, str(_REPO_ROOT / "seedemu/k8sTools/resources/setup"))
 from normalizeResources import memoryMiB
 OUTPUT_DIR = SCRIPT_DIR / "output"
 SOURCE_MANIFEST = OUTPUT_DIR / "k8s.yaml"
-DEPLOY_MANIFEST = OUTPUT_DIR / "k8s.kube-ovn.yaml"
+DEPLOY_MANIFEST = OUTPUT_DIR / "k8s.yaml"
 NETWORK_WEIGHTS = OUTPUT_DIR / "network_weights.yaml"
 PLACEMENT_REPORT = OUTPUT_DIR / "placement_report.json"
 NETWORK_PREAPPLY_MANIFEST = OUTPUT_DIR / "k8s.network-preapply.yaml"
@@ -123,6 +127,10 @@ class NodeInfo:
     sshKey: str = ""
     connection: str = "ssh"
     schedulable: bool = True
+    maxPods: int = 0
+    kubeletMaxPods: int = 0
+    existingPods: int = 0
+    admissionSource: str = "configuration"
 
 
 class DynamicSampler:
@@ -148,7 +156,9 @@ class DynamicSampler:
         """Stop the background sampler thread."""
         self._stop.set()
         if self._thread is not None:
-            self._thread.join(timeout=max(5.0, self.interval * 2))
+            batches = math.ceil(len(self.nodes) / 24)
+            self._thread.join(timeout=max(5.0, self.interval * 2,
+                                          batches * 15.0 + 5.0))
 
     def _sampleLoop(self) -> None:
         while not self._stop.is_set():
@@ -159,8 +169,16 @@ class DynamicSampler:
         """Collect one sample from every node."""
         timestamp = time.time()
         node_samples: dict[str, Any] = {}
+        raw_by_name: dict[str, dict[str, Any]] = {}
+        with ThreadPoolExecutor(max_workers=min(24, max(1, len(self.nodes)))) as pool:
+            futures = {pool.submit(self._readNodeCounters, node): node for node in self.nodes}
+            for future in as_completed(futures):
+                node = futures[future]
+                raw = future.result()
+                if raw:
+                    raw_by_name[node.name] = raw
         for node in self.nodes:
-            raw = self._readNodeCounters(node)
+            raw = raw_by_name.get(node.name)
             if not raw:
                 continue
             previous = self._previous.get(node.name)
@@ -329,6 +347,12 @@ def parseArgs(argv: list[str] | None = None) -> argparse.Namespace:
             "resource-only",
             "hypergraph",
             "kubernetes-default-scheduler",
+            "locality-only",
+            "capacity-only",
+            "crescent",
+            "crescent-resource-aware",
+            "performance-model",
+            "tradeoff-static",
         ),
     )
     parser.add_argument("--alpha", type=float, default=1.0)
@@ -355,6 +379,18 @@ def parseArgs(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--c0", type=float, default=0.05)
     parser.add_argument("--theta-c", type=float, default=0.015)
     parser.add_argument("--m0-mb", type=float, default=192.0)
+    parser.add_argument("--external-cpu-millicores", type=float, default=0.0)
+    parser.add_argument("--resource-target-utilization", type=float, default=0.70)
+    parser.add_argument("--admission-max-pods", type=int, default=4000)
+    parser.add_argument(
+        "--require-live-admission",
+        action="store_true",
+        help="require status.allocatable.pods from the live cluster before research placement",
+    )
+    parser.add_argument("--placement-seed", type=int, default=20260918)
+    parser.add_argument("--performance-model", type=Path, default=Path("performance_model.json"))
+    parser.add_argument("--static-contention-weight", type=float, default=1.0)
+    parser.add_argument("--contention-knee", type=float, default=0.70)
     parser.add_argument("--sample-interval-seconds", type=float, default=15.0)
     parser.add_argument("--post-deploy-seconds", type=float, default=600.0)
     parser.add_argument(
@@ -419,6 +455,11 @@ def main() -> int:
         raise SystemExit("No eligible worker nodes found for placement")
 
     selected_name = normalizeAlgorithmName(args.algorithm)
+    if selected_name in {
+        "locality-only", "capacity-only", "crescent",
+        "crescent-resource-aware", "performance-model", "tradeoff-static",
+    }:
+        applyAdmissionCapacities(nodes, args)
     placements = generatePlacements(pods, eligible_nodes, networks, args)
     selected_placement = placements[selected_name]
     static_validation = {
@@ -436,6 +477,10 @@ def main() -> int:
         inject_resources=args.inject_resource_requests,
         pinning_mode="none" if selected_name == "kubernetes-default-scheduler" else args.pinning_mode,
     )
+    if selected_name == "kubernetes-default-scheduler":
+        from runDefaultSchedulerBaseline import prepareSchedulerManifest
+        prepareSchedulerManifest(docs, pods[0].namespace,
+                                 None if args.include_master else [n.name for n in eligible_nodes])
     deploy_manifest.parent.mkdir(parents=True, exist_ok=True)
     writeYamlDocs(deploy_manifest, docs)
 
@@ -445,6 +490,9 @@ def main() -> int:
             "sourceManifest": str(source_manifest),
             "deployManifest": str(deploy_manifest),
             "selectedAlgorithm": selected_name,
+            "placementKind": ("scheduler-simulation" if selected_name == "kubernetes-default-scheduler"
+                              else "hard-placement"),
+            "includeMaster": args.include_master,
             "networkCostMode": args.network_cost_mode,
             "alpha": args.alpha,
             "beta": args.beta,
@@ -457,6 +505,7 @@ def main() -> int:
             "capacityHardCapPenalty": args.capacity_hard_cap_penalty,
             "resourceRequestsInjected": args.inject_resource_requests,
             "fabricAssumption": detectFabricAssumption(networks),
+            "researchPlacement": getattr(args, "research_metadata", None),
         },
         "nodes": [node.__dict__ for node in nodes],
         "networks": {name: network.__dict__ for name, network in sorted(networks.items())},
@@ -853,6 +902,96 @@ def loadNodeInfo(args: argparse.Namespace) -> list[NodeInfo]:
     raise SystemExit("Cannot load node information from inventory, configK3s, or KVM config")
 
 
+def integerKubernetesQuantity(value: Any) -> int:
+    """Parse an integer Kubernetes Quantity, including canonical forms like 4k."""
+    text = str(value).strip()
+    decimal_factors = {
+        "n": Decimal("1e-9"), "u": Decimal("1e-6"), "m": Decimal("1e-3"),
+        "": Decimal(1), "k": Decimal(1000), "M": Decimal(1000) ** 2,
+        "G": Decimal(1000) ** 3, "T": Decimal(1000) ** 4,
+        "P": Decimal(1000) ** 5, "E": Decimal(1000) ** 6,
+    }
+    binary_factors = {f"{prefix}i": Decimal(1024) ** power for power, prefix in
+                      enumerate(("K", "M", "G", "T", "P", "E"), start=1)}
+    factors = {**decimal_factors, **binary_factors}
+    suffix = next((candidate for candidate in sorted(factors, key=len, reverse=True)
+                   if candidate and text.endswith(candidate)), "")
+    number = text[:-len(suffix)] if suffix else text
+    try:
+        parsed = Decimal(number) * factors[suffix]
+    except (InvalidOperation, KeyError) as exc:
+        raise ValueError(f"invalid Kubernetes integer Quantity: {value!r}") from exc
+    integral = parsed.to_integral_value()
+    if parsed != integral or integral < 0:
+        raise ValueError(f"Kubernetes Quantity is not a non-negative integer: {value!r}")
+    return int(integral)
+
+
+def applyAdmissionCapacities(nodes: list[NodeInfo], args: argparse.Namespace) -> None:
+    """Attach each node's real remaining kubelet Pod capacity when available.
+
+    The configured value is only a pre-cluster fallback for offline planning.
+    Full B63 research runs pass --require-live-admission and therefore fail
+    before placement if Kubernetes does not expose status.allocatable.pods.
+    Live capacity subtracts every existing non-terminal Pod because kubelet's
+    limit includes system and CNI Pods as well as SeedEMU workloads.
+    """
+    configured = int(args.admission_max_pods)
+    if configured <= 0:
+        raise SystemExit("--admission-max-pods must be positive")
+    for node in nodes:
+        node.maxPods = configured
+        node.kubeletMaxPods = configured
+        node.existingPods = 0
+        node.admissionSource = "configured-k3s-maxPods"
+    kubeconfig = resolvePath(args.kubeconfig)
+    if not kubeconfig.is_file():
+        if args.require_live_admission:
+            raise SystemExit(f"live admission check requires kubeconfig: {kubeconfig}")
+        return
+    try:
+        completed = subprocess.run(
+            ["kubectl", "--kubeconfig", str(kubeconfig), "--request-timeout=60s",
+             "get", "nodes", "-o", "json"],
+            text=True, capture_output=True, check=True, timeout=60,
+        )
+        payload = json.loads(completed.stdout)
+        live = {
+            str((item.get("metadata") or {}).get("name") or ""):
+            integerKubernetesQuantity(
+                ((item.get("status") or {}).get("allocatable") or {}).get("pods") or "0")
+            for item in payload.get("items") or []
+        }
+        completed = subprocess.run(
+            ["kubectl", "--kubeconfig", str(kubeconfig), "--request-timeout=60s",
+             "get", "pods", "--all-namespaces", "-o", "json"],
+            text=True, capture_output=True, check=True, timeout=60,
+        )
+        occupied = {node.name: 0 for node in nodes}
+        for item in json.loads(completed.stdout).get("items") or []:
+            phase = str((item.get("status") or {}).get("phase") or "")
+            node_name = str((item.get("spec") or {}).get("nodeName") or "")
+            if node_name in occupied and phase not in {"Succeeded", "Failed"}:
+                occupied[node_name] += 1
+    except Exception as exc:  # noqa: BLE001 - turn discovery errors into an explicit gate.
+        if args.require_live_admission:
+            raise SystemExit(f"cannot read live kubelet Pod admission limits: {exc}") from exc
+        return
+    missing = [node.name for node in nodes if live.get(node.name, 0) <= 0]
+    if missing and args.require_live_admission:
+        raise SystemExit(f"live kubelet Pod admission limit missing for nodes: {', '.join(missing)}")
+    for node in nodes:
+        if live.get(node.name, 0) > 0:
+            node.kubeletMaxPods = live[node.name]
+            node.existingPods = occupied.get(node.name, 0)
+            node.maxPods = live[node.name] - node.existingPods
+            if node.maxPods <= 0:
+                raise SystemExit(
+                    f"node {node.name} has no remaining Pod capacity: "
+                    f"allocatable={live[node.name]} existing={node.existingPods}")
+            node.admissionSource = "status.allocatable.pods-minus-existing-nonterminal-pods"
+
+
 def loadCapacityFallbackNodes(args: argparse.Namespace) -> list[NodeInfo]:
     """Load node capacity sources used to enrich inventory records."""
     result: list[NodeInfo] = []
@@ -1027,6 +1166,11 @@ def generatePlacements(
 ) -> dict[str, dict[str, str]]:
     """Generate the optimized placement and all baselines."""
     selected_name = normalizeAlgorithmName(args.algorithm)
+    if selected_name in {
+        "locality-only", "capacity-only", "crescent",
+        "crescent-resource-aware", "performance-model", "tradeoff-static",
+    }:
+        return {selected_name: generateSelectedPlacement(selected_name, pods, nodes, networks, args)}
     if args.selected_only:
         return {
             selected_name: generateSelectedPlacement(
@@ -1111,6 +1255,16 @@ def generateSelectedPlacement(
     args: argparse.Namespace,
 ) -> dict[str, str]:
     """Generate only the selected placement algorithm for single-method large runs."""
+    if selected_name in {
+        "locality-only", "capacity-only", "crescent",
+        "crescent-resource-aware", "performance-model", "tradeoff-static",
+    }:
+        try:
+            result, metadata = researchPlacement.generate(selected_name, pods, nodes, networks, args)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        args.research_metadata = metadata
+        return result
     if selected_name == "kubernetes-default-scheduler":
         return generateDefaultSchedulerPlacement(pods, nodes)
     if selected_name == "pod-count-balanced":

@@ -161,7 +161,7 @@ def readyRouterEndpoints(
     node_groups: dict[str, str],
     request_timeout: int,
 ) -> dict[str, list[dict[str, str]]]:
-    """Index ready router Pod secondary addresses by network."""
+    """Index every ready SeedEMU Pod secondary address by network."""
     response = kubectl(
         kubeconfig,
         [
@@ -170,7 +170,7 @@ def readyRouterEndpoints(
             "get",
             "pods",
             "-l",
-            "seedemu.io/role=brd",
+            "seedemu.io/workload=seedemu",
             "-o",
             "json",
         ],
@@ -201,7 +201,6 @@ def readyRouterEndpoints(
             or not node
             or not pod_name
             or group is None
-            or router_name.startswith("ix")
         ):
             continue
         annotations = (
@@ -224,6 +223,25 @@ def readyRouterEndpoints(
     for endpoints in by_network.values():
         endpoints.sort(key=lambda item: (item["pod"], item["ip"]))
     return by_network
+
+
+def readyWorkloadNodes(kubeconfig: Path, namespace: str, request_timeout: int) -> set[str]:
+    """Return nodes that currently host at least one Ready SeedEMU workload."""
+    response = kubectl(
+        kubeconfig,
+        ["-n", namespace, "get", "pods", "-l", "seedemu.io/workload=seedemu", "-o", "json"],
+        request_timeout=request_timeout,
+    )
+    payload = json.loads(response.stdout)
+    result: set[str] = set()
+    for pod in payload.get("items", []):
+        status = pod.get("status") or {}
+        ready = any(condition.get("type") == "Ready" and condition.get("status") == "True"
+                    for condition in status.get("conditions") or [])
+        node = str((pod.get("spec") or {}).get("nodeName") or "")
+        if ready and node:
+            result.add(node)
+    return result
 
 
 def selectPair(
@@ -688,12 +706,17 @@ def main() -> int:
                 args.request_timeout,
             )
             node_samples = selectNodeMtuSamples(endpoints)
-            missing_nodes = sorted(set(groups) - set(node_samples))
+            workload_nodes = readyWorkloadNodes(
+                args.kubeconfig, args.namespace, args.request_timeout
+            )
+            missing_nodes = sorted(workload_nodes - set(node_samples))
             if missing_nodes:
                 raise RuntimeError(
-                    "no ready router secondary interface found on K3s node(s): "
+                    "no ready workload secondary interface found on occupied K3s node(s): "
                     + ", ".join(missing_nodes)
                 )
+            result["workloadNodes"] = sorted(workload_nodes)
+            result["unusedClusterNodes"] = sorted(set(groups) - workload_nodes)
             result["nodeMtuSamples"] = {
                 node: {
                     "pod": endpoint["pod"],

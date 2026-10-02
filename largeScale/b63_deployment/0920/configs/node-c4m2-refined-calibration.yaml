@@ -1,0 +1,62 @@
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+collectorSource: measureNodePressure.py
+domainAmendment: 'Before all target-node training: memory domain [0,.5], explicit
+  15%/64MiB reserve. The default control established 17.5% available memory and a
+  successful small fixed-canary diagnostic; 20% guard rejection was not Q failure.
+  Calibration includes resident+stream; integer remains excluded from this round training/calibration.'
+evidenceSplit: target_c4m2_refined_envelope_calibration_v1
+network:
+  bridge: virbrpd0920
+  cidr: 10.97.0.0/24
+  gateway: 10.97.0.1
+  name: placement-deploy0920
+pilot:
+  budgetTrackingTolerance:
+    absoluteCpuFraction: 0.0001
+    relative: 0.02
+  cpu:
+  - 0.004
+  - 0.0085
+  - 0.016
+  - 0.025
+  - 0.05
+  - 0.095
+  memory:
+  - 0.08
+  - 0.32
+  memoryReserveFraction: 0.15
+  modes:
+  - resident
+  - stream
+  pressureControl: cumulative_cpu_debt_v1
+  repeats: 5
+  seconds: 10
+  seed: 2026100701
+  streamChunkBytes: 65536
+  warmup: 2
+  warmupMode: pressure_only
+pressureAmendment: 'Before all worker training: compensate work-chunk overshoot with
+  cumulative process-CPU debt; zero CPU uses blocking wait. Legacy datasets and collector
+  unchanged.'
+profiles:
+- address: 10.97.0.12
+  cpus: 4
+  hostCpus:
+  - 140
+  - 141
+  - 142
+  - 143
+  id: c4m2
+  mac: 52:54:00:97:20:0c
+  memory: 2
+  name: placement-deploy0920-c4m2
+scopeNote: Fresh split after failed old calibration was explicitly promoted to lower-envelope
+  training; central model unchanged, no new task-type inputs. Original failures and
+  old untouched holdout retained.
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+storage: /data/lxl/k8sTools/placement-deploy0920
+streamAmendment: 'Before calibration/test: streaming kernel uses 64KiB chunks. The
+  ongoing resident-only training branch is identical; fixed canary and cumulative
+  CPU controller are unchanged. A freed-VM preflight found 1MiB rounding slightly
+  above the frozen tolerance.'

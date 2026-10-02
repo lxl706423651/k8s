@@ -1,4 +1,4 @@
-kind: kvmOvn
+kind: kvm
 clusterName: seedemu-b61-kvm
 
 defaults:
@@ -30,7 +30,16 @@ ssh:
   key: ~/.ssh/id_ed25519
 
 fabric:
-  type: ovn
+  type: macvlan-vlan
+
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens2
+
+k3s:
+  version: v1.29.15+k3s1
 
 registry:
   port: 5000

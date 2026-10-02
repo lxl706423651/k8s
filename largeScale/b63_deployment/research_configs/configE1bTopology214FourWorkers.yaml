@@ -1,0 +1,124 @@
+# E1-B pilot/formal infrastructure.  Names, networks, storage and CIDRs are
+# disjoint from 0918E1, the earlier topology214 study and the BIRD VM.
+kind: kvm
+clusterName: seedemu-b63-e1b-214
+experiment:
+  topologySize: 214
+  topologyDir: /data/lxl/seed-emulator/topology
+  canonicalOutputDir: /data/lxl/seed-emulator/topology/output_214_exportAll
+  name: b63-e1b-214
+  namespace: seedemu-b63-e1b-214
+ssh: {user: ubuntu, key: /home/lxl/.ssh/id_ed25519}
+defaults:
+  masterName: b63-e1b-master
+  workerNamePrefix: b63-e1b-worker
+  ipPrefix: 10.92.0
+  masterIpStart: 10
+  workerIpStart: 11
+  macPrefix: 52:54:00:63:92
+  masterMacStart: 16
+  workerMacStart: 17
+master: {vcpus: 2, memoryGiB: 8, diskGb: 32}
+workers: {count: 4, vcpus: 4, memoryGiB: 8, diskGb: 32}
+kvm:
+  prepareImageCache: false
+  network: seedemu-b63-e1b-214
+  networkBridge: virbrb63e1b
+  networkCidr: 10.92.0.0/24
+  networkGateway: 10.92.0.1
+  dhcpStart: 10.92.0.10
+  dhcpEnd: 10.92.0.99
+  storageDir: /data/lxl/k8sTools/b63-e1b-214
+  diskDir: /data/lxl/k8sTools/b63-e1b-214/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-e1b-214/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  extraNetworks:
+  - {name: seedemu-b63-e1b-214-fabric0, bridge: brb63e1b0, model: virtio, trunk: trunk0, masterInterface: ens3}
+  - {name: seedemu-b63-e1b-214-fabric1, bridge: brb63e1b1, model: virtio, trunk: trunk1, masterInterface: ens4}
+  allowExisting: false
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - {name: trunk0, masterInterface: ens3, vlanStart: 1, vlanEnd: 4094}
+  - {name: trunk1, masterInterface: ens4, vlanStart: 1, vlanEnd: 4094}
+cni: {cniType: macvlan, localLinkCniType: macvlan, attachedCniType: macvlan, defaultMasterInterface: ens3}
+registry: {port: 5092}
+seedemu:
+  hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs: [/home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache]
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.124.0.0/16
+  serviceCidr: 10.125.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 24
+  maxPods: 240
+  kubeletRegistryQps: 100
+  kubeletRegistryBurst: 40
+tuning: {userMaxNetNamespaces: 65536}
+placement:
+  excludeControlPlane: true
+  algorithm: capacity-only
+  selectedOnly: true
+  injectResourceRequests: false
+  externalCpuMillicores: 50
+  placementSeed: 20260918
+deploy:
+  batchSize: 30
+  batchSleepSeconds: 0
+  subnetBatchSize: 50
+  subnetBatchSleepSeconds: 0
+  monitorInterval: 10
+  monitorEnabled: false
+  staticApplyMode: batch
+  controllerApplyMode: batch
+  warmupBatches: 4
+  warmupBatchSize: 1
+  postControllerApplySettleSeconds: 3
+  pressureCheckSeconds: 3
+  stabilizeTimeoutSeconds: 7200
+  maxPendingPods: 100
+  maxCreatingPods: 100
+  maxCreatingPodsPerNode: 30
+  maxNotReadyPods: 100
+  maxFailedPods: 0
+  requireAllNodesReady: true
+  waitKubeOvnSubnets: false
+e1b:
+  planDir: experiments/e1_marginal_pods/e1b_topology214_frozen_20260919/plans
+  targetWorker: b63-e1b-worker1
+  primaryTargetCounts: [44, 54, 64, 74, 84]
+  fixedFlowCount: 16
+  candidatePairsPerStratum: 12
+  selectedPairsPerStratum: 8
+  traffic:
+    udpOfferedMbpsPerFlow: 25
+    udpWarmupSeconds: 10
+    udpMeasurementSeconds: 60
+    tcpWarmupSeconds: 10
+    tcpMeasurementSeconds: 60
+    tcpTechnicalRepetitions: 3
+  workload:
+    backgroundJobsPerSecond: 10
+    backgroundWorkUnits: 1828943
+    backgroundDeadlineMicroseconds: 100000
+    canaryJobsPerSecond: 100
+    canaryWorkUnits: 36719
+    canaryDeadlineMicroseconds: 10000
+    warmupSeconds: 30
+    measurementSeconds: 120
+    maxBacklogSeconds: 5
+    cpuRequest: 10m
+    memoryRequest: 16Mi
+  pilot: {mappingIds: [pi00-target044, pi04-target084, matched-count-target054-low-locality]}
+  formal: {repetitions: 5, randomSeed: 20260918}
+  pinning:
+    enabled: true
+    masterPcpus: [362, 363]
+    workerPcpuSets:
+    - [364, 365, 366, 367]
+    - [368, 369, 370, 371]
+    - [372, 373, 374, 375]
+    - [376, 377, 378, 379]
+  cleanup: {destroyClusterAfterRun: false}

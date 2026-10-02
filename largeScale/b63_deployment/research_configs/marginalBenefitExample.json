@@ -1,0 +1,85 @@
+{
+  "communicationWeight": 1.0,
+  "performanceWeight": 1.0,
+  "metricWeights": {
+    "tcpGoodputDeltaRatio": 1.0,
+    "udpDeliveryDeltaRatio": 2.0,
+    "udpWorkloadOnTimeDeltaRatio": 3.0,
+    "tcpWorkloadOnTimeDeltaRatio": 3.0,
+    "udpRttDeltaRatio": 1.0,
+    "tcpRttDeltaRatio": 1.0
+  },
+  "nodes": {
+    "worker-a": {
+      "cpuCapacityCores": 4.0,
+      "memoryCapacityMiB": 8192,
+      "networkCapacityMbps": 1000,
+      "cpuKnee": 0.7,
+      "memoryKnee": 0.7,
+      "networkKnee": 0.7
+    },
+    "worker-b": {
+      "cpuCapacityCores": 4.0,
+      "memoryCapacityMiB": 8192,
+      "networkCapacityMbps": 1000,
+      "cpuKnee": 0.7,
+      "memoryKnee": 0.7,
+      "networkKnee": 0.7
+    }
+  },
+  "pods": {
+    "pod-a": {
+      "cpuCores": 0.20,
+      "memoryMiB": 128,
+      "networkMbps": 10,
+      "cpuWeight": 1.0,
+      "memoryWeight": 1.0
+    },
+    "pod-b": {
+      "cpuCores": 0.20,
+      "memoryMiB": 128,
+      "networkMbps": 10,
+      "cpuWeight": 1.0,
+      "memoryWeight": 1.0
+    },
+    "pod-c": {
+      "cpuCores": 0.80,
+      "memoryMiB": 512,
+      "networkMbps": 40,
+      "cpuWeight": 2.0,
+      "memoryWeight": 1.5
+    }
+  },
+  "flows": [
+    {
+      "flowId": "important-flow",
+      "src": "pod-a",
+      "dst": "pod-c",
+      "offeredMbps": 25,
+      "importanceWeight": 3.0,
+      "stratum": "latency-critical"
+    },
+    {
+      "flowId": "background-flow",
+      "src": "pod-b",
+      "dst": "pod-c",
+      "offeredMbps": 25,
+      "importanceWeight": 1.0,
+      "stratum": "background"
+    }
+  ],
+  "before": {
+    "placement": {
+      "pod-a": "worker-a",
+      "pod-b": "worker-b",
+      "pod-c": "worker-b"
+    }
+  },
+  "after": {
+    "placement": {
+      "pod-a": "worker-a",
+      "pod-b": "worker-a",
+      "pod-c": "worker-b"
+    }
+  }
+}

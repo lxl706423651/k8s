@@ -9,7 +9,7 @@
 # Side effects: uploads compile artifacts to the master, builds Docker images on
 # the master, and pulls those images into remote K3s containerd stores.
 # Context: run from the controller host after compile.sh has produced hard
-# nodeSelector placement.
+# nodeSelector placement, or an explicitly configured default scheduler baseline.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,11 +31,15 @@ SEED_PRELOAD_BACKOFF_SECONDS=5
 SEED_REGISTRY_PUSH_RETRIES=5
 SEED_REGISTRY_PUSH_BACKOFF_SECONDS=5
 SEED_REGISTRY_PUSH_TIMEOUT_SECONDS=180
+SEED_IMAGE_BUILD_RETRIES=3
+SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS=15
+SEED_IMAGE_BUILD_TIMEOUT_SECONDS=300
 export SEED_BUILD_PARALLELISM SEED_DOCKER_BUILDKIT SEED_DOCKER_BUILDX
 export SEED_BUILD_SKIP_EXISTING SEED_FAST_IMAGE_ARCHIVE SEED_FAST_ARCHIVE_BASE_IMAGE
 export SEED_COMPOSE_DOCKER_CLI_BUILD SEED_PRELOAD_NODE_CONCURRENCY
 export SEED_PRELOAD_IMAGE_CONCURRENCY SEED_PRELOAD_RETRIES SEED_PRELOAD_BACKOFF_SECONDS
 export SEED_REGISTRY_PUSH_RETRIES SEED_REGISTRY_PUSH_BACKOFF_SECONDS SEED_REGISTRY_PUSH_TIMEOUT_SECONDS
+export SEED_IMAGE_BUILD_RETRIES SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS SEED_IMAGE_BUILD_TIMEOUT_SECONDS
 
 seed_load_cluster_nodes
 ensure_kubeconfig
@@ -73,11 +77,13 @@ echo "SEED_DOCKER_BUILDKIT=${SEED_DOCKER_BUILDKIT}"
 echo "SEED_DOCKER_BUILDX=${SEED_DOCKER_BUILDX}"
 echo "SEED_BUILD_SKIP_EXISTING=${SEED_BUILD_SKIP_EXISTING}"
 echo "SEED_FAST_IMAGE_ARCHIVE=${SEED_FAST_IMAGE_ARCHIVE:-0}"
-echo "SEED_NETWORK_BACKEND=${SEED_NETWORK_BACKEND:-${SEED_CNI_TYPE:-kube-ovn}}"
+echo "SEED_NETWORK_BACKEND=${SEED_NETWORK_BACKEND:-${SEED_CNI_TYPE:-macvlan}}"
 echo "SEED_PRELOAD_NODE_CONCURRENCY=${SEED_PRELOAD_NODE_CONCURRENCY}"
 echo "SEED_PRELOAD_IMAGE_CONCURRENCY=${SEED_PRELOAD_IMAGE_CONCURRENCY}"
 echo "SEED_REGISTRY_PUSH_RETRIES=${SEED_REGISTRY_PUSH_RETRIES}"
 echo "SEED_REGISTRY_PUSH_TIMEOUT_SECONDS=${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS}"
+echo "SEED_IMAGE_BUILD_RETRIES=${SEED_IMAGE_BUILD_RETRIES}"
+echo "SEED_IMAGE_BUILD_TIMEOUT_SECONDS=${SEED_IMAGE_BUILD_TIMEOUT_SECONDS}"
 echo "Workflow distribution mode: preload"
 echo "Remote build publish mode: ${REMOTE_BUILD_DISTRIBUTION_MODE}"
 seed_print_cluster_nodes
@@ -92,7 +98,21 @@ require_file "${K8S_MANIFEST}"
 echo "Runtime manifest: ${K8S_MANIFEST}"
 
 rm -rf "${NODE_IMAGE_DIR}" "${NODE_IMAGE_VALIDATE_DIR}"
+# Resolve the preload policy from the frozen YAML, never from caller environment.
+PRELOAD_PLAN_ARGS=()
+PLACEMENT_ALGORITHM="$(python3 - "${EXPERIMENT_DIR}/assignment.yaml" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as handle:
+    config = yaml.safe_load(handle)
+print((config.get('placement') or {}).get('algorithm', 'optimized'))
+PY
+)"
+if [ "${PLACEMENT_ALGORITHM}" = "kubernetes-default-scheduler" ]; then
+    PRELOAD_PLAN_ARGS+=(--all-nodes)
+    echo "Default scheduler: preload every workload image on every cluster node."
+fi
 python3 "${TEST_DIR}/generate_node_image_refs.py" \
+    "${PRELOAD_PLAN_ARGS[@]}" \
     "${K8S_MANIFEST}" \
     "${NODE_IMAGE_VALIDATE_DIR}" \
     "${SEED_NODE_NAMES[@]}"
@@ -110,7 +130,7 @@ PY
 
 if [ "${MISSING_SELECTOR_COUNT}" != "0" ]; then
     echo "Error: ${K8S_MANIFEST} is missing hard node placement for ${MISSING_SELECTOR_COUNT} workloads." >&2
-    echo "This build flow requires nodeSelector-based placement so per-node preload can be generated." >&2
+    echo "This build flow requires nodeName or hostname nodeSelector placement so per-node preload can be generated." >&2
     echo "Run ./compile.sh again for this experiment directory before running ./build.sh." >&2
     echo "Validation details: ${VALIDATION_SUMMARY}" >&2
     exit 1
@@ -160,6 +180,9 @@ SEED_DOCKER_BUILDX="${11}"
 SEED_BUILD_SKIP_EXISTING="${12}"
 SEED_FAST_IMAGE_ARCHIVE="${13:-0}"
 SEED_FAST_ARCHIVE_BASE_IMAGE="${14:-}"
+SEED_IMAGE_BUILD_RETRIES="${15}"
+SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS="${16}"
+SEED_IMAGE_BUILD_TIMEOUT_SECONDS="${17}"
 cd "${REMOTE_WORK_DIR}"
 tar -xzf compiled.tar.gz
 export DOCKER_BUILDKIT="${DOCKER_BUILDKIT}"
@@ -175,6 +198,7 @@ export SEED_REGISTRY_PUSH_BACKOFF_SECONDS="${SEED_REGISTRY_PUSH_BACKOFF_SECONDS}
 export SEED_REGISTRY_PUSH_TIMEOUT_SECONDS="${SEED_REGISTRY_PUSH_TIMEOUT_SECONDS}"
 export SEED_BUILD_SKIP_EXISTING="${SEED_BUILD_SKIP_EXISTING}"
 export SEED_FAST_IMAGE_ARCHIVE="${SEED_FAST_IMAGE_ARCHIVE}"
+export SEED_IMAGE_BUILD_RETRIES SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS SEED_IMAGE_BUILD_TIMEOUT_SECONDS
 if command -v curl >/dev/null 2>&1; then
   curl -m 5 -fsS "http://${SEED_REGISTRY_LOCAL_ENDPOINT:-${SEED_REGISTRY}}/v2/" >/dev/null
 fi
@@ -222,8 +246,26 @@ if [[ "\${1:-}" == "build" ]]; then
       exit 0
     fi
   fi
-  echo "+ DOCKER_BUILDKIT=1 docker buildx build --load --provenance=false \$*" >&2
-  exec "\${real_docker}" buildx build --load --provenance=false "\$@"
+  build_attempt=1
+  while true; do
+    echo "+ DOCKER_BUILDKIT=1 timeout \${SEED_IMAGE_BUILD_TIMEOUT_SECONDS}s docker buildx build --load --provenance=false \$* (attempt \${build_attempt}/\${SEED_IMAGE_BUILD_RETRIES})" >&2
+    set +e
+    timeout --signal=TERM --kill-after=30s "\${SEED_IMAGE_BUILD_TIMEOUT_SECONDS}" \
+      "\${real_docker}" buildx build --load --provenance=false "\$@"
+    build_rc=\$?
+    set -e
+    if [[ "\${build_rc}" -eq 0 ]]; then
+      exit 0
+    fi
+    if [[ "\${build_attempt}" -ge "\${SEED_IMAGE_BUILD_RETRIES}" ]]; then
+      echo "[build] image build failed after \${build_attempt} attempts rc=\${build_rc} tag=\${tag:-<unknown>}" >&2
+      exit "\${build_rc}"
+    fi
+    sleep_seconds=\$((SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS * build_attempt))
+    echo "[build] image build retry in \${sleep_seconds}s rc=\${build_rc} tag=\${tag:-<unknown>}" >&2
+    sleep "\${sleep_seconds}"
+    build_attempt=\$((build_attempt + 1))
+  done
 fi
 exec "\${real_docker}" "\$@"
 WRAPPER_EOF
@@ -262,7 +304,7 @@ fi
 REMOTE_EOF
 
 scp -q "${SSH_OPTS[@]}" "${BUILD_STAGE_DIR}/build_remote.sh" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}:${REMOTE_SCRIPT}"
-printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q' \
+printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q' \
     "${REMOTE_SCRIPT}" \
     "${REMOTE_WORK_DIR}" \
     "${SEED_BUILD_PARALLELISM}" \
@@ -277,7 +319,10 @@ printf -v REMOTE_CMD 'sudo -n bash %q %q %q %q %q %q %q %q %q %q %q %q %q %q %q'
     "${SEED_DOCKER_BUILDX}" \
     "${SEED_BUILD_SKIP_EXISTING}" \
     "${SEED_FAST_IMAGE_ARCHIVE:-0}" \
-    "${SEED_FAST_ARCHIVE_BASE_IMAGE:-}"
+    "${SEED_FAST_ARCHIVE_BASE_IMAGE:-}" \
+    "${SEED_IMAGE_BUILD_RETRIES}" \
+    "${SEED_IMAGE_BUILD_RETRY_BACKOFF_SECONDS}" \
+    "${SEED_IMAGE_BUILD_TIMEOUT_SECONDS}"
 ssh "${SSH_OPTS[@]}" "${SEED_K3S_USER}@${SEED_MASTER_NODE_IP}" "${REMOTE_CMD}"
 echo "[build] remote build stage finished"
 rm -f "${BUILD_STAGE_DIR}/build_remote.sh"

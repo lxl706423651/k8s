@@ -1,0 +1,6 @@
+asn,weight,demandMbps
+64512,1.0,5.0
+64513,1.0,5.0
+64514,1.0,5.0
+# 复制上面的格式，为需要设置的 ASN 填入实际 weight 和 demandMbps。
+# 未列出的 ASN 使用 modelPlacementBenefit.py 的默认 weight=1.0 和默认 demand。

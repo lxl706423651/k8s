@@ -1,0 +1,32 @@
+network:
+  name: placement-deploy0920
+  bridge: virbrpd0920
+  gateway: 10.97.0.1
+  cidr: 10.97.0.0/24
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+storage: /data/lxl/k8sTools/placement-deploy0920
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+profiles:
+- id: c2m2
+  name: placement-deploy0920-c2m2
+  address: 10.97.0.11
+  mac: 52:54:00:97:20:0b
+  cpus: 2
+  memory: 2
+  hostCpus:
+  - 138
+  - 139
+pilot:
+  seed: 2026092500
+  repeats: 5
+  seconds: 10
+  warmup: 2
+  warmupMode: pressure_only
+  cpu:
+  - 0
+  memory:
+  - 0
+  modes:
+  - resident
+evidenceSplit: real_routing_fixed_canary_no_extra_pressure_needs_empty_reference

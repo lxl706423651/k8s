@@ -151,8 +151,9 @@ def metadataForPodTemplate(doc: dict[str, Any]) -> dict[str, Any] | None:
 def scrubManifestForDefaultScheduler(
     docs: list[dict[str, Any]],
     namespace: str,
+    *, remove_requests: bool = True,
 ) -> dict[str, Any]:
-    """Remove hard placement/resource requests and rewrite namespace."""
+    """Scrub docs in namespace; optionally remove requests for legacy callers."""
     removed_node_names = 0
     removed_node_selectors = 0
     removed_requests = 0
@@ -189,7 +190,7 @@ def scrubManifestForDefaultScheduler(
                     continue
                 resources = container.get("resources")
                 requests = resources.get("requests") if isinstance(resources, dict) else None
-                if isinstance(requests, dict) and requests:
+                if remove_requests and isinstance(requests, dict) and requests:
                     resources.pop("requests", None)
                     removed_requests += 1
                     if not resources:
@@ -216,6 +217,30 @@ def scrubManifestForDefaultScheduler(
         "removedResourceRequests": removed_requests,
         "removedPlacementAnnotations": removed_annotations,
     }
+
+
+def prepareSchedulerManifest(docs: list[dict], namespace: str,
+                             eligible_nodes: list[str] | None = None) -> None:
+    """Unpin docs for real scheduling, preserving resource/network semantics.
+
+    eligible_nodes restricts the scheduler's node pool, never a per-Pod target.
+    Existing non-hostname constraints remain part of the source workload.
+    """
+    scrubManifestForDefaultScheduler(docs, namespace, remove_requests=False)
+    for doc in docs:
+        spec = podSpec(doc)
+        if spec is None:
+            continue
+        spec['schedulerName'] = 'default-scheduler'
+        if eligible_nodes is not None:
+            affinity = spec.setdefault('affinity', {}).setdefault('nodeAffinity', {})
+            required = affinity.setdefault('requiredDuringSchedulingIgnoredDuringExecution', {})
+            terms = required.setdefault('nodeSelectorTerms', [{}])
+            for term in terms:
+                term.setdefault('matchExpressions', []).append({
+                    'key': 'kubernetes.io/hostname', 'operator': 'In',
+                    'values': list(eligible_nodes),
+                })
 
 
 def copyOutputTree(source_output: Path, baseline_output: Path) -> None:

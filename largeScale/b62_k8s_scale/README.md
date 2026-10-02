@@ -12,6 +12,12 @@ This directory is the runnable B62 SeedEMU/K3s scale experiment workspace under
 as its source root unless `experiment.sourceRoot` is specified. Legacy
 assignment entrypoints still resolve the source tree from `assignment.yaml`.
 
+The shared `build.sh` also serves B63's real default-scheduler baseline: when
+the frozen assignment has `placement.algorithm: kubernetes-default-scheduler`,
+it preloads every workload image on every node using
+`generate_node_image_refs.py --all-nodes`. Other algorithms retain per-node placement-based preload. This is
+selected from YAML, not a new environment-variable interface.
+
 ## Quick Kubernetes Debug Commands
 
 Run these commands from this directory. Use the local stable kubeconfig
@@ -607,6 +613,9 @@ Final clean and destroy were completed and independently verified.
 
 `../b63_deployment/runB63LargeExperiment.py` 直接调用本目录 `runFullExperiment.main()`，
 并传入可选 `after_compile` / `after_ready` 回调，分别替换 placement 和检查实际落点。
+可选 `after_workload` 回调在完整或恢复流程成功后、最终 PASS 之前执行；B63
+用它默认运行 RTT/TCP/stress 测量。`before_build` 在镜像构建前运行，包括从 build
+恢复的路径，B63 用它执行静态 placement 验证。回调默认均为 None，B62 自身不新增阶段。
 回调接收 `(summary, summary_path, run_dir, env)`。未传回调时 B62 行为不变；
 B63 的输入、集群状态及 namespace 均由其运行目录独立保存。详见
 [B63 共享流程](../b63_deployment/README.md)。

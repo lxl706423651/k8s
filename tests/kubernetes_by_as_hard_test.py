@@ -108,6 +108,37 @@ class KubernetesByAsHardCompilerTest(unittest.TestCase):
         finally:
             os.chdir(original_cwd)
 
+    def test_default_compiler_uses_macvlan_vlan(self):
+        emulator = self._build_emulator()
+        original_cwd = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                compiler = KubernetesCompiler(
+                    registry_prefix="",
+                    namespace="seedemu-test",
+                    internetMapEnabled=False,
+                    image_pull_policy="IfNotPresent",
+                )
+                emulator.compile(compiler, tmp_dir, override=True)
+                output = Path(tmp_dir)
+                networking = yaml.safe_load((output / "networking.yaml").read_text(encoding="utf-8"))
+                documents = self._read_documents(output / "k8s.yaml")
+        finally:
+            os.chdir(original_cwd)
+
+        self.assertEqual(networking["networkBackend"], "macvlan")
+        self.assertEqual(networking["cniType"], "macvlan")
+        self.assertTrue(networking["macvlanVlanMode"])
+        self.assertEqual(networking["macvlanVlanIdStart"], 100)
+        nad_configs = [
+            json.loads(document["spec"]["config"])
+            for document in documents
+            if document.get("kind") == "NetworkAttachmentDefinition"
+        ]
+        self.assertTrue(nad_configs)
+        self.assertTrue(all(config["type"] == "macvlan" for config in nad_configs))
+        self.assertTrue(all(config["master"].startswith("eth0.") for config in nad_configs))
+
     def test_by_as_hard_uses_bridge_for_internal_links_and_macvlan_for_ix(self):
         emulator = Emulator()
         base = Base()
@@ -147,7 +178,9 @@ class KubernetesByAsHardCompilerTest(unittest.TestCase):
                         "151": {"kubernetes.io/hostname": "node-b"},
                     },
                     cni_type="macvlan",
+                    local_link_cni_type="bridge",
                     cni_master_interface="ens2",
+                    cni_mtu=1400,
                     image_pull_policy="IfNotPresent",
                 )
                 emulator.compile(compiler, tmp_dir, override=True)
@@ -163,7 +196,9 @@ class KubernetesByAsHardCompilerTest(unittest.TestCase):
         deployments = [document for document in documents if document.get("kind") == "Deployment"]
 
         self.assertEqual(nad_by_name["net-150-net0"]["type"], "bridge")
+        self.assertEqual(nad_by_name["net-150-net0"]["mtu"], 1400)
         self.assertEqual(nad_by_name["net-ix-ix100"]["type"], "macvlan")
+        self.assertEqual(nad_by_name["net-ix-ix100"]["mtu"], 1400)
 
         first_router = next(
             deployment for deployment in deployments
@@ -172,7 +207,7 @@ class KubernetesByAsHardCompilerTest(unittest.TestCase):
         networks = json.loads(first_router["spec"]["template"]["metadata"]["annotations"]["k8s.v1.cni.cncf.io/networks"])
         by_name = {entry["name"]: entry for entry in networks}
 
-        self.assertEqual(by_name["net-150-net0"], {"name": "net-150-net0"})
+        self.assertIn("ips", by_name["net-150-net0"])
         self.assertIn("ips", by_name["net-ix-ix100"])
 
 

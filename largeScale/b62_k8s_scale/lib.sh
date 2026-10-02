@@ -124,8 +124,8 @@ cluster_name = f"{get(assignment, 'kvm.clusterNamePrefix', 'seedemu-b62')}-w{wor
 ip_prefix = str(get(assignment, "kvm.ipPrefix"))
 master_ip = f"{ip_prefix}.{int(get(assignment, 'kvm.master.ipStart'))}"
 registry_port = int(get(assignment, "registry.port", 5000))
-network_backend = str(get(assignment, "networking.backend", "kube-ovn")).strip().lower() or "kube-ovn"
-cni_type = str(get(assignment, "networking.cniType", "kube-ovn")).strip().lower() or "kube-ovn"
+network_backend = str(get(assignment, "networking.backend", "macvlan")).strip().lower() or "macvlan"
+cni_type = str(get(assignment, "networking.cniType", "macvlan")).strip().lower() or "macvlan"
 local_link_cni_type = str(get(assignment, "networking.localLinkCniType", cni_type) or cni_type).strip().lower()
 attached_cni_type = str(get(assignment, "networking.attachedCniType", local_link_cni_type) or local_link_cni_type).strip().lower()
 cni_master_interface = str(get(assignment, "networking.cniMasterInterface", "ens2"))
@@ -534,7 +534,7 @@ seed_network_backend() {
             ;;
     esac
 
-    backend="$(normalizeNetworkValue "${SEED_NETWORK_BACKEND:-kube-ovn}")"
+    backend="$(normalizeNetworkValue "${SEED_NETWORK_BACKEND:-macvlan}")"
     if [ "${backend}" = "ovn" ]; then
         backend="kube-ovn"
     fi

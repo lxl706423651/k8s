@@ -1,0 +1,70 @@
+kind: kvm
+clusterName: seedemu-b63-e3-4954-48
+experiment: {topologySize: 4954, topologyDir: /data/lxl/seed-emulator/topology, name: b63-e3-4954-48, namespace: seedemu-b63-e3-4954-48}
+ssh: {user: ubuntu, key: /home/lxl/.ssh/id_ed25519}
+defaults: {masterName: b63-e3l-master, workerNamePrefix: b63-e3l-worker, ipPrefix: 10.88.0, masterIpStart: 10, workerIpStart: 11, macPrefix: "52:54:00:63:88", masterMacStart: 16, workerMacStart: 17}
+master: {vcpus: 24, memoryGiB: 36, diskGb: 80}
+workers: {count: 47, vcpus: 6, memoryGiB: 12, diskGb: 40}
+kvm:
+  prepareImageCache: false
+  network: seedemu-b63-e3-4954-48
+  networkBridge: virbrb63e3l
+  networkCidr: 10.88.0.0/24
+  networkGateway: 10.88.0.1
+  dhcpStart: 10.88.0.10
+  dhcpEnd: 10.88.0.239
+  storageDir: /data/lxl/k8sTools/b63-e3-4954-48
+  diskDir: /data/lxl/k8sTools/b63-e3-4954-48/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-e3-4954-48/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  extraNetworks:
+  - {name: seedemu-b63-e3-4954-48-fabric0, bridge: brb63e3lf0, model: virtio, trunk: trunk0, masterInterface: ens3}
+  - {name: seedemu-b63-e3-4954-48-fabric1, bridge: brb63e3lf1, model: virtio, trunk: trunk1, masterInterface: ens4}
+  allowExisting: false
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - {name: trunk0, masterInterface: ens3, vlanStart: 1, vlanEnd: 4094}
+  - {name: trunk1, masterInterface: ens4, vlanStart: 1, vlanEnd: 4094}
+cni: {cniType: macvlan, localLinkCniType: macvlan, attachedCniType: macvlan, defaultMasterInterface: ens3}
+registry: {port: 5088}
+seedemu: {hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache, imageCacheDirs: [/home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache]}
+k3s: {version: v1.29.15+k3s1, clusterCidr: 10.112.0.0/12, serviceCidr: 10.128.0.0/16, flannelBackend: vxlan, nodeCidrMaskSizeIpv4: 20, maxPods: 4000, kubeletRegistryQps: 100, kubeletRegistryBurst: 20}
+tuning: {userMaxNetNamespaces: 65536}
+placement:
+  # Keep the measurement/control plane responsive while all three methods use
+  # the same 47 workload nodes.  The cluster still contains 48 VMs.
+  excludeControlPlane: true
+  algorithm: performance-model
+  selectedOnly: true
+  injectResourceRequests: false
+  fastGreedyScore: true
+  externalCpuMillicores: 35
+  resourceTargetUtilization: 0.70
+  contentionKnee: 0.70
+  placementSeed: 20260918
+  performanceModel: /home/lxl/k8s/largeScale/b63_deployment/experiments/research_e1_topology214_20260918/performance_model.json
+deploy: {batchSize: 80, batchSleepSeconds: 0, subnetBatchSize: 100, subnetBatchSleepSeconds: 0, monitorInterval: 20, monitorEnabled: false, staticApplyMode: batch, controllerApplyMode: batch, warmupBatches: 12, warmupBatchSize: 1, postControllerApplySettleSeconds: 5, pressureCheckSeconds: 5, stabilizeTimeoutSeconds: 36000, maxPendingPods: 160, maxCreatingPods: 160, maxCreatingPodsPerNode: 40, maxNotReadyPods: 160, maxFailedPods: 10, requireAllNodesReady: true, waitKubeOvnSubnets: false, nodeStreamObserveTimeoutSeconds: 120, nodeStreamMaxActivePerNode: 4}
+study:
+  phase: E3
+  # A placement may legitimately stall under contention.  Preserve that FAIL,
+  # clean its isolated cluster, and still measure the remaining algorithms.
+  continueAfterVariantFailure: true
+  cleanupFailedVariants: true
+  # Bound K3s uninstall so a saturated guest cannot block KVM teardown forever.
+  destroyPhysicalTimeoutSeconds: 1800
+  variants:
+  - {id: crescent, algorithm: crescent}
+  - {id: crescent-resource, algorithm: crescent-resource-aware}
+  - {id: performance-model, algorithm: performance-model}
+  loadSweepCpuMillicores: [0, 20, 40]
+  calibrationLoadsMillicores: []
+  holdoutLoadsMillicores: [0, 20, 40]
+  loadSettleSeconds: 30
+  loadApplyNodeConcurrency: 0
+  loadApplyNodeTimeoutSeconds: 900
+  loadApplyRetries: 3
+  loadApplyRetryBackoffSeconds: 2
+  hostSampleIntervalSeconds: 10
+  dataplane: {pairPlanVersion: 2, pairSeed: 20260918, pairsPerStratum: 24, maxPairsTotal: 72, pingCount: 8, pingConcurrency: 12, baselineTcpDirections: 32, baselineTcpDuration: 6, baselineTcpConcurrency: 8, stressLevels: "8,16,32,48", stressRepetitions: 2, stressDuration: 12, loadedPingCanaries: 12, loadedPingCount: 10}

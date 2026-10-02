@@ -1,18 +1,18 @@
 # B63 input: B62 infrastructure/runtime schema plus placement algorithm settings.
 # Separate VM names, networks and disks; generated cluster state stays inside each run.
 kind: kvm
-clusterName: seedemu-b63-sh6
+clusterName: seedemu-b63-sh48
 experiment:
-  topologySize: 1078
+  topologySize: 7001
   topologyDir: ~/seed-emulator/topology
-  name: b63-sh6-1078
-  namespace: seedemu-b63-sh6-1078
+  name: b63-sh48-7001
+  namespace: seedemu-b63-sh48-7001
 ssh:
   user: ubuntu
   key: ~/.ssh/id_ed25519
 defaults:
-  masterName: b63-sh6-master
-  workerNamePrefix: b63-sh6-worker
+  masterName: b63-sh48-master
+  workerNamePrefix: b63-sh48-worker
   ipPrefix: 10.83.0
   masterIpStart: 10
   workerIpStart: 11
@@ -20,35 +20,36 @@ defaults:
   masterMacStart: 16
   workerMacStart: 17
 master:
-  vcpus: 16
-  memoryGiB: 24
+  vcpus: 24
+  memoryGiB: 36
   diskGb: 80
 workers:
-  count: 5
-  vcpus: 8
-  memoryGiB: 24
-  diskGb: 80
+  count: 47
+  vcpus: 6
+  memoryGiB: 12
+  diskGb: 40
+
 kvm:
   prepareImageCache: false
-  network: seedemu-b63-sh6
-  networkBridge: virbrb63sh6
+  network: seedemu-b63-sh48
+  networkBridge: virbrb63sh48
   networkCidr: 10.83.0.0/24
   networkGateway: 10.83.0.1
   dhcpStart: 10.83.0.10
   dhcpEnd: 10.83.0.239
-  storageDir: /data/lxl/k8sTools/b63-sh6
-  diskDir: /data/lxl/k8sTools/b63-sh6/disks
-  cloudInitDir: /data/lxl/k8sTools/b63-sh6/cloud-init
+  storageDir: /data/lxl/k8sTools/b63-sh48
+  diskDir: /data/lxl/k8sTools/b63-sh48/disks
+  cloudInitDir: /data/lxl/k8sTools/b63-sh48/cloud-init
   baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
   legacyBaseImagePath: ../b62_k8s_scale/base_image/jammy-server-cloudimg-amd64.img
   extraNetworks:
-  - name: seedemu-b63-sh6-fabric0
-    bridge: brb63s6f0
+  - name: seedemu-b63-sh48-fabric0
+    bridge: brb63s48f0
     model: virtio
     trunk: trunk0
     masterInterface: ens3
-  - name: seedemu-b63-sh6-fabric1
-    bridge: brb63s6f1
+  - name: seedemu-b63-sh48-fabric1
+    bridge: brb63s48f1
     model: virtio
     trunk: trunk1
     masterInterface: ens4

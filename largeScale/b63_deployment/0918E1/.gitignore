@@ -1,0 +1,9 @@
+# Generated compiler contexts, VM disks/cloud-init, and local smoke output.
+builds/
+state/
+output-smoke/
+__pycache__/
+
+# Per-run measurements, reports, and logs.
+/results/
+/0918E1/

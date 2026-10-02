@@ -20,7 +20,7 @@
 | 主要配置 | `assignment.yaml`，也可叠加显式单机/多机 cluster YAML | `configSingleHostKvmMacvlan.yaml`，包含 placement 算法字段 |
 | 仿真数据面 | Multus secondary macvlan+VLAN | Multus secondary macvlan+VLAN |
 | 静态结果 | `placement_plan.json` 等 | `output/placement_report.json` |
-| 动态验证 | 阶段性能采样、路由/FIB、确定性跨节点或跨宿主 ping/iperf、reconvergence | 复用 B62 全部动态验证，增加逐 Pod 落点核对 |
+| 动态验证 | 阶段性能采样、路由/FIB、确定性跨节点或跨宿主 ping/iperf、reconvergence | 复用 B62 全部动态验证，增加逐 Pod 落点核对和默认 RTT/TCP/stress 测量 |
 | 成功后 | 保留集群，需要手动销毁 | 保留集群，需要手动销毁 |
 
 B62 自带确定性的 by-AS placement。B63 的默认调度器可单独做静态基线，
@@ -163,7 +163,7 @@ jq '{status, cluster, stages}' "$RUN_DIR/summary.json"
 
 ## 4. 启动 B63
 
-新主入口只有 B63 的 placement 和落点检查，其余阶段直接调用 B62。
+新主入口增加 B63 的 placement、落点检查和最终数据面测量，其余阶段直接调用 B62。
 默认 `configSingleHostKvmMacvlan.yaml` 配置 1078 规模、6 VM，所有 VM 为
 24 GiB，master 16 vCPU、五台 worker 各 8 vCPU；总计 56 vCPU / 144 GiB。
 VM 名称为 `b63-sh6-*`，管理网段 `10.83.0.0/24`，使用两条独立 fabric 网络。
@@ -179,9 +179,35 @@ python3 runB63LargeExperiment.py \
 所有生成集群状态、kubeconfig、inventory、配置快照、manifest 和报告都放在本轮
 运行目录。入口不自动销毁已有集群；不要使用 B62 或历史 B63 的状态文件。
 
-阶段为：建群 → clean/preflight/compile → B63 placement → build/preload/deploy
+阶段为：建群 → clean/preflight/compile → B63 placement → verify-static-placement → build/preload/deploy
 → wait-ready → B63 verify-placement → start-bird/协议检查 → kernel/FIB 检查
-→ 跨节点 ping/iperf → reconvergence。默认不注入 resources.requests。
+→ 跨节点 ping/iperf → reconvergence → dataplane。默认不注入 resources.requests。
+
+`verify-static-placement` 默认检查分配完整性、目标节点、部署 manifest 与重算静态指标，
+失败会阻止 build/preload/deploy。结果为 `placement_static_summary.json`，并记录到
+`summary.json.tests.staticPlacement`。从 build 恢复也执行，可离线使用
+`python3 verifyStaticPlacement.py --run-dir <历史目录>` 复查。
+
+最后的 `dataplane` 调用 `running/measureDataplane.py`，默认测量 RTT、基线 TCP
+以及 8/16/32/48 并发（每档 3 次、每流 15 秒）。只有显式传入
+`--skipMeasureDataplane` 才跳过该阶段；`--prepare-only` 始终不执行测量。
+恢复运行也遵循同一规则。日志为 `dataplane.orchestrator.log`，结果位于
+运行目录的 `dataplane/`，并写入 `summary.json.tests.dataplane`；脚本异常退出
+会令流程失败，正常完成后的逐流失败率需要另外查看结果。销毁集群应放在测量之后。
+
+四算法串行全流程使用 B63 的新入口：
+
+```bash
+conda activate seedpy310
+python3 runPlacementComparison.py --config configSingleHostKvmMacvlan.yaml \
+  --algorithm all --run-dir experiments/placement-comparison
+```
+
+默认顺序为 optimized、network-only、kubernetes-default-scheduler、pod-count-balanced；也可
+用 `--algorithm` 单独选择一种。`all` 每轮成功后销毁本轮集群再继续，失败停止并保留现场。
+当前 YAML 是 48VM / 7001；可传历史 6VM YAML 使用同一入口。默认调度使用真实 K8s
+调度及全节点预加载，静态模拟值不作为真实落点。完整用法、汇总文件和失败恢复见
+[B63 四算法说明](b63_deployment/README.md#四算法串行对比当前入口)。
 
 ```bash
 kubectl --kubeconfig experiments/1078-6vm/kubeconfig.yaml get nodes -o wide

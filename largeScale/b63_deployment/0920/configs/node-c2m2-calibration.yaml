@@ -1,0 +1,59 @@
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+evidenceSplit: target_k3s_node_lowload_v4_calibration
+network:
+  bridge: virbrpd0920
+  cidr: 10.97.0.0/24
+  gateway: 10.97.0.1
+  name: placement-deploy0920
+pilot:
+  cpu:
+  - 0.0025
+  - 0.0075
+  - 0.015
+  - 0.03
+  - 0.06
+  - 0.1
+  memory:
+  - 0.125
+  - 0.375
+  modes:
+  - resident
+  - stream
+  repeats: 5
+  seconds: 10
+  seed: 2026100100
+  warmup: 2
+  warmupMode: pressure_only
+  memoryReserveFraction: 0.15
+  pressureControl: cumulative_cpu_debt_v1
+  budgetTrackingTolerance:
+    relative: 0.02
+    absoluteCpuFraction: 0.0001
+  streamChunkBytes: 65536
+profiles:
+- address: 10.97.0.11
+  cpus: 2
+  hostCpus:
+  - 138
+  - 139
+  id: c2m2
+  mac: 52:54:00:97:20:0b
+  memory: 2
+  name: placement-deploy0920-c2m2
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+storage: /data/lxl/k8sTools/placement-deploy0920
+scopeNote: Per-node profile on actual K3s worker, CPU injection <= .12; not a universal
+  specification-type profile. Original bare-VM failures retained.
+domainAmendment: 'Before all target-node training: memory domain [0,.5], explicit
+  15%/64MiB reserve. The default control established 17.5% available memory and a
+  successful small fixed-canary diagnostic; 20% guard rejection was not Q failure.
+  Calibration includes resident+stream; integer remains excluded from this round training/calibration.'
+collectorSource: measureNodePressure.py
+pressureAmendment: 'Before all worker training: compensate work-chunk overshoot with
+  cumulative process-CPU debt; zero CPU uses blocking wait. Legacy datasets and collector
+  unchanged.'
+streamAmendment: 'Before calibration/test: streaming kernel uses 64KiB chunks. The
+  ongoing resident-only training branch is identical; fixed canary and cumulative
+  CPU controller are unchanged. A freed-VM preflight found 1MiB rounding slightly
+  above the frozen tolerance.'

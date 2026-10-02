@@ -1,0 +1,10 @@
+# Experiment logs, temporary files, and Python caches in all subdirectories.
+*.log
+*.tmp
+*.bak
+*.swp
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Keep research notes, source code, and example configurations versioned.

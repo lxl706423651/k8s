@@ -467,11 +467,11 @@ seedemu:
   imageCacheDirs:
   - /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
 outputs:
-  tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+  tmpDir: /tmp/seedemu-k8s-tools-build-9xeahar5/setup/tmp
   kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
   inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
 kind: kvm
-sourceConfig: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/4954_20260914_155524_singlehost_macvlan_vlan/cluster-input.yaml
+sourceConfig: /home/lxl/k8s/largeScale/b62_k8s_scale/runs/7001_20260914_211251_singlehost_macvlan_vlan/cluster-input.yaml
 k8sTools:
   destroy:
     type: kvm
@@ -493,8 +493,8 @@ k8sTools:
           trunk: trunk1
           masterInterface: ens4
       outputs:
-        k3sConfig: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/configK3s.yaml
-        tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+        k3sConfig: /tmp/seedemu-k8s-tools-build-9xeahar5/setup/configK3s.yaml
+        tmpDir: /tmp/seedemu-k8s-tools-build-9xeahar5/setup/tmp
         kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
         inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
       nodes:
@@ -838,7 +838,7 @@ k8sTools:
       kind: kvm
       clusterName: seedemu-b62-singlehost-w5
       experiment:
-        topologySize: 4954
+        topologySize: 7001
         topologyDir: ~/seed-emulator/topology
       ssh:
         user: ubuntu
@@ -946,8 +946,8 @@ k8sTools:
         nodeStreamObserveTimeoutSeconds: 120
         nodeStreamMaxActivePerNode: 4
       outputs:
-        tmpDir: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/tmp
+        tmpDir: /tmp/seedemu-k8s-tools-build-9xeahar5/setup/tmp
         kubeconfig: /home/lxl/k8s/largeScale/b62_k8s_scale/kubeconfigSingleHostKvmMacvlan.yaml
         inventory: /home/lxl/k8s/largeScale/b62_k8s_scale/clusterSingleHostKvmMacvlan.inventory.yaml
-        k3sConfig: /tmp/seedemu-k8s-tools-build-bnnr0f54/setup/configK3s.yaml
+        k3sConfig: /tmp/seedemu-k8s-tools-build-9xeahar5/setup/configK3s.yaml
         kvmState: kvmState.yaml

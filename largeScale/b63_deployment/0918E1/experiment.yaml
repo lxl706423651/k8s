@@ -1,0 +1,98 @@
+# 0918E1 single-VM saturation experiment. Persistent user-facing settings live here.
+topology:
+  ixId: 100
+  firstAsn: 64512
+  asCounts: [60, 80, 100, 110, 120, 130, 140, 150, 160]
+  routeServerPeering: true
+
+traffic:
+  # One unlimited TCP iperf3 flow per Border AS to the remote Sink VM.
+  mode: vm-to-vm-sink
+  durationSeconds: 30
+  # Short all-pair TCP check; a scale is invalid if any configured pair fails this check.
+  preflightDurationSeconds: 5
+  # Retry only failed preflight pairs; every attempt is retained under preflight/iperf/.
+  preflightRetries: 2
+  # Extra time for Docker exec/iperf to be scheduled on a saturated VM.
+  commandGraceSeconds: 300
+  repeats: 10
+  baselineSeconds: 5
+  cooldownSeconds: 5
+  pingIntervalSeconds: 0.25
+  sampleIntervalSeconds: 1
+  startupWaitSeconds: 30
+  sinkAddress: 10.250.254.254
+  sinkPortBase: 6000
+
+vm:
+  # All experiment VMs use this identical resource profile.
+  vcpus: 16
+  memoryGiB: 32
+  diskGiB: 40
+  osVariant: ubuntu22.04
+  baseImagePath: state/base/jammy-server-cloudimg-amd64.img
+  baseImageUrl: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+  storageDir: state/vms
+  cloudInitDir: state/cloud-init
+  ssh:
+    user: ubuntu
+    privateKey: ~/.ssh/id_ed25519
+    publicKey: ~/.ssh/id_ed25519.pub
+  network:
+    name: seedemu-0918e1
+    bridge: virbr0918e1
+    cidr: 192.168.191.0/24
+    gateway: 192.168.191.1
+    dhcpStart: 192.168.191.100
+    dhcpEnd: 192.168.191.200
+  # Second, shared L2 fabric used by all Border containers and the Sink VM.
+  externalNetwork:
+    name: seedemu-0918e1-xvm
+    bridge: virbr0918x
+    cidr: 10.250.0.0/16
+    gateway: 10.250.0.1
+    dockerName: e1-0918e1-external-ix
+    parentInterface: ens4
+    macvlanIpRangePrefix: 24
+  # Reuses the first nine idle 16-vCPU/32-GiB domains from the prior round.
+  # Domain names are retained for SSH/libvirt identity; asCount is the experiment scale.
+  nodes:
+    - {name: e1-0918-as100, address: 192.168.191.60, mac: "52:54:00:91:18:01", xvmMac: "52:54:00:91:19:01", asCount: 60, sourceIndex: 0}
+    - {name: e1-0918-as120, address: 192.168.191.61, mac: "52:54:00:91:18:02", xvmMac: "52:54:00:91:19:02", asCount: 80, sourceIndex: 1}
+    - {name: e1-0918-as140, address: 192.168.191.62, mac: "52:54:00:91:18:03", xvmMac: "52:54:00:91:19:03", asCount: 100, sourceIndex: 2}
+    - {name: e1-0918-as160, address: 192.168.191.63, mac: "52:54:00:91:18:04", xvmMac: "52:54:00:91:19:04", asCount: 110, sourceIndex: 3}
+    - {name: e1-0918-as180, address: 192.168.191.64, mac: "52:54:00:91:18:05", xvmMac: "52:54:00:91:19:05", asCount: 120, sourceIndex: 4}
+    - {name: e1-0918-as200, address: 192.168.191.65, mac: "52:54:00:91:18:06", xvmMac: "52:54:00:91:19:06", asCount: 130, sourceIndex: 5}
+    - {name: e1-0918-as220, address: 192.168.191.66, mac: "52:54:00:91:18:07", xvmMac: "52:54:00:91:19:07", asCount: 140, sourceIndex: 6}
+    - {name: e1-0918-as240, address: 192.168.191.67, mac: "52:54:00:91:18:08", xvmMac: "52:54:00:91:19:08", asCount: 150, sourceIndex: 7}
+    - {name: e1-0918-as260, address: 192.168.191.68, mac: "52:54:00:91:18:09", xvmMac: "52:54:00:91:19:09", asCount: 160, sourceIndex: 8}
+
+  # Existing idle 16-vCPU/32-GiB domain reused as the remote iperf sink.
+  sink:
+    name: e1-0918-as280
+    address: 192.168.191.69
+    mac: "52:54:00:91:18:0a"
+    xvmMac: "52:54:00:91:19:0a"
+    xvmAddress: 10.250.254.254
+
+execution:
+  buildParallelism: 4
+  # Compose v2 is copied from the host when a VM only has incompatible Compose v1.
+  composePluginPath: /usr/libexec/docker/cli-plugins/docker-compose
+  # Exported once from the host cache and loaded into every VM, avoiding Docker Hub dependence.
+  baseImages:
+    - handsonsecurity/seedemu-router:2.0
+  sshConnectTimeoutSeconds: 10
+  sshReadyTimeoutSeconds: 1200
+  remoteRunTimeoutSeconds: 10800
+  statusPollSeconds: 10
+  resultDownloadAttempts: 6
+  remoteRoot: /home/ubuntu/0918E1
+  buildRoot: builds
+  resultsRoot: results
+
+analysis:
+  bandwidthDropRatio: 0.10
+  latencyRiseRatio: 0.20
+  totalBandwidthDropRatio: 0.05
+  highCpuPercent: 85

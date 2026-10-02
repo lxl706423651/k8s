@@ -1,0 +1,43 @@
+baseImage: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+evidenceSplit: matched_placement_comparison_zero_pressure_v1
+network:
+  bridge: virbrpd0920
+  cidr: 10.97.0.0/24
+  gateway: 10.97.0.1
+  name: placement-deploy0920
+pilot:
+  cpu:
+  - 0
+  memory:
+  - 0
+  modes:
+  - resident
+  repeats: 5
+  seconds: 10
+  seed: 2026100502
+  warmup: 2
+  warmupMode: pressure_only
+  memoryReserveFraction: 0.15
+  pressureControl: cumulative_cpu_debt_v1
+  budgetTrackingTolerance:
+    relative: 0.02
+    absoluteCpuFraction: 0.0001
+  streamChunkBytes: 65536
+profiles:
+- address: 10.97.0.13
+  cpus: 4
+  hostCpus:
+  - 144
+  - 145
+  - 146
+  - 147
+  id: c4m4
+  mac: 52:54:00:97:20:0d
+  memory: 4
+  name: placement-deploy0920-c4m4
+sshKey: ~/.ssh/id_ed25519
+sshUser: ubuntu
+storage: /data/lxl/k8sTools/placement-deploy0920
+scopeNote: Fixed unchanged canary, 5 blocks with 15 zero-pressure windows; pair before/loaded/after
+  under the same 15% headroom protocol. No extra workload injection.
+collectorSource: measureNodePressure.py

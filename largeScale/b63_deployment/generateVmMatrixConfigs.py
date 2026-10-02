@@ -85,7 +85,7 @@ def buildNodes(vm_count: int) -> list[dict[str, Any]]:
 def buildConfig(vm_count: int) -> dict[str, Any]:
     """Return a complete b63 KVM config for one VM count."""
     return {
-        "kind": "kvmOvn",
+        "kind": "kvm",
         "clusterName": "seedemu-b63-placement-kvm",
         "nodes": buildNodes(vm_count),
         "kvm": {
@@ -110,6 +110,9 @@ def buildConfig(vm_count: int) -> dict[str, Any]:
             "type": "macvlan-vlan",
         },
         "cni": {
+            "cniType": "macvlan",
+            "localLinkCniType": "macvlan",
+            "attachedCniType": "macvlan",
             "defaultMasterInterface": "ens2",
         },
         "registry": {

@@ -1,0 +1,26 @@
+{
+  "seed": 2026092119,
+  "seconds": 3,
+  "cases": [
+    {
+      "id": "t08-r0",
+      "nnet": 5,
+      "niBGP": 2,
+      "neBGP": 2,
+      "nOSPF": 1,
+      "routes": 256,
+      "repeat": 0,
+      "sharedBgpNetwork": true
+    },
+    {
+      "id": "t15-r0",
+      "nnet": 3,
+      "niBGP": 96,
+      "neBGP": 0,
+      "nOSPF": 2,
+      "routes": 256,
+      "repeat": 0,
+      "sharedBgpNetwork": true
+    }
+  ]
+}

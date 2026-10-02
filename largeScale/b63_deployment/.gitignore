@@ -1,7 +1,17 @@
-configK3s-b63.yaml
-kubeconfig-b63.yaml
-inventory-b63.yaml
-experiments/
-output/
+# Generated cluster state; source configurations remain versioned.
+/configK3s-b63.yaml
+/kubeconfig-b63.yaml
+/inventory-b63.yaml
+*.stale-*
+
+# Experiment runs, generated compiler output, and cleanup logs.
+/experiments/
+/output/
+/cleanup_logs/
+/.latest_*
+
+# Local Python caches and temporary files.
 __pycache__/
-running/__pycache__/
+*.pyc
+*.log
+*.tmp

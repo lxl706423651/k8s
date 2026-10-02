@@ -1,0 +1,35 @@
+# Resource profiles used to estimate placement marginal benefit.
+#
+# Source VMs run the listed profile. The Sink VM stays larger by default so the
+# source VM profile is the main changed variable.
+sinkProfile:
+  vcpus: 32
+  memoryGiB: 64
+
+profiles:
+  - id: p08m16
+    label: 8vCPU-16GiB
+    source:
+      vcpus: 8
+      memoryGiB: 16
+  - id: p08m32
+    label: 8vCPU-32GiB
+    source:
+      vcpus: 8
+      memoryGiB: 32
+  - id: p16m16
+    label: 16vCPU-16GiB
+    source:
+      vcpus: 16
+      memoryGiB: 16
+  - id: p16m32
+    label: 16vCPU-32GiB
+    source:
+      vcpus: 16
+      memoryGiB: 32
+    existingRun: results/run-20260919-benefit-control-p16m32
+  - id: p32m64
+    label: 32vCPU-64GiB
+    source:
+      vcpus: 32
+      memoryGiB: 64

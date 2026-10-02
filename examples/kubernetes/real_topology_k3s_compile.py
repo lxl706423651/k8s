@@ -84,7 +84,7 @@ def parse_node_labels_json(raw: str) -> Dict[str, Dict[str, str]]:
 ###############################################################################
 
 def add_traffic(base, emu, stubAS, assignment_temp, num=10):
-    etc_hosts = EtcHosts()
+    #etc_hosts = EtcHosts()
     traffic_service = TrafficService()
 
     for i in range(num):
@@ -134,7 +134,7 @@ def add_traffic(base, emu, stubAS, assignment_temp, num=10):
         )
 
     emu.addLayer(traffic_service)
-    emu.addLayer(etc_hosts)
+    #emu.addLayer(etc_hosts)
 
 
 def get_assignment(asn, assignment):
@@ -207,6 +207,7 @@ def makeTransitAs(
 
     for ix in exchanges:
         routers[ix] = transit_as.createRouter(f"r{ix}")
+        routers[ix].addSoftware("iperf3")
         routers[ix].joinNetwork(f"ix{ix}", str(IPv4Network(node_prefix[ix])[asn]))
 
     if rrNum == 1:
@@ -272,7 +273,9 @@ def run():
         node_prefix[int(value["asn"])] = str(value["ipv4"])
 
     emu = Emulator()
-    ebgp = Ebgp()
+    ebgp = Ebgp().setTimers(holdTime=36000, keepaliveTime=60)
+    ibgp = Ibgp().setTimers(holdTime=36000, keepaliveTime=60)
+    ospf = Ospf().setTimers(tick=3, hello=10, dead=40)
     base = Base()
 
     t = time.time()
@@ -389,8 +392,8 @@ def run():
     emu.addLayer(base)
     emu.addLayer(Routing())
     emu.addLayer(ebgp)
-    emu.addLayer(Ibgp())
-    emu.addLayer(Ospf())
+    emu.addLayer(ibgp)
+    emu.addLayer(ospf)
 
     print("开始渲染仿真网络...")
     emu.render()
@@ -400,8 +403,19 @@ def run():
     ###############################################################################
     registry_prefix = os.environ.get("SEED_REGISTRY", "localhost:5001")
     namespace = os.environ.get("SEED_NAMESPACE", "seedemu")
-    cni_type = os.environ.get("SEED_CNI_TYPE", "bridge").strip().lower()
+    cni_type = os.environ.get("SEED_CNI_TYPE", "macvlan").strip().lower().replace("_", "-")
+    local_link_cni_type = os.environ.get("SEED_LOCAL_LINK_CNI_TYPE", "").strip().lower().replace("_", "-") or None
     cni_master_interface = os.environ.get("SEED_CNI_MASTER_INTERFACE", "eth0").strip()
+    cni_mtu_raw = os.environ.get("SEED_CNI_MTU", "").strip()
+    cni_mtu = int(cni_mtu_raw) if cni_mtu_raw else None
+    macvlan_vlan_mode = env_bool("SEED_MACVLAN_VLAN_MODE", default=True)
+    macvlan_vlan_start = int(os.environ.get("SEED_MACVLAN_VLAN_START", "100"))
+    macvlan_vlan_trunks_raw = os.environ.get("SEED_MACVLAN_VLAN_TRUNKS_JSON", "").strip()
+    macvlan_vlan_trunks = None
+    if macvlan_vlan_trunks_raw:
+        macvlan_vlan_trunks = json.loads(macvlan_vlan_trunks_raw)
+        if not isinstance(macvlan_vlan_trunks, list):
+            raise ValueError("SEED_MACVLAN_VLAN_TRUNKS_JSON must decode to a list")
     image_pull_policy = os.environ.get("SEED_IMAGE_PULL_POLICY", "Always").strip()
     scheduling_strategy = os.environ.get(
         "SEED_SCHEDULING_STRATEGY",
@@ -425,7 +439,12 @@ def run():
         scheduling_strategy=scheduling_strategy,
         node_labels=node_labels,
         cni_type=cni_type,
+        local_link_cni_type=local_link_cni_type,
         cni_master_interface=cni_master_interface,
+        cni_mtu=cni_mtu,
+        macvlan_vlan_mode=macvlan_vlan_mode,
+        macvlan_vlan_id_start=macvlan_vlan_start,
+        macvlan_vlan_trunks=macvlan_vlan_trunks,
         generate_services=True,
         image_pull_policy=image_pull_policy,
     )
@@ -448,7 +467,14 @@ def run():
     print(f"Namespace: {namespace}")
     print(f"Registry prefix: {registry_prefix}")
     print(f"CNI type: {cni_type}")
+    print(f"Local link CNI type: {local_link_cni_type or '<default>'}")
+    print(f"CNI MTU: {cni_mtu or '<parent-default>'}")
+    print(f"Macvlan VLAN mode: {macvlan_vlan_mode}")
+    print(f"Macvlan VLAN start: {macvlan_vlan_start}")
+    print(f"Macvlan VLAN trunks: {macvlan_vlan_trunks or '<default>'}")
     print(f"Internet Map enabled: {enable_internet_map}")
+    print("OSPF timers: tick=3 hello=10 dead=40")
+    print("BGP timers: holdTime=36000 keepaliveTime=60")
     print(f"RR plan: {rr_plan_path}")
     print(f"编译时间: {time.time() - t} 秒")
 

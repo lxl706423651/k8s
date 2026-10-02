@@ -1,0 +1,81 @@
+kind: kvm
+clusterName: placement-deploy0920
+ssh:
+  user: ubuntu
+  key: ~/.ssh/id_ed25519
+nodes:
+- name: placement-deploy0920-master
+  role: master
+  ip: 10.97.0.10
+  mac: 52:54:00:97:20:0a
+  vcpus: 4
+  memoryGiB: 4
+  disk_gb: 40
+- name: placement-deploy0920-c2m2
+  role: worker
+  ip: 10.97.0.11
+  mac: 52:54:00:97:20:0b
+  vcpus: 2
+  memoryGiB: 2
+  disk_gb: 40
+- name: placement-deploy0920-c4m2
+  role: worker
+  ip: 10.97.0.12
+  mac: 52:54:00:97:20:0c
+  vcpus: 4
+  memoryGiB: 2
+  disk_gb: 40
+- name: placement-deploy0920-c4m4
+  role: worker
+  ip: 10.97.0.13
+  mac: 52:54:00:97:20:0d
+  vcpus: 4
+  memoryGiB: 4
+  disk_gb: 40
+kvm:
+  prepareImageCache: false
+  network: placement-deploy0920
+  networkBridge: virbrpd0920
+  networkCidr: 10.97.0.0/24
+  networkGateway: 10.97.0.1
+  dhcpStart: 10.97.0.10
+  dhcpEnd: 10.97.0.239
+  storageDir: /data/lxl/k8sTools/placement-deploy0920
+  diskDir: /data/lxl/k8sTools/placement-deploy0920/disks
+  cloudInitDir: /data/lxl/k8sTools/placement-deploy0920/cloud-init
+  baseImagePath: /data/lxl/k8sTools/base/jammy-server-cloudimg-amd64.img
+  allowExisting: false
+  extraNetworks:
+  - name: placement-deploy0920-fabric
+    bridge: brpd0920f0
+    model: virtio
+    trunk: trunk0
+    masterInterface: ens3
+fabric:
+  type: macvlan-vlan
+  mtu: 1400
+  vlanTrunks:
+  - name: trunk0
+    masterInterface: ens3
+    vlanStart: 1
+    vlanEnd: 4094
+cni:
+  cniType: macvlan
+  localLinkCniType: macvlan
+  attachedCniType: macvlan
+  defaultMasterInterface: ens3
+registry:
+  port: 5097
+seedemu:
+  hostImageCacheDir: /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+  imageCacheDirs:
+  - /home/lxl/k8s/largeScale/b62_k8s_scale/base_image/image-cache
+k3s:
+  version: v1.29.15+k3s1
+  clusterCidr: 10.240.0.0/16
+  serviceCidr: 10.241.0.0/16
+  flannelBackend: vxlan
+  nodeCidrMaskSizeIpv4: 24
+  maxPods: 110
+  kubeletRegistryQps: 50
+  kubeletRegistryBurst: 10
